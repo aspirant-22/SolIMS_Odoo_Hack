@@ -5,7 +5,8 @@
  * @DEPENDENCIES: react, AuthContext.jsx, MainLayout.jsx, all module views
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { LoginView } from './modules/auth/LoginView';
 import { PublicLandingView } from './modules/landing/PublicLandingView';
@@ -20,20 +21,26 @@ import { WarrantyLookupTicketView } from './modules/warranty/WarrantyLookupTicke
 import { DirectorDashboardView } from './modules/director/DirectorDashboardView';
 import { SystemDiagnosticsView } from './modules/diagnostics/SystemDiagnosticsView';
 
+const ROLE_HOME = {
+  ADMIN: '/director',
+  OPERATIONS: '/inquiries',
+  STAFF: '/field-install',
+  CUSTOMER: '/my-solar'
+};
+
+// Internal ERP routes with RBAC whitelist
+const ERP_ROUTES = [
+  { path: '/inquiries', module: 'inquiries', roles: ['ADMIN', 'OPERATIONS', 'STAFF'], element: <InquiriesView /> },
+  { path: '/orders', module: 'orders', roles: ['ADMIN', 'OPERATIONS'], element: <OrdersView /> },
+  { path: '/dispatch', module: 'warehouse', roles: ['ADMIN', 'OPERATIONS'], element: <WarehouseDispatchView /> },
+  { path: '/field-install', module: 'technician', roles: ['ADMIN', 'STAFF'], element: <TechnicianRoofSignoffView /> },
+  { path: '/warranty', module: 'warranty', roles: ['ADMIN', 'OPERATIONS', 'STAFF'], element: <WarrantyLookupTicketView /> },
+  { path: '/director', module: 'director', roles: ['ADMIN', 'OPERATIONS'], element: <DirectorDashboardView /> },
+  { path: '/admin/system-logs', module: 'diagnostics', roles: ['ADMIN'], element: <SystemDiagnosticsView /> }
+];
+
 export const App = () => {
   const { currentUser, isInitializing } = useAuth();
-  const [activeModule, setActiveModule] = useState('inquiries');
-  const [publicView, setPublicView] = useState('landing'); // 'landing' | 'login'
-
-  // Sync default module with role capabilities
-  useEffect(() => {
-    if (!currentUser) return;
-    if (currentUser.role === 'STAFF' && activeModule === 'inquiries') {
-      setActiveModule('technician');
-    } else if (currentUser.role === 'ADMIN' && activeModule === 'inquiries') {
-      setActiveModule('director');
-    }
-  }, [currentUser?.role]);
 
   if (isInitializing) {
     return (
@@ -46,50 +53,41 @@ export const App = () => {
     );
   }
 
-  // 1. Unauthenticated Visitor Flow: Public Solar Landing vs Staff Login
-  if (!currentUser) {
-    if (publicView === 'login') {
-      return <LoginView onBackToLanding={() => setPublicView('landing')} />;
-    }
-    return (
-      <PublicLandingView
-        onOpenStaffLogin={() => setPublicView('login')}
-        onSelectPublicSection={(section) => setPublicView(section)}
-      />
-    );
-  }
-
-  // 2. Dedicated Homeowner Portal (Strict Role Decoupling - No Shared Disabled Tabs)
-  if (currentUser.role === 'CUSTOMER') {
-    return <CustomerMySolarPortalView />;
-  }
-
-  // 3. Internal Staff / Director Enterprise ERP Workspace
-  const renderActiveModuleView = () => {
-    switch (activeModule) {
-      case 'inquiries':
-        return <InquiriesView />;
-      case 'orders':
-        return <OrdersView />;
-      case 'warehouse':
-        return <WarehouseDispatchView />;
-      case 'technician':
-        return <TechnicianRoofSignoffView />;
-      case 'warranty':
-        return <WarrantyLookupTicketView />;
-      case 'director':
-        return <DirectorDashboardView />;
-      case 'diagnostics':
-        return <SystemDiagnosticsView />;
-      default:
-        return <InquiriesView />;
-    }
-  };
+  const role = currentUser?.role;
+  const home = ROLE_HOME[role] || '/login';
 
   return (
-    <MainLayout currentModule={activeModule} onSelectModule={setActiveModule}>
-      {renderActiveModuleView()}
-    </MainLayout>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<PublicLandingView mode="landing" />} />
+      <Route path="/quote" element={<PublicLandingView mode="quote" />} />
+      <Route path="/login" element={currentUser ? <Navigate to={home} replace /> : <LoginView />} />
+
+      {/* Homeowner portal */}
+      <Route
+        path="/my-solar"
+        element={
+          !currentUser ? <Navigate to="/login" replace />
+            : role === 'CUSTOMER' ? <CustomerMySolarPortalView />
+            : <Navigate to={home} replace />
+        }
+      />
+
+      {/* Internal ERP workspace */}
+      {ERP_ROUTES.map((r) => (
+        <Route
+          key={r.path}
+          path={r.path}
+          element={
+            !currentUser ? <Navigate to="/login" replace />
+              : r.roles.includes(role) ? <MainLayout currentModule={r.module}>{r.element}</MainLayout>
+              : <Navigate to={home} replace />
+          }
+        />
+      ))}
+
+      <Route path="*" element={<Navigate to={currentUser ? home : '/'} replace />} />
+    </Routes>
   );
 };
 

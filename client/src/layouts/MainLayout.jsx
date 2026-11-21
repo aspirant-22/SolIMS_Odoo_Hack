@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Sun,
   Truck,
@@ -21,19 +22,20 @@ import { NetworkTimeoutBanner } from '../components/NetworkTimeoutBanner';
 import { CommandPaletteModal } from './CommandPaletteModal';
 import { useAuth } from '../context/AuthContext';
 
-export const MainLayout = ({ currentModule, onSelectModule, children }) => {
+export const MainLayout = ({ currentModule, children }) => {
   const { currentUser, switchPersonaRole } = useAuth();
+  const navigate = useNavigate();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Strict RBAC module whitelist
   const allNavigationItems = [
-    { id: 'inquiries', label: 'Inquiries & Proposals', icon: Sun, scene: 'Scene 1 & 2', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
-    { id: 'orders', label: 'Orders & BOM', icon: Layers, scene: 'BOM & Advance', roles: ['ADMIN', 'OPERATIONS'] },
-    { id: 'warehouse', label: 'Warehouse & Serials', icon: Truck, scene: 'Scene 3', roles: ['ADMIN', 'OPERATIONS'] },
-    { id: 'technician', label: 'Roof Sign-off Mobile', icon: FileCheck2, scene: 'Scene 4', roles: ['ADMIN', 'STAFF'] },
-    { id: 'warranty', label: 'Rainy Warranty & Tickets', icon: ShieldCheck, scene: 'Scene 5', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
-    { id: 'director', label: 'Director P&L & Subsidies', icon: BarChart3, scene: 'Scene 6', roles: ['ADMIN', 'OPERATIONS'] },
-    { id: 'diagnostics', label: 'System Diagnostics', icon: Terminal, scene: 'Admin Telemetry', roles: ['ADMIN'] }
+    { id: 'inquiries', path: '/inquiries', label: 'Inquiries & Proposals', icon: Sun, scene: 'Scene 1 & 2', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
+    { id: 'orders', path: '/orders', label: 'Orders & BOM', icon: Layers, scene: 'BOM & Advance', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'warehouse', path: '/dispatch', label: 'Warehouse & Serials', icon: Truck, scene: 'Scene 3', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'technician', path: '/field-install', label: 'Roof Sign-off Mobile', icon: FileCheck2, scene: 'Scene 4', roles: ['ADMIN', 'STAFF'] },
+    { id: 'warranty', path: '/warranty', label: 'Rainy Warranty & Tickets', icon: ShieldCheck, scene: 'Scene 5', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
+    { id: 'director', path: '/director', label: 'Director P&L & Subsidies', icon: BarChart3, scene: 'Scene 6', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'diagnostics', path: '/admin/system-logs', label: 'System Diagnostics', icon: Terminal, scene: 'Admin Telemetry', roles: ['ADMIN'] }
   ];
 
   const userRole = currentUser?.role || 'ADMIN';
@@ -56,7 +58,7 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
       {/* Primary Subdomain Navigation Bar: Clean White Navbar */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 py-2.5 flex items-center justify-between shadow-xs sticky top-0 z-40">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => onSelectModule('inquiries')}>
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/inquiries')}>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#135D3B] to-[#0E462C] flex items-center justify-center shadow-xs text-white">
               <Sun className="w-5 h-5 text-amber-300" />
             </div>
@@ -71,9 +73,9 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
               const IconComp = item.icon;
               const isActive = currentModule === item.id;
               return (
-                <button
+                <NavLink
                   key={item.id}
-                  onClick={() => onSelectModule(item.id)}
+                  to={item.path}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                     isActive
                       ? 'border-b-2 border-[#135D3B] text-[#135D3B] font-semibold bg-[#E6F4EC]'
@@ -82,7 +84,7 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
                 >
                   <IconComp className="w-3.5 h-3.5" />
                   <span>{item.label}</span>
-                </button>
+                </NavLink>
               );
             })}
           </div>
@@ -143,7 +145,6 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
       <CommandPaletteModal
         isOpen={isCommandPaletteOpen}
         onClose={setIsCommandPaletteOpen}
-        onNavigate={onSelectModule}
       />
     </div>
   );

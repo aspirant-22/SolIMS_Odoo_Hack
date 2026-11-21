@@ -28,6 +28,7 @@ import {
   Barcode,
   Check
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { executeHttpRequest } from '../../services/api';
 import {
   formatCurrencyInr,
@@ -35,7 +36,12 @@ import {
   getStatusBadgeStyle
 } from '../../erpClientConfig';
 
-export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) => {
+export const PublicLandingView = ({ mode = 'landing' }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isQuotePage = mode === 'quote';
+  const onOpenStaffLogin = () => navigate('/login');
+
   // Calculator inputs
   const [monthlyBillInr, setMonthlyBillInr] = useState(4500);
   const [roofAreaSqFt, setRoofAreaSqFt] = useState(350);
@@ -156,8 +162,21 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
     const el = document.getElementById(sectionId);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Section lives on another route (e.g. /quote -> /)
+      navigate(`/#${sectionId}`);
     }
   };
+
+  // Deep-link support for /#section and top-of-page reset on route change
+  React.useEffect(() => {
+    if (location.hash) {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0 });
+    }
+  }, [location.pathname, location.hash]);
 
   const pipelineSteps = [
     {
@@ -233,7 +252,7 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
 
           {/* Center Links */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
-            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-[#135D3B] transition-colors cursor-pointer">
+            <button onClick={() => (isQuotePage ? navigate('/') : window.scrollTo({ top: 0, behavior: 'smooth' }))} className="hover:text-[#135D3B] transition-colors cursor-pointer">
               Home
             </button>
             <button onClick={() => scrollToSection('workflow')} className="hover:text-[#135D3B] transition-colors cursor-pointer">
@@ -267,7 +286,7 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
             </button>
 
             <button
-              onClick={() => scrollToSection('calculator')}
+              onClick={() => (isQuotePage ? scrollToSection('calculator') : navigate('/quote'))}
               className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <span>Get Free Quote</span>
@@ -277,6 +296,7 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
         </div>
       </header>
 
+      {!isQuotePage && (<>
       {/* 2. HERO SECTION & FLOATING GLASS KPI CARDS */}
       <section className="relative overflow-hidden pt-12 pb-20 bg-white border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -301,7 +321,7 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <button
-                  onClick={() => scrollToSection('calculator')}
+                  onClick={() => navigate('/quote')}
                   className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-6 py-3.5 shadow-sm flex items-center gap-2 transition-all cursor-pointer text-sm"
                 >
                   <span>Get Free Quote</span>
@@ -843,6 +863,18 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
         </div>
       </section>
 
+      </>)}
+
+      {isQuotePage && (
+        <div className="bg-white border-b border-slate-200/90">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#135D3B]">Zero-login · Free · 2 minutes</div>
+            <h1 className="font-heading text-3xl font-extrabold tracking-tight text-slate-900 mt-1">Rooftop Inquiry &amp; Solar Savings Estimator</h1>
+            <p className="text-sm text-slate-600 mt-2 max-w-2xl">Estimate your system size, monthly savings and PM Surya Ghar subsidy, then submit your rooftop inquiry. No account required.</p>
+          </div>
+        </div>
+      )}
+
       {/* 5. INTERACTIVE SOLAR SAVINGS CALCULATOR & ZERO-LOGIN FREE QUOTE FORM */}
       <section id="calculator" className="py-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1284,6 +1316,7 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
         </div>
       </section>
 
+      {!isQuotePage && (<>
       {/* 7. FEATURES SHOWCASE */}
       <section id="features" className="py-16 bg-slate-50 border-t border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1414,6 +1447,8 @@ export const PublicLandingView = ({ onOpenStaffLogin, onSelectPublicSection }) =
           </div>
         </div>
       </section>
+
+      </>)}
 
       {/* 9. FOOTER */}
       <footer className="bg-slate-950 text-white py-12 border-t border-slate-800">

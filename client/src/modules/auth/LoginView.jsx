@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Sun,
   Shield,
@@ -19,7 +20,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const LoginView = ({ onBackToLanding }) => {
+export const LoginView = () => {
+  const navigate = useNavigate();
+  const onBackToLanding = () => navigate('/');
   const { loginUser, switchPersonaRole } = useAuth();
   const [emailInput, setEmailInput] = useState('admin@solims.com');
   const [passwordInput, setPasswordInput] = useState('admin123');

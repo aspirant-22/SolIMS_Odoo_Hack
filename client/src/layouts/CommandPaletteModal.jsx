@@ -18,19 +18,22 @@ import {
   Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-export const CommandPaletteModal = ({ isOpen, onClose, onNavigate }) => {
+export const CommandPaletteModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+  const onNavigate = (route) => navigate(route);
   const { currentUser, switchPersonaRole } = useAuth();
   const [searchFilter, setSearchFilter] = useState('');
 
   const allNavigationCommands = [
-    { id: 'inquiries', label: 'Rooftop Inquiries & Surveys (Scene 1 & 2)', icon: Sun, route: 'inquiries', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
-    { id: 'orders', label: 'Confirmed Project Orders & BOM', icon: Layers, route: 'orders', roles: ['ADMIN', 'OPERATIONS'] },
-    { id: 'warehouse', label: 'Warehouse Dispatch & Serial Scanner (Scene 3)', icon: Truck, route: 'warehouse', roles: ['ADMIN', 'OPERATIONS'] },
-    { id: 'technician', label: 'Technician Roof Sign-off (Scene 4)', icon: FileCheck2, route: 'technician', roles: ['ADMIN', 'STAFF'] },
-    { id: 'warranty', label: 'Rainy Season Breakdown & Warranty Tickets (Scene 5)', icon: ShieldCheck, route: 'warranty', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
-    { id: 'director', label: "Director's Month-End P&L & Subsidies (Scene 6)", icon: BarChart3, route: 'director', roles: ['ADMIN', 'OPERATIONS'] },
-    { id: 'diagnostics', label: 'Admin Monospace System Diagnostics', icon: Terminal, route: 'diagnostics', roles: ['ADMIN'] }
+    { id: 'inquiries', label: 'Rooftop Inquiries & Surveys (Scene 1 & 2)', icon: Sun, route: '/inquiries', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
+    { id: 'orders', label: 'Confirmed Project Orders & BOM', icon: Layers, route: '/orders', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'warehouse', label: 'Warehouse Dispatch & Serial Scanner (Scene 3)', icon: Truck, route: '/dispatch', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'technician', label: 'Technician Roof Sign-off (Scene 4)', icon: FileCheck2, route: '/field-install', roles: ['ADMIN', 'STAFF'] },
+    { id: 'warranty', label: 'Rainy Season Breakdown & Warranty Tickets (Scene 5)', icon: ShieldCheck, route: '/warranty', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
+    { id: 'director', label: "Director's Month-End P&L & Subsidies (Scene 6)", icon: BarChart3, route: '/director', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'diagnostics', label: 'Admin Monospace System Diagnostics', icon: Terminal, route: '/admin/system-logs', roles: ['ADMIN'] }
   ];
 
   const userRole = currentUser?.role || 'ADMIN';
