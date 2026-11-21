@@ -17,6 +17,7 @@ import { StockMoveModel } from '../modules/inventory/stockMove.model.js';
 import { SiteLogModel } from '../modules/service/siteLog.model.js';
 import { TicketModel } from '../modules/service/ticket.model.js';
 import { JournalEntryModel } from '../modules/accounting/journalEntry.model.js';
+import { generateSampleDemoSimulatedEmails } from '../modules/notifications/simulatedEmail.service.js';
 
 export const seedEnterpriseUsers = async () => {
   const commonPasswordHash = await bcrypt.hash('admin123', 10);
@@ -413,6 +414,7 @@ export const executeDatabaseSeedRoutine = async () => {
   const seededOrders = await seedOrdersAndInstallations(seededLeads, seededUsers);
   await seedServiceTicketsAndSiteLogs(seededOrders, seededUsers);
   await seedDoubleEntryLedger(seededOrders, adminUser._id);
+  await generateSampleDemoSimulatedEmails();
 
   // Self-Healing ir.sequence counter synchronization
   console.log('[SEED] Synchronizing atomic ir.sequence registries...');

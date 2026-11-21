@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { executeHttpRequest } from './services/api';
 import { LoginView } from './modules/auth/LoginView';
 import { PublicLandingView } from './modules/landing/PublicLandingView';
 import { CustomerMySolarPortalView } from './modules/customer/CustomerMySolarPortalView';
@@ -20,6 +21,7 @@ import { TechnicianRoofSignoffView } from './modules/technician/TechnicianRoofSi
 import { WarrantyLookupTicketView } from './modules/warranty/WarrantyLookupTicketView';
 import { DirectorDashboardView } from './modules/director/DirectorDashboardView';
 import { SystemDiagnosticsView } from './modules/diagnostics/SystemDiagnosticsView';
+import { SimulatedEmailFloatingNotifier } from './components/SimulatedEmailFloatingNotifier';
 
 const ROLE_HOME = {
   ADMIN: '/director',
@@ -39,6 +41,54 @@ const ERP_ROUTES = [
   { path: '/admin/system-logs', module: 'diagnostics', roles: ['ADMIN'], element: <SystemDiagnosticsView /> }
 ];
 
+const ActivateAccountRoute = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { switchPersonaRole, refreshSession } = useAuth();
+  const token = searchParams.get('token') || searchParams.get('magicToken');
+
+  React.useEffect(() => {
+    let isCancelled = false;
+    (async () => {
+      try {
+        if (token) {
+          const res = await executeHttpRequest('/api/auth/magic-login', {
+            method: 'POST',
+            body: JSON.stringify({ magicToken: token })
+          });
+          if (!isCancelled && res.success && res.user) {
+            await refreshSession();
+            navigate('/my-solar', { replace: true });
+            return;
+          }
+        }
+        if (!isCancelled) {
+          await switchPersonaRole('CUSTOMER');
+          navigate('/my-solar', { replace: true });
+        }
+      } catch (e) {
+        if (!isCancelled) {
+          await switchPersonaRole('CUSTOMER');
+          navigate('/my-solar', { replace: true });
+        }
+      }
+    })();
+    return () => { isCancelled = true; };
+  }, [token, navigate, switchPersonaRole, refreshSession]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 text-center space-y-3 max-w-sm">
+        <div className="w-10 h-10 rounded-full bg-[#135D3B] text-white flex items-center justify-center mx-auto text-lg animate-pulse">
+          ☀️
+        </div>
+        <h3 className="font-heading font-extrabold text-base text-slate-900">Activating My-Solar Customer Portal</h3>
+        <p className="text-xs text-slate-500 font-medium">Validating your zero-config token and provisioning live project access...</p>
+      </div>
+    </div>
+  );
+};
+
 export const App = () => {
   const { currentUser, isInitializing } = useAuth();
 
@@ -57,37 +107,41 @@ export const App = () => {
   const home = ROLE_HOME[role] || '/login';
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<PublicLandingView mode="landing" />} />
-      <Route path="/quote" element={<PublicLandingView mode="quote" />} />
-      <Route path="/login" element={currentUser ? <Navigate to={home} replace /> : <LoginView />} />
+    <>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<PublicLandingView mode="landing" />} />
+        <Route path="/quote" element={<PublicLandingView mode="quote" />} />
+        <Route path="/activate-account" element={<ActivateAccountRoute />} />
+        <Route path="/login" element={currentUser ? <Navigate to={home} replace /> : <LoginView />} />
 
-      {/* Homeowner portal */}
-      <Route
-        path="/my-solar"
-        element={
-          !currentUser ? <Navigate to="/login" replace />
-            : role === 'CUSTOMER' ? <CustomerMySolarPortalView />
-            : <Navigate to={home} replace />
-        }
-      />
-
-      {/* Internal ERP workspace */}
-      {ERP_ROUTES.map((r) => (
+        {/* Homeowner portal */}
         <Route
-          key={r.path}
-          path={r.path}
+          path="/my-solar"
           element={
             !currentUser ? <Navigate to="/login" replace />
-              : r.roles.includes(role) ? <MainLayout currentModule={r.module}>{r.element}</MainLayout>
+              : role === 'CUSTOMER' ? <CustomerMySolarPortalView />
               : <Navigate to={home} replace />
           }
         />
-      ))}
 
-      <Route path="*" element={<Navigate to={currentUser ? home : '/'} replace />} />
-    </Routes>
+        {/* Internal ERP workspace */}
+        {ERP_ROUTES.map((r) => (
+          <Route
+            key={r.path}
+            path={r.path}
+            element={
+              !currentUser ? <Navigate to="/login" replace />
+                : r.roles.includes(role) ? <MainLayout currentModule={r.module}>{r.element}</MainLayout>
+                : <Navigate to={home} replace />
+            }
+          />
+        ))}
+
+        <Route path="*" element={<Navigate to={currentUser ? home : '/'} replace />} />
+      </Routes>
+      <SimulatedEmailFloatingNotifier />
+    </>
   );
 };
 

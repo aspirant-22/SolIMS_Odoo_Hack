@@ -14,18 +14,21 @@ import {
   ShieldCheck,
   BarChart3,
   Terminal,
-  Layers
+  Layers,
+  Mail
 } from 'lucide-react';
 import { ControlPanelHeader } from './ControlPanelHeader';
 import { ProcessingOverlay } from '../components/ProcessingOverlay';
 import { NetworkTimeoutBanner } from '../components/NetworkTimeoutBanner';
 import { CommandPaletteModal } from './CommandPaletteModal';
+import { SimulatedEmailOutboxModal } from '../components/SimulatedEmailOutboxModal';
 import { useAuth } from '../context/AuthContext';
 
 export const MainLayout = ({ currentModule, children }) => {
   const { currentUser, switchPersonaRole } = useAuth();
   const navigate = useNavigate();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState('Ready');
 
   const moduleStages = {
@@ -137,6 +140,14 @@ export const MainLayout = ({ currentModule, children }) => {
             >
               Customer Portal ➔
             </button>
+            <button
+              onClick={() => setIsEmailModalOpen(true)}
+              className="px-3 py-1 rounded-full text-[10px] font-bold bg-white text-[#135D3B] border border-emerald-300 hover:bg-emerald-50 shadow-2xs transition-all cursor-pointer flex items-center gap-1 ml-1"
+              title="Open Zero-Config Simulated Email Outbox"
+            >
+              <Mail className="w-3 h-3 text-[#135D3B]" />
+              <span>Simulated Mailbox</span>
+            </button>
           </div>
         </div>
       </nav>
@@ -159,6 +170,10 @@ export const MainLayout = ({ currentModule, children }) => {
       <CommandPaletteModal
         isOpen={isCommandPaletteOpen}
         onClose={setIsCommandPaletteOpen}
+      />
+      <SimulatedEmailOutboxModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
       />
     </div>
   );

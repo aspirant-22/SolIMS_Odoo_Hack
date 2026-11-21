@@ -26,12 +26,16 @@ import {
   BatteryCharging,
   Cpu,
   Barcode,
-  Check
+  Check,
+  Mail,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LandingHero } from '../../components/LandingHero';
 import { LifecycleTimeline } from '../../components/LifecycleTimeline';
 import { executeHttpRequest } from '../../services/api';
+import { SimulatedEmailOutboxModal } from '../../components/SimulatedEmailOutboxModal';
 import {
   formatCurrencyInr,
   calculateEstimatedSubsidyInr,
@@ -64,6 +68,8 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
   const [siteAddress, setSiteAddress] = useState('');
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [quoteSubmissionResult, setQuoteSubmissionResult] = useState(null);
+  const [dispatchedSimulatedEmail, setDispatchedSimulatedEmail] = useState(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [quoteErrorMessage, setQuoteErrorMessage] = useState('');
 
   // Track My Order State
@@ -71,6 +77,27 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
   const [isTracking, setIsTracking] = useState(false);
   const [trackingResult, setTrackingResult] = useState(null);
   const [trackErrorMessage, setTrackErrorMessage] = useState('');
+  const [trackingCustomerEmails, setTrackingCustomerEmails] = useState([]);
+  const [hasCopiedLink, setHasCopiedLink] = useState(false);
+
+  const loadCustomerTrackingEmails = async (leadOrOrder) => {
+    try {
+      const res = await executeHttpRequest('/api/notifications/emails');
+      if (res.success && res.emails) {
+        const emailAddr = (leadOrOrder?.lead?.customerEmailAddress || leadOrOrder?.order?.customerEmailAddress || '').toLowerCase();
+        const inqRef = leadOrOrder?.lead?.inquiryReference;
+        const ordRef = leadOrOrder?.order?.orderReference || leadOrOrder?.order?.quotationReference;
+        const filtered = res.emails.filter((e) =>
+          (emailAddr && e.to?.toLowerCase() === emailAddr) ||
+          (inqRef && (e.relatedEntity?.referenceCode === inqRef || e.subject?.includes(inqRef))) ||
+          (ordRef && (e.relatedEntity?.referenceCode === ordRef || e.subject?.includes(ordRef)))
+        );
+        setTrackingCustomerEmails(filtered);
+      }
+    } catch (e) {
+      console.error('Failed to load tracking emails:', e);
+    }
+  };
 
   // Interactive calculations based on bill & roof area
   const calculatedSpecs = useMemo(() => {
@@ -129,6 +156,9 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
 
       if (response.success && response.lead) {
         setQuoteSubmissionResult(response.lead);
+        if (response.simulatedEmail) {
+          setDispatchedSimulatedEmail(response.simulatedEmail);
+        }
       }
     } catch (err) {
       setQuoteErrorMessage(err.message || 'Unable to submit free quote. Please check your inputs.');
@@ -150,6 +180,7 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
       const response = await executeHttpRequest(`/api/leads/track/${encodeURIComponent(trackQuery.trim())}`);
       if (response.success && response.result) {
         setTrackingResult(response.result);
+        loadCustomerTrackingEmails(response.result);
       } else {
         setTrackErrorMessage('No project record found for this tracking code or phone number.');
       }
@@ -170,15 +201,38 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
     }
   };
 
-  // Deep-link support for /#section and top-of-page reset on route change
+  // Deep-link support for /#section, ?track= query, and top-of-page reset on route change
   React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const trackCode = params.get('track');
+    if (trackCode) {
+      setTrackQuery(trackCode);
+      scrollToSection('track');
+      (async () => {
+        setIsTracking(true);
+        setTrackErrorMessage('');
+        try {
+          const response = await executeHttpRequest(`/api/leads/track/${encodeURIComponent(trackCode.trim())}`);
+          if (response.success && response.result) {
+            setTrackingResult(response.result);
+            loadCustomerTrackingEmails(response.result);
+          }
+        } catch (err) {
+          setTrackErrorMessage(err.message || 'Tracking failed');
+        } finally {
+          setIsTracking(false);
+        }
+      })();
+      return;
+    }
+
     if (location.hash) {
       const el = document.getElementById(location.hash.slice(1));
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else {
       window.scrollTo({ top: 0 });
     }
-  }, [location.pathname, location.hash]);
+  }, [location.pathname, location.hash, location.search]);
 
   const pipelineSteps = [
     {
@@ -518,7 +572,7 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
                 <div className="p-3 bg-white rounded-xl border border-slate-200">
                   <span className="text-[10px] text-slate-500 font-bold uppercase block">Battery Bank Storage</span>
                   <span className="font-heading font-black text-slate-900 tabular-nums">
-                    {selectedKitCapacity * 2.4} kWh Deep-Cycle
+                    {(selectedKitCapacity * 2.4).toFixed(2)} kWh Deep-Cycle
                   </span>
                   <span className="text-[10px] text-amber-800 font-semibold block mt-0.5">Zero Grid Dependency</span>
                 </div>
@@ -833,6 +887,25 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
                     </div>
                   </div>
 
+                  {/* Stage 1 Progressive Onboarding Banner */}
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-left space-y-1 text-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-900 font-bold">
+                      <Mail className="w-3.5 h-3.5 text-[#135D3B]" />
+                      <span>Stage 1 Onboarding Email Dispatched</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800 leading-relaxed">
+                      A zero-config simulated assessment email with your live tracking pass has been generated. No password setup required!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsEmailModalOpen(true)}
+                      className="mt-1 text-[11px] font-bold text-[#135D3B] hover:text-[#0E462C] inline-flex items-center gap-1 underline cursor-pointer"
+                    >
+                      <span>Preview Dispatched Email</span>
+                      <span>➔</span>
+                    </button>
+                  </div>
+
                   <button
                     onClick={() => {
                       setTrackQuery(quoteSubmissionResult.inquiryReference);
@@ -1018,54 +1091,171 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
                 })()}
               </div>
 
-              {/* Progress Milestones Ribbon */}
+              {/* Clean Pre-Survey Status Tracker */}
               <div className="space-y-1.5">
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   Live Project Progression
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-bold">
-                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    ✓ 1. Inquiry
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[10px] font-bold">
+                  <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center gap-1">
+                    <span>✓</span>
+                    <span>1. Inquiry Received</span>
                   </div>
-                  <div className={`p-2 rounded-xl border ${
+                  <div className={`p-2.5 rounded-xl border flex items-center justify-center gap-1 ${
                     trackingResult.lead?.inquiryWorkflowStatus === 'Approved' || trackingResult.order
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                      : trackingResult.lead?.inquiryWorkflowStatus === 'Survey_Completed'
+                      ? 'bg-sky-50 text-sky-800 border-sky-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
                   }`}>
-                    2. Survey
+                    {trackingResult.lead?.inquiryWorkflowStatus === 'Approved' || trackingResult.order ? (
+                      <span>✓ 2. Roof Survey Approved</span>
+                    ) : trackingResult.lead?.inquiryWorkflowStatus === 'Survey_Completed' ? (
+                      <span>⏳ 2. Survey Recorded</span>
+                    ) : (
+                      <span>⚙️ 2. Technical Roof Survey</span>
+                    )}
                   </div>
-                  <div className={`p-2 rounded-xl border ${
+                  <div className={`p-2.5 rounded-xl border flex items-center justify-center gap-1 ${
                     trackingResult.order?.orderWorkflowStatus === 'Dispatched' || trackingResult.order?.orderWorkflowStatus === 'Installed'
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
                   }`}>
-                    3. Dispatch
+                    {['Dispatched', 'Installed', 'Done'].includes(trackingResult.order?.orderWorkflowStatus) ? '✓ ' : ''}3. Serial Dispatch
                   </div>
-                  <div className={`p-2 rounded-xl border ${
+                  <div className={`p-2.5 rounded-xl border flex items-center justify-center gap-1 ${
                     trackingResult.order?.orderWorkflowStatus === 'Installed' || trackingResult.order?.orderWorkflowStatus === 'Done'
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
                   }`}>
-                    4. Installed
+                    {['Installed', 'Done'].includes(trackingResult.order?.orderWorkflowStatus) ? '✓ ' : ''}4. Signed Off
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2 text-xs font-medium text-slate-600 border-t border-slate-200">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase">System Capacity</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">System Capacity</span>
                   <span className="font-bold text-slate-800 tabular-nums">
                     {trackingResult.order?.systemCapacityKw || trackingResult.lead?.requestedCapacityKw} kW{' '}
                     {trackingResult.order?.systemVariant || trackingResult.lead?.requestedVariant}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase">Subsidy Status</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Subsidy Status</span>
                   <span className="font-bold text-amber-800">
                     {trackingResult.order?.subsidyApplicationStatus || 'Eligibility Pre-Verified'}
                   </span>
                 </div>
               </div>
+
+              {/* QA FIX 5: Inline Simulated Customer Mailbox if survey is approved vs in-progress notice */}
+              {(() => {
+                const isSurveyApproved = trackingResult.lead?.inquiryWorkflowStatus === 'Approved' || trackingResult.order != null;
+                const customerEmail = trackingResult.lead?.customerEmailAddress || trackingResult.order?.customerEmailAddress || 'customer@solims.com';
+                const token = trackingResult.lead?.onboardingAccessToken || trackingResult.lead?._id || 'demo-token';
+                const refCode = trackingResult.lead?.inquiryReference || trackingResult.order?.orderReference || 'REF';
+                const activationLink = `${window.location.origin}/activate-account?token=${token}&ref=${refCode}`;
+
+                const activationEmail = trackingCustomerEmails.find(e => e.stage === 'STAGE_2_ACTIVATION' || e.subject?.includes('Approved') || e.subject?.includes('Welcome')) ||
+                  trackingCustomerEmails[0] ||
+                  {
+                    emailReference: 'EML/2026/0101',
+                    subject: `☀️ Roof Survey Approved! Activate Your SolIMS Portal [Ref: ${refCode}]`,
+                    recipientName: trackingResult.lead?.customerFullName || trackingResult.order?.customerFullName || 'Homeowner',
+                    to: customerEmail,
+                    createdAt: new Date().toISOString(),
+                    previewText: `Your roof technical feasibility survey has been approved. Click to activate your My-Solar customer portal.`,
+                    magicLink: activationLink
+                  };
+
+                if (isSurveyApproved) {
+                  return (
+                    <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
+                      <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-emerald-50 rounded-2xl border border-emerald-300 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-[#135D3B] text-white flex items-center justify-center text-xs">
+                              ✉️
+                            </span>
+                            <span className="font-heading font-extrabold text-xs text-[#0F291E]">
+                              Simulated Customer Mailbox • Post-Survey Portal Email
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
+                            {activationEmail.emailReference || 'EML/2026/...'}
+                          </span>
+                        </div>
+
+                        <div className="bg-white p-3 rounded-xl border border-emerald-200/90 text-xs space-y-1.5">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="font-bold text-slate-900 text-xs leading-snug">
+                              {activationEmail.subject}
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                              {new Date(activationEmail.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium">
+                            To: <span className="text-slate-800 font-mono font-semibold">{activationEmail.to || customerEmail}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-relaxed pt-1 border-t border-slate-100">
+                            {activationEmail.previewText}
+                          </p>
+                        </div>
+
+                        {/* 1-Click Action Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigate(`/activate-account?token=${token}&ref=${refCode}`);
+                            }}
+                            className="w-full sm:flex-1 py-2.5 px-4 rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <span>Activate Account & Open My-Solar Portal ➔</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(activationLink);
+                              setHasCopiedLink(true);
+                              setTimeout(() => setHasCopiedLink(false), 2000);
+                            }}
+                            className="w-full sm:w-auto py-2.5 px-4 rounded-full bg-white hover:bg-emerald-50 text-slate-700 font-bold text-xs border border-slate-300 shadow-2xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            {hasCopiedLink ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="text-emerald-700">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Copy Magic Link</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-1.5">
+                      <div className="flex items-center gap-2 font-bold text-amber-950">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Roof Survey Status: In Progress</span>
+                      </div>
+                      <p className="text-[11px] text-amber-900 leading-relaxed font-medium">
+                        Your rooftop technical survey is currently in progress. Once approved by our engineering team, your portal activation email will appear here automatically.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -1228,6 +1418,12 @@ export const PublicLandingView = ({ mode = 'landing' }) => {
           </div>
         </div>
       </footer>
+
+      <SimulatedEmailOutboxModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        selectedEmailId={dispatchedSimulatedEmail?._id}
+      />
     </div>
   );
 };

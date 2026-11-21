@@ -23,13 +23,15 @@ import {
   handleApproveSurvey,
   handleGetAllInquiries,
   handleGetInquiryById,
-  handleTrackOrderOrInquiry
+  handleTrackOrderOrInquiry,
+  handleResendStage1Email
 } from './lead.controller.js';
 
 const leadApiRouter = Router();
 
 leadApiRouter.post('/', validateRequestBody(createLeadInquiryValidationSchema), handleCreateInquiry);
 leadApiRouter.get('/track/:query', handleTrackOrderOrInquiry);
+leadApiRouter.post('/:id/resend-stage1-email', handleResendStage1Email);
 leadApiRouter.get('/', verifyAuthentication, handleGetAllInquiries);
 leadApiRouter.get('/:id', verifyAuthentication, handleGetInquiryById);
 
@@ -44,7 +46,7 @@ leadApiRouter.post(
 leadApiRouter.post(
   '/:id/record-survey',
   verifyAuthentication,
-  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS, ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF),
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF),
   validateRequestBody(recordSurveyResultsValidationSchema),
   handleRecordSurveyResults
 );

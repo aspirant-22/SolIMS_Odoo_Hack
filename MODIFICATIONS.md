@@ -87,4 +87,10 @@
 | `client/src/modules/diagnostics/SystemDiagnosticsView.jsx`| Garima Mittal | Admin monospace diagnostics portal presenting memory, uptime telemetry, and DB health. |
 | `client/src/App.jsx` | Garima Mittal | Top-level routing component managing authentication gate and active subdomain views. |
 | `client/src/main.jsx` | Garima Mittal | Client root mounting React virtual DOM, AuthProvider, and Tailwind theme styles. |
+| `server/src/modules/notifications/simulatedEmail.model.js` | Garima Mittal | Mongoose schema persisting zero-config simulated emails, stage metadata, and onboarding credentials. |
+| `server/src/modules/notifications/simulatedEmail.service.js` | Garima Mittal | Zero-config offline email dispatch engine, branded HTML templates, Socket.IO broadcaster, and ASCII logger. |
+| `server/src/modules/notifications/simulatedEmail.controller.js` | Garima Mittal | Controllers for simulated email outbox listing, single email view, and demo triggers. |
+| `server/src/modules/notifications/simulatedEmail.routes.js` | Garima Mittal | Express router defining simulated email outbox, inspection, and test dispatch endpoints. |
+| `client/src/components/SimulatedEmailOutboxModal.jsx` | Garima Mittal | Interactive zero-config simulated email outbox drawer and HTML previewer with 1-click magic login. |
+| `client/src/components/SimulatedEmailFloatingNotifier.jsx` | Garima Mittal | Floating real-time notification widget and toast for simulated email dispatches. |
 | `package.json` | Garima Mittal | Monorepo helper script coordinator. |

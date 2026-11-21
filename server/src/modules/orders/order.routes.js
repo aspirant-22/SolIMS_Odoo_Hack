@@ -18,15 +18,40 @@ import {
 import {
   handleGenerateQuote,
   handleCaptureAdvancePayment,
+  handleRecordOrderPayment,
   handleAssignCrew,
   handleGetAllOrders,
-  handleGetOrderById
+  handleGetOrderById,
+  handleActivateCustomerAccount,
+  handleResendStage2Email,
+  handleGetMyProjectOrder,
+  handleGetAllTechnicians
 } from './order.controller.js';
 
 const orderApiRouter = Router();
 
+orderApiRouter.get('/technicians', verifyAuthentication, handleGetAllTechnicians);
+orderApiRouter.get('/my-project', verifyAuthentication, handleGetMyProjectOrder);
 orderApiRouter.get('/', verifyAuthentication, handleGetAllOrders);
 orderApiRouter.get('/:id', verifyAuthentication, handleGetOrderById);
+orderApiRouter.post(
+  '/:id/payment',
+  verifyAuthentication,
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.CUSTOMER, ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
+  handleRecordOrderPayment
+);
+orderApiRouter.post(
+  '/:id/activate-customer',
+  verifyAuthentication,
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
+  handleActivateCustomerAccount
+);
+orderApiRouter.post(
+  '/:id/resend-stage2-email',
+  verifyAuthentication,
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
+  handleResendStage2Email
+);
 
 orderApiRouter.post(
   '/generate-quote',

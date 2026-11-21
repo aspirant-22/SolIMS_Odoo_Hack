@@ -11,14 +11,27 @@ import {
   recordSurveyMeasurements,
   executeSurveyApprovalDecision,
   fetchAllLeadInquiries,
-  fetchLeadInquiryById
+  fetchLeadInquiryById,
+  resendStage1InquiryEmail
 } from './lead.service.js';
 
 export const handleCreateInquiry = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
     const creatorUserId = httpRequest.authenticatedUser?._id || null;
-    const createdLead = await createLeadInquiryRecord(httpRequest.validatedBody, creatorUserId);
-    return httpResponse.status(201).json({ success: true, lead: createdLead });
+    const result = await createLeadInquiryRecord(httpRequest.validatedBody, creatorUserId);
+    const lead = result.lead || result;
+    const simulatedEmail = result.simulatedEmail || null;
+    return httpResponse.status(201).json({ success: true, lead, simulatedEmail });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleResendStage1Email = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const result = await resendStage1InquiryEmail(id);
+    return httpResponse.status(200).json({ success: true, lead: result.lead, simulatedEmail: result.simulatedEmail });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }
@@ -110,26 +123,39 @@ export const handleTrackOrderOrInquiry = async (httpRequest, httpResponse, nextM
       success: true,
       result: {
         lead: leadMatch ? {
+          _id: leadMatch._id,
           inquiryReference: leadMatch.inquiryReference,
           customerFullName: leadMatch.customerFullName,
           customerPhoneNumber: leadMatch.customerPhoneNumber,
+          customerEmailAddress: leadMatch.customerEmailAddress,
           installationSiteAddress: leadMatch.installationSiteAddress,
           requestedCapacityKw: leadMatch.requestedCapacityKw,
           requestedVariant: leadMatch.requestedVariant,
           inquiryWorkflowStatus: leadMatch.inquiryWorkflowStatus,
+          surveyDetails: leadMatch.surveyDetails,
+          onboardingStage: leadMatch.onboardingStage,
+          onboardingAccessToken: leadMatch.onboardingAccessToken,
           createdAt: leadMatch.createdAt,
           approximateRoofAreaSqFt: leadMatch.approximateRoofAreaSqFt
         } : null,
         order: orderMatch ? {
+          _id: orderMatch._id,
           orderReference: orderMatch.orderReference,
           quotationReference: orderMatch.quotationReference,
           customerFullName: orderMatch.customerFullName,
+          customerPhoneNumber: orderMatch.customerPhoneNumber,
+          customerEmailAddress: orderMatch.customerEmailAddress,
           installationSiteAddress: orderMatch.installationSiteAddress,
           systemCapacityKw: orderMatch.systemCapacityKw,
           systemVariant: orderMatch.systemVariant,
           orderWorkflowStatus: orderMatch.orderWorkflowStatus,
+          netPayableAmountInr: orderMatch.netPayableAmountInr,
+          advancePaymentAmountInr: orderMatch.advancePaymentAmountInr,
+          balancePaymentDueInr: orderMatch.balancePaymentDueInr,
+          assignedTechnicians: orderMatch.assignedTechnicians,
           scheduledInstallationDate: orderMatch.scheduledInstallationDate,
           subsidyApplicationStatus: orderMatch.subsidyApplicationStatus,
+          onboardingStage: orderMatch.onboardingStage,
           createdAt: orderMatch.createdAt
         } : null
       }

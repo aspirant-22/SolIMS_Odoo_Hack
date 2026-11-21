@@ -6,7 +6,11 @@
  */
 
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
-import { authenticateUserCredentials, switchDemoUserPersona } from './auth.service.js';
+import {
+  authenticateUserCredentials,
+  switchDemoUserPersona,
+  authenticateMagicToken
+} from './auth.service.js';
 
 export const handleUserLogin = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
@@ -59,6 +63,34 @@ export const handleDemoPersonaSwitch = async (httpRequest, httpResponse, nextMid
     });
   } catch (personaError) {
     return nextMiddlewareFunction(personaError);
+  }
+};
+
+export const handleMagicLogin = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const magicToken = httpRequest.body?.magicToken || httpRequest.query?.magicToken;
+    const { authenticatedUser, sessionToken } = await authenticateMagicToken(magicToken);
+
+    httpResponse.cookie(ERP_SYSTEM_CONFIG.COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: ERP_SYSTEM_CONFIG.JWT_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000
+    });
+
+    return httpResponse.status(200).json({
+      success: true,
+      message: 'Magic authentication successful',
+      sessionToken,
+      user: {
+        id: authenticatedUser._id,
+        fullName: authenticatedUser.fullName,
+        email: authenticatedUser.email,
+        role: authenticatedUser.role,
+        phoneNumber: authenticatedUser.phoneNumber
+      }
+    });
+  } catch (magicError) {
+    return nextMiddlewareFunction(magicError);
   }
 };
 

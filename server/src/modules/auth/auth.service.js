@@ -44,3 +44,62 @@ export const switchDemoUserPersona = async (targetPersonaRole) => {
   const generatedPersonaToken = createSignedUserToken(personaUserAccount._id, personaUserAccount.role);
   return { authenticatedUser: personaUserAccount, sessionToken: generatedPersonaToken };
 };
+
+export const createMagicLoginToken = (userId, userRole) => {
+  return jwt.sign(
+    { userId, userRole, isMagicLink: true },
+    ERP_SYSTEM_CONFIG.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+};
+
+export const authenticateMagicToken = async (magicToken) => {
+  if (!magicToken) {
+    throw new Error('Magic token missing');
+  }
+
+  const decoded = jwt.verify(magicToken, ERP_SYSTEM_CONFIG.JWT_SECRET);
+  const user = await UserModel.findById(decoded.userId);
+  if (!user || !user.isActive) {
+    throw new Error('User not found or inactive');
+  }
+
+  const sessionToken = createSignedUserToken(user._id, user.role);
+  return { authenticatedUser: user, sessionToken };
+};
+
+export const provisionCustomerUserAccount = async ({ fullName, email, phoneNumber }) => {
+  const cleanEmail = email.toLowerCase().trim();
+  let existingUser = await UserModel.findOne({ email: cleanEmail });
+
+  if (existingUser) {
+    const magicLoginToken = createMagicLoginToken(existingUser._id, existingUser.role);
+    return {
+      customerUser: existingUser,
+      temporaryPassword: '(Preserved Active Password)',
+      magicLoginToken,
+      isNewUser: false
+    };
+  }
+
+  const defaultTempPassword = 'SolarHome#2026';
+  const passwordHash = await bcrypt.hash(defaultTempPassword, 10);
+
+  const newUser = await UserModel.create({
+    fullName: fullName.trim(),
+    email: cleanEmail,
+    passwordHash,
+    role: ERP_SYSTEM_CONFIG.RBAC_ROLES.CUSTOMER,
+    phoneNumber: (phoneNumber || '').trim(),
+    assignedSpecialization: 'Residential Rooftop Client',
+    isActive: true
+  });
+
+  const magicLoginToken = createMagicLoginToken(newUser._id, newUser.role);
+  return {
+    customerUser: newUser,
+    temporaryPassword: defaultTempPassword,
+    magicLoginToken,
+    isNewUser: true
+  };
+};

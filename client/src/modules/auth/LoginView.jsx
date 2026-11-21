@@ -5,8 +5,8 @@
  * @DEPENDENCIES: react, lucide-react, AuthContext.jsx
  */
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Sun,
   Shield,
@@ -20,6 +20,7 @@ import {
   Check
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { executeHttpRequest } from '../../services/api';
 import { AlertBanner } from '../../components/AlertBanner';
 
 const PERSONAS = [
@@ -55,26 +56,72 @@ const PERSONAS = [
 
 export const LoginView = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const onBackToLanding = () => navigate('/');
   const { loginUser, switchPersonaRole } = useAuth();
   const [emailInput, setEmailInput] = useState('admin@solims.com');
   const [passwordInput, setPasswordInput] = useState('admin123');
   const [errorMessage, setErrorMessage] = useState('');
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const magicToken = params.get('magicToken');
+    const emailParam = params.get('email');
+    if (emailParam) setEmailInput(emailParam);
+
+    if (magicToken) {
+      (async () => {
+        try {
+          const response = await executeHttpRequest('/api/auth/magic-login', {
+            method: 'POST',
+            body: JSON.stringify({ magicToken })
+          });
+          if (response.success && response.user) {
+            navigate(response.user.role === 'CUSTOMER' ? '/my-solar' : '/director');
+          }
+        } catch (err) {
+          setErrorMessage('Magic link invalid or expired: ' + err.message);
+        }
+      })();
+    }
+  }, [location.search, navigate]);
+
   const handleStandardSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage('');
     try {
-      await loginUser(emailInput, passwordInput);
+      const res = await loginUser(emailInput, passwordInput);
+      if (res?.success && res.user) {
+        if (res.user.role === 'CUSTOMER') {
+          navigate('/my-solar');
+        } else if (res.user.role === 'STAFF') {
+          navigate('/field-install');
+        } else if (res.user.role === 'OPERATIONS') {
+          navigate('/inquiries');
+        } else {
+          navigate('/director');
+        }
+      }
     } catch (err) {
-      setErrorMessage(err.message || 'Authentication failed');
+      setErrorMessage(err.message || 'Authentication failed. Please verify your email and password.');
     }
   };
 
   const handleInstantPersonaClick = async (targetRole) => {
     setErrorMessage('');
     try {
-      await switchPersonaRole(targetRole);
+      const res = await switchPersonaRole(targetRole);
+      if (res?.success && res.user) {
+        if (res.user.role === 'CUSTOMER') {
+          navigate('/my-solar');
+        } else if (res.user.role === 'STAFF') {
+          navigate('/field-install');
+        } else if (res.user.role === 'OPERATIONS') {
+          navigate('/inquiries');
+        } else {
+          navigate('/director');
+        }
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Persona switch failed');
     }

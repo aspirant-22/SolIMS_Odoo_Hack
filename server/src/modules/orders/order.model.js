@@ -57,6 +57,13 @@ const projectOrderEntitySchema = new mongoose.Schema(
       default: 'NOT_SUBMITTED'
     },
     subsidyDisbursedDate: { type: Date, default: null },
+    customerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    onboardingStage: {
+      type: String,
+      enum: ['PENDING_ACTIVATION', 'STAGE_2_ACTIVATED'],
+      default: 'PENDING_ACTIVATION'
+    },
+    stage2EmailDispatchedAt: { type: Date, default: null },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
   },
   { timestamps: true }

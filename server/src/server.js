@@ -23,6 +23,8 @@ import { inventoryApiRouter } from './modules/inventory/inventory.routes.js';
 import { serviceApiRouter } from './modules/service/service.routes.js';
 import { accountingApiRouter } from './modules/accounting/accounting.routes.js';
 import { diagnosticsApiRouter } from './modules/diagnostics/diagnostics.routes.js';
+import { simulatedEmailApiRouter } from './modules/notifications/simulatedEmail.routes.js';
+import { generateSampleDemoSimulatedEmails } from './modules/notifications/simulatedEmail.service.js';
 
 const expressApplication = express();
 const httpServerInstance = http.createServer(expressApplication);
@@ -66,12 +68,14 @@ expressApplication.use('/api/inventory', inventoryApiRouter);
 expressApplication.use('/api/service', serviceApiRouter);
 expressApplication.use('/api/accounting', accountingApiRouter);
 expressApplication.use('/api/diagnostics', diagnosticsApiRouter);
+expressApplication.use('/api/notifications/emails', simulatedEmailApiRouter);
 
 expressApplication.use(handleGlobalApplicationErrors);
 
 const startEnterpriseServer = async () => {
   try {
     await connectDatabase();
+    await generateSampleDemoSimulatedEmails();
     httpServerInstance.listen(ERP_SYSTEM_CONFIG.PORT, () => {
       console.log(`[ERP] ${ERP_SYSTEM_CONFIG.COMPANY_NAME} Server live on port ${ERP_SYSTEM_CONFIG.PORT}`);
     });

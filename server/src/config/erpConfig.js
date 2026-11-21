@@ -28,7 +28,8 @@ export const ERP_SYSTEM_CONFIG = Object.freeze({
     DISPATCH: 'seq_dispatch',
     TICKET: 'seq_ticket',
     JOURNAL: 'seq_journal',
-    INVOICE: 'seq_invoice'
+    INVOICE: 'seq_invoice',
+    EMAIL: 'seq_email'
   }),
 
   SEQUENCE_DEFINITIONS: Object.freeze({
@@ -38,7 +39,8 @@ export const ERP_SYSTEM_CONFIG = Object.freeze({
     seq_dispatch: { prefix: 'DSP/2026/', paddingLength: 4 },
     seq_ticket: { prefix: 'TKT/2026/', paddingLength: 4 },
     seq_journal: { prefix: 'JRN/2026/', paddingLength: 4 },
-    seq_invoice: { prefix: 'INV/2026/', paddingLength: 4 }
+    seq_invoice: { prefix: 'INV/2026/', paddingLength: 4 },
+    seq_email: { prefix: 'EML/2026/', paddingLength: 4 }
   }),
 
   WARRANTY_DAYS: Object.freeze({

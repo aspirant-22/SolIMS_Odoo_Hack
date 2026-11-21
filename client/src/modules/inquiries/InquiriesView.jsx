@@ -16,7 +16,8 @@ import {
   XCircle,
   AlertCircle,
   CreditCard,
-  Zap
+  Zap,
+  Mail
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -24,7 +25,7 @@ import { getStatusBadgeStyle } from '../../erpClientConfig';
 import { AlertBanner } from '../../components/AlertBanner';
 
 export const InquiriesView = () => {
-  const { setIsSystemProcessing } = useAuth();
+  const { currentUser, setIsSystemProcessing } = useAuth();
   const [inquiriesList, setInquiriesList] = useState([]);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -33,6 +34,10 @@ export const InquiriesView = () => {
   const [generatedQuoteResult, setGeneratedQuoteResult] = useState(null);
   const [advanceAmountInput, setAdvanceAmountInput] = useState(50000);
   const [errorMessage, setErrorMessage] = useState('');
+  const [approvalQueueOnly, setApprovalQueueOnly] = useState(false);
+
+  const isTechnician = currentUser?.role === 'STAFF';
+  const isDirectorOrOps = currentUser?.role === 'ADMIN' || currentUser?.role === 'OPERATIONS';
 
   // New inquiry form state
   const [newInquiryData, setNewInquiryData] = useState({
@@ -136,6 +141,25 @@ export const InquiriesView = () => {
     }
   };
 
+  const handleResendStage1EmailClick = async () => {
+    if (!selectedInquiry) return;
+    setIsSystemProcessing(true);
+    setErrorMessage('');
+    try {
+      const response = await executeHttpRequest(`/api/leads/${selectedInquiry._id}/resend-stage1-email`, {
+        method: 'POST'
+      });
+      if (response.success) {
+        setSelectedInquiry(response.lead);
+        await loadAllInquiries();
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to resend Stage 1 simulated email');
+    } finally {
+      setIsSystemProcessing(false);
+    }
+  };
+
   const handleGenerateQuoteClick = async () => {
     if (!selectedInquiry) return;
     setIsSystemProcessing(true);
@@ -227,13 +251,49 @@ export const InquiriesView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left List Pane */}
         <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide flex justify-between items-center">
-            <span>Inquiry Records ({inquiriesList.length})</span>
-            <span className="text-[11px] text-slate-600 font-mono font-medium bg-white px-2.5 py-0.5 rounded-full border border-slate-200">ir.sequence</span>
+          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide space-y-2">
+            <div className="flex justify-between items-center">
+              <span>Inquiry Records ({inquiriesList.length})</span>
+              <span className="text-[11px] text-slate-600 font-mono font-medium bg-white px-2.5 py-0.5 rounded-full border border-slate-200">ir.sequence</span>
+            </div>
+
+            {/* QA FIX 4: Director & Operations Survey Approval Queue Filter */}
+            {isDirectorOrOps && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setApprovalQueueOnly(false)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                    !approvalQueueOnly
+                      ? 'bg-[#135D3B] text-white shadow-2xs'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  All ({inquiriesList.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApprovalQueueOnly(true)}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                    approvalQueueOnly
+                      ? 'bg-amber-600 text-white shadow-2xs'
+                      : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  <span>Survey Approval Queue</span>
+                  <span className="px-1.5 py-0.2 bg-white/50 text-amber-950 rounded-full font-mono text-[9px] font-extrabold">
+                    {inquiriesList.filter((i) => i.inquiryWorkflowStatus === 'Survey_Completed').length}
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-            {inquiriesList.map((lead) => {
+            {(approvalQueueOnly
+              ? inquiriesList.filter((i) => i.inquiryWorkflowStatus === 'Survey_Completed')
+              : inquiriesList
+            ).map((lead) => {
               const isSelected = selectedInquiry?._id === lead._id;
               const badgeStyle = getStatusBadgeStyle(lead.inquiryWorkflowStatus);
               return (
@@ -258,6 +318,18 @@ export const InquiriesView = () => {
                   <div className="text-xs text-slate-600 font-medium mt-0.5 tabular-nums">
                     {lead.requestedCapacityKw} kW {lead.requestedVariant} • ₹{lead.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}/mo
                   </div>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                      lead.onboardingStage === 'STAGE_2_ACTIVATED'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
+                    }`}>
+                      {lead.onboardingStage === 'STAGE_2_ACTIVATED' ? 'Stage 2: Customer Active' : 'Stage 1: Lead Registered'}
+                    </span>
+                    {lead.stage1EmailDispatchedAt && (
+                      <span className="text-[9px] text-slate-400 font-mono">✉️ Email Sent</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -278,7 +350,8 @@ export const InquiriesView = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {selectedInquiry.inquiryWorkflowStatus === 'Approved' && (
+                  {/* Director & Operations ONLY: Auto-Generate BOM Quote on Approved */}
+                  {isDirectorOrOps && selectedInquiry.inquiryWorkflowStatus === 'Approved' && (
                     <button
                       onClick={handleGenerateQuoteClick}
                       className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
@@ -288,35 +361,86 @@ export const InquiriesView = () => {
                     </button>
                   )}
 
-                  {selectedInquiry.inquiryWorkflowStatus === 'Survey_Completed' && (
+                  {/* Director & Operations ONLY: Approve or Reject Survey when Technician Measurements are Recorded */}
+                  {isDirectorOrOps && selectedInquiry.inquiryWorkflowStatus === 'Survey_Completed' && (
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleApproveSurvey(true)}
                         className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Approve Survey</span>
+                        <CheckCircle className="w-4 h-4 text-emerald-300" />
+                        <span>✅ Approve Survey</span>
                       </button>
                       <button
                         onClick={() => handleApproveSurvey(false)}
-                        className="p-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-full border border-rose-200 transition-colors cursor-pointer"
+                        className="rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 px-3 py-2 text-xs font-semibold border border-rose-200 flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Reject Survey"
                       >
                         <XCircle className="w-4 h-4" />
+                        <span>❌ Reject</span>
                       </button>
                     </div>
                   )}
 
-                  {(selectedInquiry.inquiryWorkflowStatus === 'Draft' ||
-                    selectedInquiry.inquiryWorkflowStatus === 'Survey_Scheduled') && (
+                  {/* Technician (STAFF ONLY): Record Survey Measurements */}
+                  {isTechnician &&
+                    (selectedInquiry.inquiryWorkflowStatus === 'Draft' ||
+                      selectedInquiry.inquiryWorkflowStatus === 'Survey_Scheduled') && (
                     <button
                       onClick={() => setIsSurveyModalOpen(true)}
-                      className="rounded-full border border-[#135D3B] text-[#135D3B] hover:bg-emerald-50 font-semibold px-5 py-2 text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                     >
-                      <Compass className="w-4 h-4" />
-                      <span>Record Survey Measurements</span>
+                      <Compass className="w-4 h-4 text-amber-300" />
+                      <span>📐 Record Survey Measurements</span>
                     </button>
                   )}
+
+                  {/* Informational Status Pills based on role */}
+                  {isTechnician && selectedInquiry.inquiryWorkflowStatus === 'Survey_Completed' && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200">
+                      <span>✓ Measurements Recorded</span>
+                      <span className="text-[10px] text-slate-500 font-normal">• Awaiting Director Approval</span>
+                    </span>
+                  )}
+
+                  {isDirectorOrOps &&
+                    (selectedInquiry.inquiryWorkflowStatus === 'Draft' ||
+                      selectedInquiry.inquiryWorkflowStatus === 'Survey_Scheduled') && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      <span>⏳ Awaiting Technician Measurements</span>
+                    </span>
+                  )}
                 </div>
+              </div>
+
+              {/* Progressive Onboarding & Simulated Email Status */}
+              <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[#135D3B]" />
+                    <span className="font-extrabold text-[#0F291E]">Stage 1 Progressive Onboarding</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      {selectedInquiry.onboardingStage === 'STAGE_2_ACTIVATED' ? 'Stage 2 Customer Active' : 'Stage 1 Assessment Registered'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                    Customer Email: <strong className="font-mono text-slate-800">{selectedInquiry.customerEmailAddress || 'No email specified'}</strong>
+                    {selectedInquiry.stage1EmailDispatchedAt && (
+                      <span className="text-emerald-700 ml-1.5 font-semibold">
+                        • Simulated Email Sent ({new Date(selectedInquiry.stage1EmailDispatchedAt).toLocaleTimeString()})
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResendStage1EmailClick}
+                  className="px-3.5 py-1.5 rounded-full bg-white hover:bg-emerald-50 text-[#135D3B] font-bold border border-emerald-300 shadow-2xs text-[11px] flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Resend Stage 1 Email</span>
+                </button>
               </div>
 
               {/* Inquiry Specifications Grid */}

@@ -120,6 +120,23 @@ const leadInquiryEntitySchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    onboardingStage: {
+      type: String,
+      enum: ['STAGE_1_INQUIRY', 'STAGE_2_ACTIVATED'],
+      default: 'STAGE_1_INQUIRY'
+    },
+    onboardingAccessToken: {
+      type: String,
+      default: null
+    },
+    stage1EmailDispatchedAt: {
+      type: Date,
+      default: null
+    },
+    stage2EmailDispatchedAt: {
+      type: Date,
+      default: null
+    },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

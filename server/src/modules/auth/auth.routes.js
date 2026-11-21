@@ -16,13 +16,16 @@ import {
   handleUserLogin,
   handleDemoPersonaSwitch,
   handleUserLogout,
-  handleGetSessionProfile
+  handleGetSessionProfile,
+  handleMagicLogin
 } from './auth.controller.js';
 
 const authApiRouter = Router();
 
 authApiRouter.post('/login', validateRequestBody(userLoginValidationSchema), handleUserLogin);
 authApiRouter.post('/switch-persona', validateRequestBody(demoPersonaSwitchValidationSchema), handleDemoPersonaSwitch);
+authApiRouter.post('/magic-login', handleMagicLogin);
+authApiRouter.get('/magic-login', handleMagicLogin);
 authApiRouter.post('/logout', handleUserLogout);
 authApiRouter.get('/profile', verifyAuthentication, handleGetSessionProfile);
 

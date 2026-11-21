@@ -11,6 +11,7 @@
 | Method | Endpoint | RBAC Tier | Controller Handler | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/api/auth/login` | Public | `handleUserLogin` | Authenticates email & password, sets JWT cookie |
+| `POST` | `/api/auth/magic-login` | Public | `handleMagicLogin` | 1-click customer login from Stage 2 simulated onboarding email token |
 | `POST` | `/api/auth/switch-persona` | Public | `handleDemoPersonaSwitch` | Instant 1-click persona switch for hackathon judges |
 | `POST` | `/api/auth/logout` | Authenticated | `handleUserLogout` | Terminates JWT session cookie |
 | `GET` | `/api/auth/profile` | Authenticated | `handleGetSessionProfile` | Returns currently active user session object |
@@ -20,6 +21,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `POST` | `/api/leads` | Public | `handleCreateInquiry` | Creates new rooftop solar inquiry (`INQ/2026/0001`) with zero login |
 | `GET` | `/api/leads/track/:query` | Public | `handleTrackOrderOrInquiry` | Public tracking lookup by reference code or phone |
+| `POST` | `/api/leads/:id/resend-stage1-email` | Public | `handleResendStage1Email` | Resends Stage 1 simulated onboarding assessment email |
 | `GET` | `/api/leads` | Authenticated | `handleGetAllInquiries` | Fetches all inquiries with survey details |
 | `GET` | `/api/leads/:id` | Authenticated | `handleGetInquiryById` | Fetches single inquiry record |
 | `POST` | `/api/leads/:id/schedule-survey` | `ADMIN`, `OPERATIONS` | `handleScheduleSurvey` | Assigns technician for on-site roof measurement visit |
@@ -29,10 +31,14 @@
 ## 3. Commercial Quotes & Project Orders (`/api/orders`)
 | Method | Endpoint | RBAC Tier | Controller Handler | Description |
 | :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/orders/my-project` | Authenticated | `handleGetMyProjectOrder` | Retrieves authenticated homeowner's active project order & milestones |
 | `GET` | `/api/orders` | Authenticated | `handleGetAllOrders` | Lists all commercial quotes and project orders |
 | `GET` | `/api/orders/:id` | Authenticated | `handleGetOrderById` | Fetches single order with full BOM breakdown |
 | `POST` | `/api/orders/generate-quote` | `ADMIN`, `OPERATIONS` | `handleGenerateQuote` | Auto-generates BOM and proposal (`QT/2026/0001`) |
-| `POST` | `/api/orders/:id/advance-payment`| `ADMIN`, `OPERATIONS` | `handleCaptureAdvancePayment` | Captures >= 20% advance, records double-entry journal, unlocks dispatch |
+| `POST` | `/api/orders/:id/advance-payment`| `ADMIN`, `OPERATIONS` | `handleCaptureAdvancePayment` | Captures >= 20% advance, triggers Stage 2 progressive customer onboarding & simulated email |
+| `POST` | `/api/orders/:id/activate-customer`| `ADMIN`, `OPERATIONS` | `handleActivateCustomerAccount` | Provisions customer account, generates credentials, and dispatches Stage 2 email |
+| `POST` | `/api/orders/:id/resend-stage2-email`| `ADMIN`, `OPERATIONS` | `handleResendStage2Email` | Re-dispatches Stage 2 customer credentials email |
+| `POST` | `/api/orders/:id/assign-crew` | `ADMIN`, `OPERATIONS` | `handleAssignCrew` | Schedules installation date & assigns certified technicians |
 | `POST` | `/api/orders/:id/assign-crew` | `ADMIN`, `OPERATIONS` | `handleAssignCrew` | Schedules installation date and crew members |
 
 ## 4. Warehouse Inventory & Serial Dispatch (`/api/inventory`)
@@ -62,3 +68,12 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/api/diagnostics/telemetry` | `ADMIN` | `handleGetSystemTelemetry` | Live V8 heap memory, uptime, and database metrics |
 | `GET` | `/api/health` | Public | Inline handler | Basic HTTP alive check |
+
+## 8. Zero-Config Simulated Email Dispatch & Progressive Onboarding (`/api/notifications/emails`)
+| Method | Endpoint | RBAC Tier | Controller Handler | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/notifications/emails` | Public | `handleGetAllSimulatedEmails` | Lists all simulated emails with stage filter and sorting |
+| `GET` | `/api/notifications/emails/:id` | Public | `handleGetSimulatedEmailById` | Retrieves full HTML markup and metadata of a single email |
+| `POST` | `/api/notifications/emails/:id/mark-read` | Public | `handleMarkSimulatedEmailRead` | Marks a simulated email as read |
+| `POST` | `/api/notifications/emails/test-dispatch` | Public | `handleTriggerTestEmail` | Triggers a test Stage 1 or Stage 2 email for hackathon demo |
+| `DELETE` | `/api/notifications/emails` | Public | `handleClearAllSimulatedEmails` | Clears simulation outbox for clean demo resetting |

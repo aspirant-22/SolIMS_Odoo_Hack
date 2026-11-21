@@ -8,9 +8,14 @@
 import {
   generateQuoteForLeadInquiry,
   processAdvancePaymentForOrder,
+  processPaymentForOrder,
   assignCrewToProjectOrder,
   fetchAllProjectOrders,
-  fetchProjectOrderById
+  fetchProjectOrderById,
+  activateCustomerForProjectOrder,
+  resendStage2ActivationEmail,
+  fetchMyCustomerProjectOrder,
+  fetchAllTechnicians
 } from './order.service.js';
 
 export const handleGenerateQuote = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
@@ -72,6 +77,82 @@ export const handleGetOrderById = async (httpRequest, httpResponse, nextMiddlewa
     const foundOrder = await fetchProjectOrderById(id);
     if (!foundOrder) return httpResponse.status(404).json({ success: false, message: 'Order not found' });
     return httpResponse.status(200).json({ success: true, order: foundOrder });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleActivateCustomerAccount = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const result = await activateCustomerForProjectOrder(id, httpRequest.authenticatedUser._id);
+    return httpResponse.status(200).json({
+      success: true,
+      message: 'Stage 2 Customer Account Activated & Welcome Email Dispatched',
+      ...result
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleResendStage2Email = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const result = await resendStage2ActivationEmail(id);
+    return httpResponse.status(200).json({
+      success: true,
+      message: 'Stage 2 Welcome & Credentials Email Resent',
+      ...result
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleGetMyProjectOrder = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const userEmail = httpRequest.authenticatedUser?.email;
+    const userPhone = httpRequest.authenticatedUser?.phoneNumber;
+    const projectOrder = await fetchMyCustomerProjectOrder(userEmail, userPhone);
+    return httpResponse.status(200).json({
+      success: true,
+      order: projectOrder
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleRecordOrderPayment = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const { paymentAmountInr, paymentMode, transactionReference, paymentNotes } = httpRequest.body || {};
+    const updatedOrder = await processPaymentForOrder(
+      id,
+      paymentAmountInr,
+      paymentMode,
+      transactionReference,
+      httpRequest.authenticatedUser?._id
+    );
+    return httpResponse.status(200).json({
+      success: true,
+      message: 'Online payment received & double-entry journal posted',
+      order: updatedOrder
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleGetAllTechnicians = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const technicians = await fetchAllTechnicians();
+    return httpResponse.status(200).json({
+      success: true,
+      count: technicians.length,
+      technicians
+    });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }
