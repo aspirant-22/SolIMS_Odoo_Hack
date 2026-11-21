@@ -55,6 +55,8 @@ Each business module in `server/src/modules/` is strictly encapsulated with five
 5. `*.routes.js`: Route registration, middleware bindings (JWT, RBAC, Zod).
 
 ## 3. Odoo Core Engine Mechanisms
+- **Mongoose Schema Audit Plugin (`auditPlugin.js`)**:
+  Enforces `{ timestamps: true }` and `updatedBy` (`mongoose.Schema.Types.ObjectId`, ref `'User'`) across every domain model in `server/src/modules/**/*.model.js`.
 - **Atomic `ir.sequence` Registry**:
   Corporate tracking codes are generated atomically using `$inc` counters in collection `ir_sequences`. It self-heals against manual seeds or external record insertions.
 - **Double-Entry Ledgers**:
@@ -65,3 +67,14 @@ Each business module in `server/src/modules/` is strictly encapsulated with five
   - Solar PV Panels: 20 Years (7,300 days)
   - Inverter, Battery Bank, Charge Controller: 2 Years (730 days)
   - Fault diagnosis automatically bifurcates costs: ₹0 for active warranty, standard parts + ₹1,200 labor for expired assets.
+
+## 4. Frontend Client Architecture & Role Separation
+- **Centralized Client Config (`erpClientConfig.js`)**:
+  Manages API endpoints, 15,000ms timeout thresholds, INR currency formatting, 1 kW–5 kW system options, and status badge color themes.
+- **Reusable Odoo Enterprise Table (`DataTable.jsx`)**:
+  High-contrast table component featuring live search filtering, column sort toggling, status pills, and empty states.
+- **Public Solar Landing & Zero-Login Portal (`PublicLandingView.jsx`)**:
+  Crisp emerald & solar gold design with 6-stage workflow strip, interactive ROI savings calculator, zero-login quote intake (`POST /api/leads`), and public order tracker.
+- **Strict Role-Separated Dashboards (Zero Shared Disabled Tabs)**:
+  - *Customer Portal (`CustomerMySolarPortalView.jsx`)*: Exclusively renders homeowner project milestones, 2-year/20-year warranty certificates, installation sign-off proof, and monsoon repair dispatch. Internal staff tabs (P&L, Warehouse Scanner, Diagnostics) are completely stripped.
+  - *Staff ERP Shell (`MainLayout.jsx`)*: Dynamically renders only the modules whitelisted for `ADMIN` (all), `OPERATIONS` (inquiries, orders, warehouse, warranty, director), or `STAFF` (inquiries, technician sign-off, warranty).

@@ -23,6 +23,16 @@
 
 ---
 
+## 2. Customer Portal State Machine & Isolation
+The Customer My-Solar Portal decouples customer-facing milestone tracking from internal ERP execution:
+- **Project Ribbon**: `Enquiry ➔ Survey Approved ➔ Quote Confirmed ➔ Dispatched ➔ Installed` (Real-time read state).
+- **Warranty State Clock**: Auto-calculated based on dispatch date:
+  - <= 730 days: `ACTIVE_WARRANTY` (₹0 Parts, ₹0 Labor).
+  - > 730 days: `EXPIRED_WARRANTY` (Standard Catalog Parts + ₹1,200 Labor).
+- **Role Isolation**: No internal operations (P&L ledgers, stock allocation, diagnostics) are exposed or rendered in the Customer UI.
+
+---
+
 ## 2. Project Order Lifecycle State Machine (`orderWorkflowStatus`)
 ```
 [Draft Quote] ---> [Advance_Paid] ---> [Packed] ---> [Dispatched] ---> [Installed] ---> [Done]

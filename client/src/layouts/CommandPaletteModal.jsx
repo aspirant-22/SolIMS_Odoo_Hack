@@ -14,22 +14,27 @@ import {
   ShieldCheck,
   BarChart3,
   Terminal,
-  UserCheck
+  UserCheck,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const CommandPaletteModal = ({ isOpen, onClose, onNavigate }) => {
-  const { switchPersonaRole } = useAuth();
+  const { currentUser, switchPersonaRole } = useAuth();
   const [searchFilter, setSearchFilter] = useState('');
 
-  const navigationCommands = [
-    { id: 'inquiries', label: 'Rooftop Inquiries & Surveys (Scene 1 & 2)', icon: Sun, route: 'inquiries' },
-    { id: 'warehouse', label: 'Warehouse Dispatch & Serial Scanner (Scene 3)', icon: Truck, route: 'warehouse' },
-    { id: 'technician', label: 'Technician Roof Sign-off (Scene 4)', icon: FileCheck2, route: 'technician' },
-    { id: 'warranty', label: 'Rainy Season Breakdown & Warranty Tickets (Scene 5)', icon: ShieldCheck, route: 'warranty' },
-    { id: 'director', label: "Director's Month-End P&L & Subsidies (Scene 6)", icon: BarChart3, route: 'director' },
-    { id: 'diagnostics', label: 'Admin Monospace System Diagnostics', icon: Terminal, route: 'diagnostics' }
+  const allNavigationCommands = [
+    { id: 'inquiries', label: 'Rooftop Inquiries & Surveys (Scene 1 & 2)', icon: Sun, route: 'inquiries', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
+    { id: 'orders', label: 'Confirmed Project Orders & BOM', icon: Layers, route: 'orders', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'warehouse', label: 'Warehouse Dispatch & Serial Scanner (Scene 3)', icon: Truck, route: 'warehouse', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'technician', label: 'Technician Roof Sign-off (Scene 4)', icon: FileCheck2, route: 'technician', roles: ['ADMIN', 'STAFF'] },
+    { id: 'warranty', label: 'Rainy Season Breakdown & Warranty Tickets (Scene 5)', icon: ShieldCheck, route: 'warranty', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
+    { id: 'director', label: "Director's Month-End P&L & Subsidies (Scene 6)", icon: BarChart3, route: 'director', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'diagnostics', label: 'Admin Monospace System Diagnostics', icon: Terminal, route: 'diagnostics', roles: ['ADMIN'] }
   ];
+
+  const userRole = currentUser?.role || 'ADMIN';
+  const navigationCommands = allNavigationCommands.filter((cmd) => cmd.roles.includes(userRole));
 
   const personaCommands = [
     { id: 'p-admin', label: 'Switch to Director / Admin (Garima Mittal)', role: 'ADMIN' },

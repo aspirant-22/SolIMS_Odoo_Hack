@@ -5,10 +5,11 @@
  * @DEPENDENCIES: react, AuthContext.jsx, MainLayout.jsx, all module views
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
 import { LoginView } from './modules/auth/LoginView';
 import { PublicLandingView } from './modules/landing/PublicLandingView';
+import { CustomerMySolarPortalView } from './modules/customer/CustomerMySolarPortalView';
 import { MainLayout } from './layouts/MainLayout';
 
 import { InquiriesView } from './modules/inquiries/InquiriesView';
@@ -24,6 +25,16 @@ export const App = () => {
   const [activeModule, setActiveModule] = useState('inquiries');
   const [publicView, setPublicView] = useState('landing'); // 'landing' | 'login'
 
+  // Sync default module with role capabilities
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === 'STAFF' && activeModule === 'inquiries') {
+      setActiveModule('technician');
+    } else if (currentUser.role === 'ADMIN' && activeModule === 'inquiries') {
+      setActiveModule('director');
+    }
+  }, [currentUser?.role]);
+
   if (isInitializing) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
@@ -35,6 +46,7 @@ export const App = () => {
     );
   }
 
+  // 1. Unauthenticated Visitor Flow: Public Solar Landing vs Staff Login
   if (!currentUser) {
     if (publicView === 'login') {
       return <LoginView onBackToLanding={() => setPublicView('landing')} />;
@@ -47,6 +59,12 @@ export const App = () => {
     );
   }
 
+  // 2. Dedicated Homeowner Portal (Strict Role Decoupling - No Shared Disabled Tabs)
+  if (currentUser.role === 'CUSTOMER') {
+    return <CustomerMySolarPortalView />;
+  }
+
+  // 3. Internal Staff / Director Enterprise ERP Workspace
   const renderActiveModuleView = () => {
     switch (activeModule) {
       case 'inquiries':

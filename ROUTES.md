@@ -18,7 +18,8 @@
 ## 2. Inquiries & Technical Survey Subdomain (`/api/leads`)
 | Method | Endpoint | RBAC Tier | Controller Handler | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `POST` | `/api/leads` | Public | `handleCreateInquiry` | Creates new rooftop solar inquiry (`INQ/2026/0001`) |
+| `POST` | `/api/leads` | Public | `handleCreateInquiry` | Creates new rooftop solar inquiry (`INQ/2026/0001`) with zero login |
+| `GET` | `/api/leads/track/:query` | Public | `handleTrackOrderOrInquiry` | Public tracking lookup by reference code or phone |
 | `GET` | `/api/leads` | Authenticated | `handleGetAllInquiries` | Fetches all inquiries with survey details |
 | `GET` | `/api/leads/:id` | Authenticated | `handleGetInquiryById` | Fetches single inquiry record |
 | `POST` | `/api/leads/:id/schedule-survey` | `ADMIN`, `OPERATIONS` | `handleScheduleSurvey` | Assigns technician for on-site roof measurement visit |
