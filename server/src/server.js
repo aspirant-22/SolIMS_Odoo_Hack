@@ -16,6 +16,14 @@ import { connectDatabase } from './config/db.js';
 import { initializeSocketEmitter } from './core/socketEmitter.js';
 import { handleGlobalApplicationErrors } from './middleware/errorHandler.js';
 
+import { authApiRouter } from './modules/auth/auth.routes.js';
+import { leadApiRouter } from './modules/leads/lead.routes.js';
+import { orderApiRouter } from './modules/orders/order.routes.js';
+import { inventoryApiRouter } from './modules/inventory/inventory.routes.js';
+import { serviceApiRouter } from './modules/service/service.routes.js';
+import { accountingApiRouter } from './modules/accounting/accounting.routes.js';
+import { diagnosticsApiRouter } from './modules/diagnostics/diagnostics.routes.js';
+
 const expressApplication = express();
 const httpServerInstance = http.createServer(expressApplication);
 
@@ -50,12 +58,14 @@ expressApplication.get('/api/health', (httpRequest, httpResponse) => {
   });
 });
 
-// Dynamic Route Registration Loader
-export const registerApiModuleRoutes = (registeredRouterPaths) => {
-  registeredRouterPaths.forEach(({ pathPrefix, routerInstance }) => {
-    expressApplication.use(pathPrefix, routerInstance);
-  });
-};
+// Mount Subdomain Modular API Routers
+expressApplication.use('/api/auth', authApiRouter);
+expressApplication.use('/api/leads', leadApiRouter);
+expressApplication.use('/api/orders', orderApiRouter);
+expressApplication.use('/api/inventory', inventoryApiRouter);
+expressApplication.use('/api/service', serviceApiRouter);
+expressApplication.use('/api/accounting', accountingApiRouter);
+expressApplication.use('/api/diagnostics', diagnosticsApiRouter);
 
 expressApplication.use(handleGlobalApplicationErrors);
 
