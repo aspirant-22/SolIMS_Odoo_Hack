@@ -21,6 +21,16 @@ export default {
       boxShadow: {
         '2xs': '0 1px 1px 0 rgb(0 0 0 / 0.03)',
         'xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        'card': '0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -14px rgb(15 23 42 / 0.16)',
+        'lift': '0 2px 4px rgb(15 23 42 / 0.05), 0 22px 44px -18px rgb(15 23 42 / 0.32)',
+        'glow': '0 0 0 4px rgb(245 158 11 / 0.18), 0 12px 28px -8px rgb(19 93 59 / 0.45)',
+      },
+      keyframes: {
+        float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } },
+      },
+      animation: {
+        float: 'float 5s ease-in-out infinite',
+        'float-delayed': 'float 6s ease-in-out 1.2s infinite',
       },
       colors: {
         solims: {

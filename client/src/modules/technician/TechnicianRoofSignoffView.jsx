@@ -6,6 +6,8 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Wrench as KWrench, Sun as KSun, Zap as KZap, PenLine as KPenLine } from 'lucide-react';
+import { KpiCard, KpiStrip } from '../../components/KpiCard';
 import {
   FileCheck2,
   Camera,
@@ -148,7 +150,7 @@ export const TechnicianRoofSignoffView = () => {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 font-sans">
       {/* Page Hero Strip: Clean White Surface */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="page-hero flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <FileCheck2 className="w-4 h-4 text-[#135D3B]" />
@@ -167,6 +169,13 @@ export const TechnicianRoofSignoffView = () => {
           <span>Mobile & Tablet Optimized</span>
         </div>
       </div>
+
+      <KpiStrip>
+        <KpiCard label="Jobs on roster" value={activeOrders.length} icon={KWrench} tone="sky" trend="dispatched" hint="to commission" />
+        <KpiCard label="Confirmed capacity" value={confirmedCapacityKw + ' kW'} icon={KSun} tone="amber" trend="as installed" hint="system size" />
+        <KpiCard label="Live generation" value={Number(powerGenerationWatts || 0).toLocaleString('en-IN') + ' W'} icon={KZap} tone="emerald" trend="wattage test" trendDir="up" hint="commissioning" />
+        <KpiCard label="Signature" value={hasSignatureDrawn ? 'Captured' : 'Pending'} icon={KPenLine} tone={hasSignatureDrawn ? 'emerald' : 'amber'} trend={hasSignatureDrawn ? 'ready to submit' : 'needs client'} trendDir={hasSignatureDrawn ? 'up' : 'flat'} hint="digital sign-off" />
+      </KpiStrip>
 
       {errorMessage && (
         <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl flex items-center gap-2 font-semibold shadow-2xs">

@@ -6,6 +6,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Search as KSearch, ShieldCheck as KShieldCheck, AlertTriangle as KAlertTriangle, Wrench as KWrench } from 'lucide-react';
+import { WarrantyCertificateCard } from '../../components/WarrantyCertificateCard';
+import { KpiCard, KpiStrip } from '../../components/KpiCard';
 import {
   ShieldCheck,
   Search,
@@ -121,7 +124,7 @@ export const WarrantyLookupTicketView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Page Hero Strip: Clean White Surface */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="page-hero flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <CloudRain className="w-4 h-4 text-[#135D3B]" />
@@ -140,6 +143,13 @@ export const WarrantyLookupTicketView = () => {
           <span>Automated ₹0 vs Billable Split</span>
         </div>
       </div>
+
+      <KpiStrip>
+        <KpiCard label="Assets looked up" value={searchResults.length} icon={KSearch} tone="sky" trend="live" hint="current search" />
+        <KpiCard label="Under warranty" value={searchResults.filter((a) => a.isUnderActiveWarranty).length} icon={KShieldCheck} tone="emerald" trend="₹0 billed" trendDir="up" hint="covered repairs" />
+        <KpiCard label="Expired" value={searchResults.filter((a) => !a.isUnderActiveWarranty).length} icon={KAlertTriangle} tone="rose" trend="auto-billed" trendDir="down" hint="parts + labor" />
+        <KpiCard label="Open tickets" value={ticketsList.filter((t) => t.ticketWorkflowStatus !== 'Done').length} icon={KWrench} tone="amber" trend={ticketsList.length + ' total'} hint="service queue" />
+      </KpiStrip>
 
       {feedbackMessage && (
         <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-2xs">
@@ -207,88 +217,14 @@ export const WarrantyLookupTicketView = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {searchResults.map((asset) => (
-              <div
+              <WarrantyCertificateCard
                 key={asset.assetId}
-                className={`bg-white rounded-2xl border p-5 shadow-sm space-y-4 ${
-                  asset.isUnderActiveWarranty ? 'border-emerald-200' : 'border-rose-200'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
-                      {asset.serialNumber}
-                    </span>
-                    <h4 className="font-heading font-bold text-base text-slate-900 mt-0.5">{asset.customerFullName}</h4>
-                    <p className="text-xs text-slate-500 font-medium">{asset.installationSiteAddress}</p>
-                  </div>
-
-                  <span
-                    className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border tabular-nums ${
-                      asset.isUnderActiveWarranty
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        : 'bg-rose-50 text-rose-700 border-rose-200'
-                    }`}
-                  >
-                    {asset.isUnderActiveWarranty ? (
-                      <>
-                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                        <span>ACTIVE WARRANTY ({asset.remainingWarrantyDays} Days Left)</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-4 h-4 text-rose-700" />
-                        <span>WARRANTY EXPIRED</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-
-                {/* Financial Auto-Calculation Breakdown */}
-                <div className="bg-slate-50 rounded-2xl p-4 text-xs space-y-2 border border-slate-200">
-                  <div className="flex justify-between text-slate-700 font-medium">
-                    <span>Component Category:</span>
-                    <span className="font-bold text-slate-900">{asset.assetCategory}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-700 font-medium">
-                    <span>Replacement Hardware / Parts:</span>
-                    <span className="font-mono font-bold text-slate-900 tabular-nums">
-                      {asset.isUnderActiveWarranty ? '₹0 (100% Covered)' : `₹${asset.estimatedPartCostInr.toLocaleString('en-IN')}`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-slate-700 font-medium">
-                    <span>Technician Visit & Labor Fee:</span>
-                    <span className="font-mono font-bold text-slate-900 tabular-nums">
-                      {asset.isUnderActiveWarranty ? '₹0 (100% Covered)' : `₹${asset.estimatedLaborCostInr.toLocaleString('en-IN')}`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold pt-2 border-t border-slate-200">
-                    <span className="text-slate-900">Total Cost to Customer:</span>
-                    <span
-                      className={`font-mono text-base tabular-nums ${
-                        asset.isUnderActiveWarranty ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'
-                      }`}
-                    >
-                      ₹{asset.totalBillableCostInr.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-xs text-slate-500 font-mono font-medium tabular-nums">
-                    Order Ref: {asset.orderReference}
-                  </span>
-                  <button
-                    onClick={() => {
-                      setSelectedAssetForTicket(asset);
-                      setIsTicketModalOpen(true);
-                    }}
-                    className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs py-2 px-4 shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Wrench className="w-3.5 h-3.5" />
-                    <span>Create Breakdown Ticket</span>
-                  </button>
-                </div>
-              </div>
+                asset={asset}
+                onCreateTicket={() => {
+                  setSelectedAssetForTicket(asset);
+                  setIsTicketModalOpen(true);
+                }}
+              />
             ))}
           </div>
         </div>

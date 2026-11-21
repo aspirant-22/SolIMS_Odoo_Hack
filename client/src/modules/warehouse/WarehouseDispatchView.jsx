@@ -6,6 +6,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Truck as KTruck, Barcode as KBarcode, Package as KPackage, ShieldCheck as KShieldCheck } from 'lucide-react';
+import { KpiCard, KpiStrip } from '../../components/KpiCard';
 import {
   Truck,
   Barcode,
@@ -142,7 +144,7 @@ export const WarehouseDispatchView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Page Hero Strip: Clean White Surface */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="page-hero flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <Truck className="w-4 h-4 text-[#135D3B]" />
@@ -161,6 +163,13 @@ export const WarehouseDispatchView = () => {
           <span>Zero manual date entry required</span>
         </div>
       </div>
+
+      <KpiStrip>
+        <KpiCard label="Awaiting dispatch" value={ordersAwaitingDispatch.length} icon={KTruck} tone="amber" trend="queue" hint="advance paid" />
+        <KpiCard label="Serials scanned" value={scannedSerialsList.length} icon={KBarcode} tone="sky" trend="this order" hint="barcode locked" />
+        <KpiCard label="Units in stock" value={availableStock.filter((x) => x.assetStatus === 'WAREHOUSE_STOCK').length} icon={KPackage} tone="emerald" trend="serialised" trendDir="up" hint="ready to ship" />
+        <KpiCard label="Warranty clocks" value={scannedSerialsList.length} icon={KShieldCheck} tone="slate" trend="auto-start" hint="on dispatch" />
+      </KpiStrip>
 
       {feedbackMessage.text && (
         <div

@@ -16,9 +16,41 @@ import {
   ArrowRight,
   Sparkles,
   Lock,
-  ArrowLeft
+  ArrowLeft,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+
+const PERSONAS = [
+  {
+    role: 'ADMIN', title: 'Director', person: 'Garima Mittal', initials: 'GM', icon: Shield, badge: 'ADMIN', route: '/director',
+    summary: 'Executive P&L, job margins and subsidy tracking with full system access.',
+    perms: ['P&L & margins', 'CSV export', 'Diagnostics'],
+    avatar: 'bg-gradient-to-br from-indigo-500 to-indigo-700', bar: 'bg-indigo-500',
+    chip: 'bg-indigo-50 text-indigo-800 border-indigo-200', hover: 'hover:border-indigo-300'
+  },
+  {
+    role: 'OPERATIONS', title: 'Operations', person: 'Vikram Sethi', initials: 'VS', icon: Truck, badge: 'OPS', route: '/inquiries',
+    summary: 'Surveys, Auto-BOM quotes, orders and barcode serial dispatch.',
+    perms: ['Quotes & BOM', 'Dispatch', 'Warranty'],
+    avatar: 'bg-gradient-to-br from-sky-500 to-sky-700', bar: 'bg-sky-500',
+    chip: 'bg-sky-50 text-sky-800 border-sky-200', hover: 'hover:border-sky-300'
+  },
+  {
+    role: 'STAFF', title: 'Technician', person: 'Ramesh Sharma', initials: 'RS', icon: Wrench, badge: 'STAFF', route: '/field-install',
+    summary: 'Mobile roof sign-off with live camera capture and client signature.',
+    perms: ['Roof sign-off', 'Camera', 'Tickets'],
+    avatar: 'bg-gradient-to-br from-amber-400 to-amber-600', bar: 'bg-amber-500',
+    chip: 'bg-amber-50 text-amber-800 border-amber-200', hover: 'hover:border-amber-300'
+  },
+  {
+    role: 'CUSTOMER', title: 'Homeowner', person: 'Sunil Agrawal', initials: 'SA', icon: Home, badge: 'CLIENT', route: '/my-solar',
+    summary: 'Live generation, warranty countdowns and monsoon repair requests.',
+    perms: ['My solar', 'Warranty', 'Report fault'],
+    avatar: 'bg-gradient-to-br from-emerald-500 to-emerald-700', bar: 'bg-emerald-500',
+    chip: 'bg-emerald-50 text-emerald-800 border-emerald-200', hover: 'hover:border-emerald-300'
+  }
+];
 
 export const LoginView = () => {
   const navigate = useNavigate();
@@ -49,7 +81,7 @@ export const LoginView = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg border border-slate-200/90 overflow-hidden">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-slate-200/90 overflow-hidden">
         {/* Brand Banner - Forest Green Brand Header */}
         <div className="bg-gradient-to-r from-[#0F291E] via-[#135D3B] to-[#0E462C] px-6 py-8 text-white text-center relative overflow-hidden shadow-sm">
           <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
@@ -77,74 +109,41 @@ export const LoginView = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* 1. Director Persona */}
-            <button
-              onClick={() => handleInstantPersonaClick('ADMIN')}
-              className="flex items-start gap-3 p-3 bg-white hover:bg-indigo-50/40 border border-slate-200/90 hover:border-indigo-300 rounded-2xl text-left transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5 cursor-pointer group"
-            >
-              <div className="p-2 bg-indigo-50 group-hover:bg-indigo-100 text-indigo-700 rounded-xl border border-indigo-200/60 shrink-0 transition-colors">
-                <Shield className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-heading text-xs font-bold text-slate-900 group-hover:text-indigo-900">Director</span>
-                  <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">ADMIN</span>
-                </div>
-                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Executive P&L, margins & subsidy claims</div>
-              </div>
-            </button>
-
-            {/* 2. Operations Persona */}
-            <button
-              onClick={() => handleInstantPersonaClick('OPERATIONS')}
-              className="flex items-start gap-3 p-3 bg-white hover:bg-sky-50/40 border border-slate-200/90 hover:border-sky-300 rounded-2xl text-left transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5 cursor-pointer group"
-            >
-              <div className="p-2 bg-sky-50 group-hover:bg-sky-100 text-sky-700 rounded-xl border border-sky-200/60 shrink-0 transition-colors">
-                <Truck className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-heading text-xs font-bold text-slate-900 group-hover:text-sky-900">Operations</span>
-                  <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-sky-50 text-sky-700 border border-sky-200">OPS</span>
-                </div>
-                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Auto-BOM, survey quotes & serial dispatch</div>
-              </div>
-            </button>
-
-            {/* 3. Technician Persona */}
-            <button
-              onClick={() => handleInstantPersonaClick('STAFF')}
-              className="flex items-start gap-3 p-3 bg-white hover:bg-amber-50/40 border border-slate-200/90 hover:border-amber-300 rounded-2xl text-left transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5 cursor-pointer group"
-            >
-              <div className="p-2 bg-amber-50 group-hover:bg-amber-100 text-amber-800 rounded-xl border border-amber-200/60 shrink-0 transition-colors">
-                <Wrench className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-heading text-xs font-bold text-slate-900 group-hover:text-amber-950">Technician</span>
-                  <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">STAFF</span>
-                </div>
-                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Mobile roof sign-off & digital signature</div>
-              </div>
-            </button>
-
-            {/* 4. Homeowner Persona */}
-            <button
-              onClick={() => handleInstantPersonaClick('CUSTOMER')}
-              className="flex items-start gap-3 p-3 bg-white hover:bg-emerald-50/40 border border-slate-200/90 hover:border-emerald-300 rounded-2xl text-left transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5 cursor-pointer group"
-            >
-              <div className="p-2 bg-emerald-50 group-hover:bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-200/60 shrink-0 transition-colors">
-                <Home className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="font-heading text-xs font-bold text-slate-900 group-hover:text-emerald-950">Homeowner</span>
-                  <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">CLIENT</span>
-                </div>
-                <div className="text-[11px] text-slate-500 font-medium mt-0.5 leading-snug">Live power generation & 20-Yr warranty</div>
-              </div>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {PERSONAS.map((persona) => {
+              const PIcon = persona.icon;
+              return (
+                <button
+                  key={persona.role}
+                  onClick={() => handleInstantPersonaClick(persona.role)}
+                  className={"relative flex flex-col gap-3 p-4 bg-white border border-slate-200/80 rounded-2xl text-left transition-all duration-200 shadow-card hover:shadow-lift hover:-translate-y-1 cursor-pointer group overflow-hidden " + persona.hover}
+                >
+                  <span className={"absolute inset-x-0 top-0 h-1 " + persona.bar} />
+                  <div className="flex items-center gap-3">
+                    <span className={"w-11 h-11 rounded-full flex items-center justify-center font-heading text-sm font-extrabold text-white shadow-sm shrink-0 " + persona.avatar}>
+                      {persona.initials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-heading text-sm font-extrabold text-slate-900 leading-tight">{persona.title}</div>
+                      <div className="text-[11px] text-slate-600 font-medium truncate">{persona.person}</div>
+                    </div>
+                    <span className={"p-1.5 rounded-lg border shrink-0 " + persona.chip}><PIcon className="w-4 h-4" /></span>
+                  </div>
+                  <p className="text-xs text-slate-700 leading-snug">{persona.summary}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {persona.perms.map((perm) => (
+                      <span key={perm} className={"inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border " + persona.chip}>
+                        <Check className="w-3 h-3" />{perm}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-bold">
+                    <span className={"font-mono px-1.5 py-0.5 rounded border " + persona.chip}>{persona.badge}</span>
+                    <span className="text-slate-700 group-hover:text-slate-900 inline-flex items-center gap-1">Enter {persona.route}<ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

@@ -16,25 +16,23 @@ export const ProgressWorkflowRibbon = ({ stages = ['Draft', 'Waiting', 'Ready', 
     <div
       data-component="workflow-ribbon"
       data-purpose="fsm-status-indicator"
-      className="flex items-center overflow-hidden border border-slate-200 rounded-full bg-white text-xs font-semibold shadow-xs"
+      className="flex items-center gap-0.5 p-0.5 border border-slate-200 rounded-full bg-slate-100 text-xs font-semibold shadow-inner"
     >
       {stages.map((stageName, stageIdx) => {
         const isCurrentActive = stageIdx === normalizedIndex;
         const isCompleted = stageIdx < normalizedIndex;
 
-        let styleClasses = 'text-slate-500 bg-slate-50';
+        let styleClasses = 'text-slate-600 bg-transparent';
         if (isCurrentActive) {
-          styleClasses = 'bg-[#135D3B] text-white shadow-sm ring-1 ring-[#135D3B] font-extrabold';
+          styleClasses = 'bg-[#135D3B] text-white font-extrabold shadow-[0_0_0_3px_rgba(245,158,11,0.35),0_6px_14px_-4px_rgba(19,93,59,0.6)]';
         } else if (isCompleted) {
-          styleClasses = 'bg-emerald-50 text-emerald-800 border-r border-emerald-200 font-bold';
+          styleClasses = 'bg-emerald-50 text-emerald-800 font-bold';
         }
 
         return (
           <div
             key={stageName}
-            className={`px-3 py-1 flex items-center gap-1.5 transition-all ${styleClasses} ${
-              stageIdx > 0 ? 'border-l border-slate-200' : ''
-            }`}
+            className={`px-3.5 py-1 rounded-full flex items-center gap-1.5 transition-all duration-300 ${styleClasses}`}
           >
             {isCompleted ? <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" /> : null}
             <span>{stageName}</span>

@@ -54,7 +54,7 @@ export const SystemDiagnosticsView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Page Header: Clean White Card */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="page-hero flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
             <Terminal className="w-4 h-4 text-[#135D3B]" />

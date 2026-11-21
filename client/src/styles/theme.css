@@ -81,3 +81,36 @@
     @apply block w-full rounded-xl border-slate-300 shadow-sm focus:border-[#135D3B] focus:ring-[#135D3B] text-sm py-2 px-3.5 border text-slate-900 placeholder:text-slate-400 transition-colors bg-white;
   }
 }
+
+/* ---- 2026 Executive design system additions ---- */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgb(226 232 240 / 0.8);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -14px rgb(15 23 42 / 0.16);
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #F59E0B, #135D3B 60%, #0EA5E9);
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  right: -48px;
+  top: -48px;
+  width: 180px;
+  height: 180px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(245 158 11 / 0.16), transparent 70%);
+  pointer-events: none;
+}
+.bg-dots {
+  background-image: radial-gradient(rgb(148 163 184 / 0.35) 1px, transparent 1px);
+  background-size: 20px 20px;
+}

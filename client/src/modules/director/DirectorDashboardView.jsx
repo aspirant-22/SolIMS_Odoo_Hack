@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { RevenueBreakdown } from '../../components/RevenueBreakdown';
 import {
   BarChart3,
   Download,
@@ -99,7 +100,7 @@ export const DirectorDashboardView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Page Hero Strip: Clean White Surface */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="page-hero flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <BarChart3 className="w-4 h-4 text-[#135D3B]" />
@@ -193,6 +194,8 @@ export const DirectorDashboardView = () => {
           <div className="text-[11px] text-amber-800 font-semibold mt-1">PM Surya Ghar claims</div>
         </div>
       </div>
+
+      <RevenueBreakdown kpis={kpis} projectMargins={projectMargins} />
 
       {/* Sub-Tabs: P&L per Job vs Double-Entry General Ledger */}
       <div className="flex border-b border-slate-200 gap-6 text-sm font-semibold">

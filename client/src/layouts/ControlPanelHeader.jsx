@@ -44,7 +44,7 @@ export const ControlPanelHeader = ({
             <span
               className={
                 idx === breadcrumbHierarchy.length - 1
-                  ? 'font-extrabold text-slate-900 font-heading'
+                  ? 'font-extrabold text-slate-900 font-heading bg-slate-100 border border-slate-200/80 rounded-full px-3 py-0.5'
                   : 'text-slate-600 font-medium hover:text-[#135D3B] cursor-pointer'
               }
             >
