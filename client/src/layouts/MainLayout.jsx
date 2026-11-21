@@ -42,23 +42,23 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col text-gray-900">
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col text-slate-900 font-sans">
       <NetworkTimeoutBanner />
 
       {/* Primary Subdomain Navigation Bar */}
-      <nav className="bg-[#714B67] text-white px-6 py-2.5 flex items-center justify-between shadow-xs">
+      <nav className="bg-[#714B67] text-white px-6 py-2.5 flex items-center justify-between shadow-sm border-b border-[#5D3C54]">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => onSelectModule('inquiries')}>
-            <div className="p-1.5 bg-white/10 rounded-lg">
+            <div className="p-1.5 bg-white/10 rounded-lg border border-white/20">
               <Sun className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <span className="font-bold text-sm tracking-tight text-white block leading-tight">SolIMS ERP</span>
-              <span className="text-[10px] text-amber-200 block font-mono leading-none">by Garima Mittal</span>
+              <span className="font-extrabold text-sm tracking-tight text-white block leading-tight">SolIMS ERP</span>
+              <span className="text-[10px] text-amber-300 block font-mono font-bold leading-none">by Garima Mittal</span>
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1 border-l border-white/20 pl-4">
+          <div className="hidden lg:flex items-center gap-1.5 border-l border-white/20 pl-4">
             {navigationItems.map((item) => {
               const IconComp = item.icon;
               const isActive = currentModule === item.id;
@@ -66,10 +66,10 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
                 <button
                   key={item.id}
                   onClick={() => onSelectModule(item.id)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-white text-[#714B67] shadow-xs'
-                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                      ? 'bg-white text-[#714B67] shadow-sm'
+                      : 'text-purple-100 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   <IconComp className="w-3.5 h-3.5" />

@@ -16,27 +16,27 @@ export const ProgressWorkflowRibbon = ({ stages = ['Draft', 'Waiting', 'Ready', 
     <div
       data-component="workflow-ribbon"
       data-purpose="fsm-status-indicator"
-      className="flex items-center overflow-hidden border border-gray-200 rounded-md bg-white text-xs font-semibold shadow-xs"
+      className="flex items-center overflow-hidden border border-slate-200 rounded-lg bg-white text-xs font-bold shadow-sm"
     >
       {stages.map((stageName, stageIdx) => {
         const isCurrentActive = stageIdx === normalizedIndex;
         const isCompleted = stageIdx < normalizedIndex;
 
-        let styleClasses = 'text-gray-400 bg-gray-50';
+        let styleClasses = 'text-slate-500 bg-slate-50';
         if (isCurrentActive) {
-          styleClasses = 'bg-[#714B67] text-white shadow-sm ring-1 ring-[#714B67] font-bold';
+          styleClasses = 'bg-[#714B67] text-white shadow-sm ring-1 ring-[#714B67] font-extrabold';
         } else if (isCompleted) {
-          styleClasses = 'bg-emerald-50 text-emerald-700 border-r border-emerald-100';
+          styleClasses = 'bg-emerald-50 text-emerald-800 border-r border-emerald-200 font-bold';
         }
 
         return (
           <div
             key={stageName}
             className={`px-3 py-1.5 flex items-center gap-1.5 transition-all ${styleClasses} ${
-              stageIdx > 0 ? 'border-l border-gray-200' : ''
+              stageIdx > 0 ? 'border-l border-slate-200' : ''
             }`}
           >
-            {isCompleted ? <Check className="w-3 h-3 text-emerald-600" /> : null}
+            {isCompleted ? <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" /> : null}
             <span>{stageName}</span>
           </div>
         );

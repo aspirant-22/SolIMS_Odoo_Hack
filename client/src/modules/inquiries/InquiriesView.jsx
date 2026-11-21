@@ -181,14 +181,16 @@ export const InquiriesView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner / Problem Statement Scene Anchor */}
-      <div className="bg-linear-to-r from-[#714B67] to-[#008784] rounded-xl p-5 text-white flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300">
-            <Sun className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+            <Sun className="w-4 h-4 text-amber-300" />
             <span>Scene 1 & 2 — The Rooftop Inquiry & Auto-BOM Kit</span>
           </div>
-          <h2 className="text-xl font-bold mt-1">Inquiry Intake, Survey Feasibility & Proposal Engine</h2>
-          <p className="text-xs text-white/80 max-w-2xl mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+            Inquiry Intake, Survey Feasibility & Proposal Engine
+          </h2>
+          <p className="text-xs text-purple-100 max-w-2xl mt-1.5 leading-relaxed font-medium">
             Enforces Odoo governance guardrails: Quotation generation is strictly blocked until a qualified technician visits the site, records tilt/azimuth measurements, and operations validates technical feasibility.
           </p>
         </div>
@@ -198,7 +200,7 @@ export const InquiriesView = () => {
             setErrorMessage('');
             setIsCreateModalOpen(true);
           }}
-          className="bg-white hover:bg-gray-100 text-[#714B67] font-semibold text-xs px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer"
+          className="bg-white hover:bg-slate-100 text-[#714B67] font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer border border-slate-200"
         >
           <Plus className="w-4 h-4" />
           <span>New Rooftop Inquiry</span>
@@ -206,8 +208,8 @@ export const InquiriesView = () => {
       </div>
 
       {errorMessage && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md flex items-center gap-2 font-medium">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center gap-2 font-semibold shadow-xs">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -215,21 +217,21 @@ export const InquiriesView = () => {
       {/* Main Grid: Inquiries List & Detail Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left List Pane */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
-          <div className="p-3 bg-gray-50 border-b border-gray-200 font-semibold text-xs text-gray-700 uppercase tracking-wide flex justify-between items-center">
+        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm">
+          <div className="p-3.5 bg-slate-50 border-b border-slate-200 font-extrabold text-xs text-slate-800 uppercase tracking-wide flex justify-between items-center">
             <span>Inquiry Records ({inquiriesList.length})</span>
-            <span className="text-[10px] text-gray-400 font-mono">ir.sequence</span>
+            <span className="text-[11px] text-slate-500 font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-200">ir.sequence</span>
           </div>
 
-          <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
             {inquiriesList.map((lead) => {
               const isSelected = selectedInquiry?._id === lead._id;
               return (
                 <div
                   key={lead._id}
                   onClick={() => setSelectedInquiry(lead)}
-                  className={`p-3.5 cursor-pointer transition-colors text-left ${
-                    isSelected ? 'bg-[#714B67]/5 border-l-4 border-[#714B67]' : 'hover:bg-gray-50'
+                  className={`p-4 cursor-pointer transition-colors text-left ${
+                    isSelected ? 'bg-[#714B67]/8 border-l-4 border-[#714B67]' : 'hover:bg-slate-50/80'
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
@@ -237,21 +239,21 @@ export const InquiriesView = () => {
                       {lead.inquiryReference}
                     </span>
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                         lead.inquiryWorkflowStatus === 'Approved'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : lead.inquiryWorkflowStatus === 'Quoted'
-                          ? 'bg-purple-100 text-purple-800'
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
                           : lead.inquiryWorkflowStatus === 'Survey_Completed'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-amber-100 text-amber-800'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}
                     >
                       {lead.inquiryWorkflowStatus}
                     </span>
                   </div>
-                  <div className="font-semibold text-xs text-gray-900">{lead.customerFullName}</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
+                  <div className="font-bold text-sm text-slate-900">{lead.customerFullName}</div>
+                  <div className="text-xs text-slate-600 font-medium mt-0.5">
                     {lead.requestedCapacityKw} kW {lead.requestedVariant} • ₹{lead.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}/mo
                   </div>
                 </div>
@@ -261,43 +263,43 @@ export const InquiriesView = () => {
         </div>
 
         {/* Right Detail Pane */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 shadow-2xs space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm space-y-6">
           {selectedInquiry ? (
             <>
-              <div className="flex flex-wrap items-center justify-between pb-4 border-b border-gray-200 gap-3">
+              <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-3">
                 <div>
-                  <span className="font-mono text-xs text-[#714B67] font-bold">
+                  <span className="font-mono text-xs text-[#714B67] font-extrabold">
                     {selectedInquiry.inquiryReference}
                   </span>
-                  <h3 className="text-lg font-bold text-gray-900">{selectedInquiry.customerFullName}</h3>
-                  <p className="text-xs text-gray-500">{selectedInquiry.installationSiteAddress}</p>
+                  <h3 className="text-xl font-extrabold text-slate-900 tracking-tight mt-0.5">{selectedInquiry.customerFullName}</h3>
+                  <p className="text-xs text-slate-600 font-medium mt-0.5">{selectedInquiry.installationSiteAddress}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {selectedInquiry.inquiryWorkflowStatus === 'Approved' && (
                     <button
                       onClick={handleGenerateQuoteClick}
-                      className="odoo-btn-primary gap-1.5 text-xs"
+                      className="odoo-btn-primary gap-1.5 text-xs py-2 px-3.5 shadow-sm"
                     >
-                      <Zap className="w-3.5 h-3.5 text-amber-300" />
+                      <Zap className="w-4 h-4 text-amber-300" />
                       <span>Auto-Generate BOM Quote</span>
                     </button>
                   )}
 
                   {selectedInquiry.inquiryWorkflowStatus === 'Survey_Completed' && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleApproveSurvey(true)}
-                        className="odoo-btn-secondary gap-1 text-xs"
+                        className="odoo-btn-secondary gap-1.5 text-xs py-2 px-3.5"
                       >
-                        <CheckCircle className="w-3.5 h-3.5" />
+                        <CheckCircle className="w-4 h-4" />
                         <span>Approve Survey</span>
                       </button>
                       <button
                         onClick={() => handleApproveSurvey(false)}
-                        className="px-2.5 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-semibold rounded-md border border-rose-200"
+                        className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold rounded-lg border border-rose-200 transition-colors"
                       >
-                        <XCircle className="w-3.5 h-3.5" />
+                        <XCircle className="w-4 h-4" />
                       </button>
                     </div>
                   )}
@@ -306,9 +308,9 @@ export const InquiriesView = () => {
                     selectedInquiry.inquiryWorkflowStatus === 'Survey_Scheduled') && (
                     <button
                       onClick={() => setIsSurveyModalOpen(true)}
-                      className="odoo-btn-secondary gap-1.5 text-xs"
+                      className="odoo-btn-secondary gap-1.5 text-xs py-2 px-3.5"
                     >
-                      <Compass className="w-3.5 h-3.5" />
+                      <Compass className="w-4 h-4" />
                       <span>Record Survey Measurements</span>
                     </button>
                   )}
@@ -316,28 +318,28 @@ export const InquiriesView = () => {
               </div>
 
               {/* Inquiry Specifications Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50/70 p-4 rounded-lg border border-gray-200/80">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/90 p-4 rounded-xl border border-slate-200">
                 <div>
-                  <div className="text-[11px] text-gray-500">Requested Capacity</div>
-                  <div className="text-sm font-bold text-gray-900 mt-0.5">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Requested Capacity</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-1">
                     {selectedInquiry.requestedCapacityKw} kW
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">System Variant</div>
-                  <div className="text-sm font-bold text-gray-900 mt-0.5">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">System Variant</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-1">
                     {selectedInquiry.requestedVariant}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">Roof Area</div>
-                  <div className="text-sm font-bold text-gray-900 mt-0.5">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Roof Area</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-1">
                     {selectedInquiry.approximateRoofAreaSqFt} sq.ft
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-500">Avg Monthly Bill</div>
-                  <div className="text-sm font-bold text-gray-900 mt-0.5">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg Monthly Bill</div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-1">
                     ₹{selectedInquiry.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}
                   </div>
                 </div>
@@ -345,59 +347,59 @@ export const InquiriesView = () => {
 
               {/* Survey Technical Measurements Section */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                   <Compass className="w-4 h-4 text-[#714B67]" />
                   <span>Technical Roof Feasibility Survey</span>
                 </h4>
 
                 {selectedInquiry.surveyDetails?.surveyCompletedAt ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-emerald-50/50 p-4 rounded-lg border border-emerald-200 text-xs">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 bg-emerald-50/60 p-4 rounded-xl border border-emerald-200 text-xs">
                     <div>
-                      <span className="text-gray-500 block">Azimuth Direction:</span>
-                      <span className="font-bold text-emerald-900">
+                      <span className="text-slate-600 font-medium block">Azimuth Direction:</span>
+                      <span className="font-extrabold text-emerald-950 text-sm">
                         {selectedInquiry.surveyDetails.azimuthDirection}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Tilt Angle:</span>
-                      <span className="font-bold text-emerald-900">
+                      <span className="text-slate-600 font-medium block">Tilt Angle:</span>
+                      <span className="font-extrabold text-emerald-950 text-sm">
                         {selectedInquiry.surveyDetails.tiltAngleDegrees}°
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Cable Distance:</span>
-                      <span className="font-bold text-emerald-900">
+                      <span className="text-slate-600 font-medium block">Cable Distance:</span>
+                      <span className="font-extrabold text-emerald-950 text-sm">
                         {selectedInquiry.surveyDetails.cableDistanceMeters} meters
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Shadow-Free Area:</span>
-                      <span className="font-bold text-emerald-900">
+                      <span className="text-slate-600 font-medium block">Shadow-Free Area:</span>
+                      <span className="font-extrabold text-emerald-950 text-sm">
                         {selectedInquiry.surveyDetails.shadowFreeAreaSqFt} sq.ft
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Roof Structure:</span>
-                      <span className="font-bold text-emerald-900">
+                      <span className="text-slate-600 font-medium block">Roof Structure:</span>
+                      <span className="font-extrabold text-emerald-950 text-sm">
                         {selectedInquiry.surveyDetails.roofStructureType}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500 block">Grid Voltage:</span>
-                      <span className="font-bold text-emerald-900">
+                      <span className="text-slate-600 font-medium block">Grid Voltage:</span>
+                      <span className="font-extrabold text-emerald-950 text-sm">
                         {selectedInquiry.surveyDetails.gridConnectionVoltage}
                       </span>
                     </div>
-                    <div className="col-span-2 md:col-span-3 text-gray-600 italic border-t border-emerald-200/60 pt-2 mt-1">
+                    <div className="col-span-2 md:col-span-3 text-slate-700 italic border-t border-emerald-200 pt-2.5 mt-1 font-medium">
                       "{selectedInquiry.surveyDetails.surveyRemarks || 'Site measurements verified.'}"
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-semibold">Survey Pending Technician Site Visit</div>
-                      <p className="mt-0.5 text-amber-700">
+                      <div className="font-bold text-amber-950">Survey Pending Technician Site Visit</div>
+                      <p className="mt-0.5 text-amber-800 font-medium">
                         A certified technician must visit the rooftop, measure solar azimuth, tilt degrees, and cable drop before this lead can be approved for commercial quoting.
                       </p>
                     </div>
@@ -406,7 +408,7 @@ export const InquiriesView = () => {
               </div>
             </>
           ) : (
-            <div className="py-20 text-center text-gray-400 text-xs">
+            <div className="py-20 text-center text-slate-500 text-xs font-medium">
               Select an inquiry on the left to inspect details
             </div>
           )}
@@ -415,22 +417,22 @@ export const InquiriesView = () => {
 
       {/* New Inquiry Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-lg p-6 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-              <h3 className="font-bold text-sm text-gray-900">New Homeowner Rooftop Inquiry</h3>
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+              <h3 className="font-bold text-base text-slate-900">New Homeowner Rooftop Inquiry</h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateInquirySubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateInquirySubmit} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Customer Full Name</label>
+                  <label className="block font-bold text-slate-700 mb-1">Customer Full Name</label>
                   <input
                     type="text"
                     required
@@ -441,7 +443,7 @@ export const InquiriesView = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Phone Number</label>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
                   <input
                     type="tel"
                     required
@@ -454,7 +456,7 @@ export const InquiriesView = () => {
               </div>
 
               <div>
-                <label className="block font-medium text-gray-700 mb-1">Email Address</label>
+                <label className="block font-bold text-slate-700 mb-1">Email Address</label>
                 <input
                   type="email"
                   required
@@ -466,7 +468,7 @@ export const InquiriesView = () => {
               </div>
 
               <div>
-                <label className="block font-medium text-gray-700 mb-1">Site Address</label>
+                <label className="block font-bold text-slate-700 mb-1">Site Address</label>
                 <textarea
                   required
                   rows={2}
@@ -479,11 +481,11 @@ export const InquiriesView = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">System Size (kW)</label>
+                  <label className="block font-bold text-slate-700 mb-1">System Size (kW)</label>
                   <select
                     value={newInquiryData.requestedCapacityKw}
                     onChange={(e) => setNewInquiryData({ ...newInquiryData, requestedCapacityKw: Number(e.target.value) })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   >
                     {[1, 2, 3, 4, 5].map((kw) => (
                       <option key={kw} value={kw}>{kw} kW</option>
@@ -491,11 +493,11 @@ export const InquiriesView = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Grid Variant</label>
+                  <label className="block font-bold text-slate-700 mb-1">Grid Variant</label>
                   <select
                     value={newInquiryData.requestedVariant}
                     onChange={(e) => setNewInquiryData({ ...newInquiryData, requestedVariant: e.target.value })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   >
                     <option value="ON_GRID">On-Grid (Connected)</option>
                     <option value="OFF_GRID">Off-Grid (Battery Bank)</option>
@@ -505,26 +507,26 @@ export const InquiriesView = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Approx Roof Area (sq.ft)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Approx Roof Area (sq.ft)</label>
                   <input
                     type="number"
                     value={newInquiryData.approximateRoofAreaSqFt}
                     onChange={(e) => setNewInquiryData({ ...newInquiryData, approximateRoofAreaSqFt: Number(e.target.value) })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Monthly Bill (₹)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Monthly Bill (₹)</label>
                   <input
                     type="number"
                     value={newInquiryData.averageMonthlyElectricityBillInr}
                     onChange={(e) => setNewInquiryData({ ...newInquiryData, averageMonthlyElectricityBillInr: Number(e.target.value) })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100 flex justify-end gap-2">
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
@@ -546,26 +548,26 @@ export const InquiriesView = () => {
 
       {/* Survey Measurements Modal */}
       {isSurveyModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-lg p-6 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-              <h3 className="font-bold text-sm text-gray-900">Record Field Survey Measurements</h3>
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+              <h3 className="font-bold text-base text-slate-900">Record Field Survey Measurements</h3>
               <button
                 onClick={() => setIsSurveyModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleRecordSurveySubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleRecordSurveySubmit} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Azimuth Direction</label>
+                  <label className="block font-bold text-slate-700 mb-1">Azimuth Direction</label>
                   <select
                     value={surveyData.azimuthDirection}
                     onChange={(e) => setSurveyData({ ...surveyData, azimuthDirection: e.target.value })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   >
                     <option value="South">South (Best Yield)</option>
                     <option value="South-West">South-West</option>
@@ -575,44 +577,44 @@ export const InquiriesView = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Tilt Angle (Degrees)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Tilt Angle (Degrees)</label>
                   <input
                     type="number"
                     value={surveyData.tiltAngleDegrees}
                     onChange={(e) => setSurveyData({ ...surveyData, tiltAngleDegrees: Number(e.target.value) })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Cable Distance (Meters)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Cable Distance (Meters)</label>
                   <input
                     type="number"
                     value={surveyData.cableDistanceMeters}
                     onChange={(e) => setSurveyData({ ...surveyData, cableDistanceMeters: Number(e.target.value) })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Shadow-Free Area (sq.ft)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Shadow-Free Area (sq.ft)</label>
                   <input
                     type="number"
                     value={surveyData.shadowFreeAreaSqFt}
                     onChange={(e) => setSurveyData({ ...surveyData, shadowFreeAreaSqFt: Number(e.target.value) })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Roof Structure Type</label>
+                  <label className="block font-bold text-slate-700 mb-1">Roof Structure Type</label>
                   <select
                     value={surveyData.roofStructureType}
                     onChange={(e) => setSurveyData({ ...surveyData, roofStructureType: e.target.value })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   >
                     <option value="RCC Flat">RCC Flat Roof</option>
                     <option value="Tin Shade">Tin Shade</option>
@@ -621,11 +623,11 @@ export const InquiriesView = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">Grid Voltage</label>
+                  <label className="block font-bold text-slate-700 mb-1">Grid Voltage</label>
                   <select
                     value={surveyData.gridConnectionVoltage}
                     onChange={(e) => setSurveyData({ ...surveyData, gridConnectionVoltage: e.target.value })}
-                    className="odoo-input"
+                    className="odoo-input font-semibold"
                   >
                     <option value="Single-Phase 230V">Single-Phase 230V</option>
                     <option value="Three-Phase 415V">Three-Phase 415V</option>
@@ -633,7 +635,7 @@ export const InquiriesView = () => {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100 flex justify-end gap-2">
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsSurveyModalOpen(false)}
@@ -655,20 +657,20 @@ export const InquiriesView = () => {
 
       {/* Auto-BOM Quote Proposal Modal */}
       {isQuoteModalOpen && generatedQuoteResult && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
               <div>
                 <span className="font-mono text-xs font-bold text-[#714B67]">
                   {generatedQuoteResult.quotationReference}
                 </span>
-                <h3 className="font-bold text-base text-gray-900">
+                <h3 className="font-extrabold text-lg text-slate-900">
                   Commercial Proposal & Auto-Populated BOM
                 </h3>
               </div>
               <button
                 onClick={() => setIsQuoteModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
               >
                 ✕
               </button>
@@ -676,12 +678,12 @@ export const InquiriesView = () => {
 
             {/* BOM Table */}
             <div>
-              <div className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+              <div className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
                 System Bill of Materials ({generatedQuoteResult.systemCapacityKw} kW {generatedQuoteResult.systemVariant})
               </div>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
                     <tr>
                       <th className="p-2.5">Component / Hardware</th>
                       <th className="p-2.5">Category</th>
@@ -690,18 +692,18 @@ export const InquiriesView = () => {
                       <th className="p-2.5 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-slate-100">
                     {generatedQuoteResult.billOfMaterials.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="p-2.5 font-medium text-gray-900">{item.componentName}</td>
+                      <tr key={idx} className="hover:bg-slate-50/80">
+                        <td className="p-2.5 font-bold text-slate-900">{item.componentName}</td>
                         <td className="p-2.5">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 font-mono text-gray-600">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 font-mono text-slate-700 font-semibold border border-slate-200">
                             {item.itemCategory}
                           </span>
                         </td>
-                        <td className="p-2.5 text-right">{item.quantityRequired} {item.unitOfMeasure}</td>
-                        <td className="p-2.5 text-right font-mono">₹{item.unitPriceInr.toLocaleString('en-IN')}</td>
-                        <td className="p-2.5 text-right font-mono font-semibold">₹{item.totalPriceInr.toLocaleString('en-IN')}</td>
+                        <td className="p-2.5 text-right font-medium text-slate-800">{item.quantityRequired} {item.unitOfMeasure}</td>
+                        <td className="p-2.5 text-right font-mono text-slate-800">₹{item.unitPriceInr.toLocaleString('en-IN')}</td>
+                        <td className="p-2.5 text-right font-mono font-bold text-slate-900">₹{item.totalPriceInr.toLocaleString('en-IN')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -710,28 +712,28 @@ export const InquiriesView = () => {
             </div>
 
             {/* Financial Summary */}
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2 text-xs">
-              <div className="flex justify-between text-gray-600">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-700 font-medium">
                 <span>Gross Equipment & EPC Total:</span>
-                <span className="font-mono font-semibold">₹{generatedQuoteResult.grossTotalAmountInr.toLocaleString('en-IN')}</span>
+                <span className="font-mono font-bold text-slate-900">₹{generatedQuoteResult.grossTotalAmountInr.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-emerald-700 font-medium">
+              <div className="flex justify-between text-emerald-800 font-semibold">
                 <span>National Rooftop Solar Subsidy (Est.):</span>
                 <span className="font-mono font-bold">- ₹{generatedQuoteResult.estimatedSubsidyAmountInr.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t border-gray-200">
+              <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
                 <span>Net Payable by Homeowner:</span>
-                <span className="font-mono text-[#714B67]">₹{generatedQuoteResult.netPayableAmountInr.toLocaleString('en-IN')}</span>
+                <span className="font-mono text-[#714B67] text-base">₹{generatedQuoteResult.netPayableAmountInr.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
             {/* Advance Payment Collector (Scene 2 Unlock) */}
-            <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-lg space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-purple-900">
+            <div className="p-4 bg-purple-50/80 border border-purple-200 rounded-xl space-y-3">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-purple-950">
                 <CreditCard className="w-4 h-4 text-[#714B67]" />
                 <span>Scene 2 Unlock: Collect Advance Payment (Min 20% required)</span>
               </div>
-              <p className="text-[11px] text-purple-700">
+              <p className="text-[11px] text-purple-800 font-medium">
                 Once customer pays advance, warehouse sees what to pack and installation crew sees the job on their schedule automatically without phone calls.
               </p>
               <div className="flex items-center gap-3">

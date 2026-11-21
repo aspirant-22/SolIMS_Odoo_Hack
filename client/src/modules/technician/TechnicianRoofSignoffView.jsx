@@ -61,7 +61,6 @@ export const TechnicianRoofSignoffView = () => {
     fetchOrdersForSignoff();
   }, []);
 
-  // Initialize canvas drawing listeners
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -86,7 +85,7 @@ export const TechnicianRoofSignoffView = () => {
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
     ctx.lineTo(x, y);
-    ctx.strokeStyle = '#714B67';
+    ctx.strokeStyle = '#4A2545';
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -151,47 +150,49 @@ export const TechnicianRoofSignoffView = () => {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
       {/* Top Banner */}
-      <div className="bg-linear-to-r from-[#714B67] to-[#0EA5E9] rounded-xl p-5 text-white flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300">
-            <FileCheck2 className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+            <FileCheck2 className="w-4 h-4 text-amber-300" />
             <span>Scene 4 — On The Roof Mobile Sign-off</span>
           </div>
-          <h2 className="text-xl font-bold mt-1">Field Installation Certification & Homeowner Acceptance</h2>
-          <p className="text-xs text-white/80 max-w-xl mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+            Field Installation Certification & Homeowner Acceptance
+          </h2>
+          <p className="text-xs text-purple-100 max-w-xl mt-1.5 leading-relaxed font-medium">
             Mount stands, lay panels, test generation wattage, snap proof photos, and capture homeowner signature on screen. Clear proof for SolIMS, zero doubts for the customer.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 text-xs font-mono">
+        <div className="flex items-center gap-2 bg-white/10 px-3.5 py-2 rounded-lg border border-white/20 text-xs font-mono font-semibold">
           <Zap className="w-4 h-4 text-amber-300" />
           <span>Mobile & Tablet Optimized</span>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-md flex items-center gap-2 font-medium">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center gap-2 font-semibold shadow-xs">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {submissionSuccess ? (
-        <div className="bg-white rounded-xl border border-emerald-300 p-8 text-center space-y-4 shadow-xs">
-          <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+        <div className="bg-white rounded-2xl border border-emerald-300 p-8 text-center space-y-4 shadow-md">
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-xs">
             <CheckCircle className="w-10 h-10" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">Roof Installation Formally Certified!</h3>
-          <p className="text-xs text-gray-600 max-w-md mx-auto">
-            Site execution log for order <strong className="font-mono">{submissionSuccess.orderReference}</strong> has been logged with homeowner digital acceptance signature.
+          <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Roof Installation Formally Certified!</h3>
+          <p className="text-xs text-slate-600 max-w-md mx-auto font-medium">
+            Site execution log for order <strong className="font-mono font-bold text-slate-900">{submissionSuccess.orderReference}</strong> has been logged with homeowner digital acceptance signature.
           </p>
 
-          <div className="max-w-xs mx-auto border border-gray-200 rounded-lg p-3 bg-gray-50 text-left text-xs">
-            <div className="text-gray-500 text-[10px]">Homeowner Acceptance Signature:</div>
+          <div className="max-w-xs mx-auto border border-slate-200 rounded-xl p-4 bg-slate-50 text-left text-xs shadow-xs">
+            <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Homeowner Acceptance Signature:</div>
             <img
               src={submissionSuccess.homeownerSignatureDataUrl}
               alt="Digital Signature"
-              className="h-16 w-auto mt-2 mx-auto border-b border-gray-300"
+              className="h-16 w-auto mt-2 mx-auto border-b border-slate-300"
             />
           </div>
 
@@ -200,16 +201,16 @@ export const TechnicianRoofSignoffView = () => {
               setSubmissionSuccess(null);
               clearSignatureCanvas();
             }}
-            className="odoo-btn-primary text-xs py-2 px-4"
+            className="odoo-btn-primary text-xs py-2 px-5 shadow-sm"
           >
             Start Another Field Sign-off
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmitFinalSignoff} className="bg-white rounded-xl border border-gray-200 p-6 shadow-2xs space-y-6">
+        <form onSubmit={handleSubmitFinalSignoff} className="bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm space-y-6">
           {/* Order Selection */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide">
+            <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wide">
               Select Installation Project Order
             </label>
             <select
@@ -219,7 +220,7 @@ export const TechnicianRoofSignoffView = () => {
                 const obj = activeOrders.find((o) => o._id === e.target.value);
                 if (obj) setConfirmedCapacityKw(obj.systemCapacityKw);
               }}
-              className="odoo-input font-medium"
+              className="odoo-input font-semibold text-slate-900"
             >
               {activeOrders.map((ord) => (
                 <option key={ord._id} value={ord._id}>
@@ -230,39 +231,39 @@ export const TechnicianRoofSignoffView = () => {
           </div>
 
           {/* Time & Generation Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50/70 p-4 rounded-xl border border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/90 p-4 rounded-xl border border-slate-200">
             <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">Start Time</label>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Start Time</label>
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                <Clock className="w-4 h-4 text-slate-400" />
                 <input
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="odoo-input py-1 text-xs"
+                  className="odoo-input py-1 text-xs font-bold"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">Finish Time</label>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Finish Time</label>
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                <Clock className="w-4 h-4 text-slate-400" />
                 <input
                   type="time"
                   value={finishTime}
                   onChange={(e) => setFinishTime(e.target.value)}
-                  className="odoo-input py-1 text-xs"
+                  className="odoo-input py-1 text-xs font-bold"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">Confirmed Size</label>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Confirmed Size</label>
               <select
                 value={confirmedCapacityKw}
                 onChange={(e) => setConfirmedCapacityKw(Number(e.target.value))}
-                className="odoo-input py-1 text-xs font-bold text-[#714B67]"
+                className="odoo-input py-1 text-xs font-extrabold text-[#714B67]"
               >
                 {[1, 2, 3, 4, 5].map((kw) => (
                   <option key={kw} value={kw}>{kw} kW System</option>
@@ -271,14 +272,14 @@ export const TechnicianRoofSignoffView = () => {
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-gray-600 mb-1">Tested Generation (W)</label>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Tested Generation (W)</label>
               <div className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <Zap className="w-4 h-4 text-amber-500" />
                 <input
                   type="number"
                   value={powerGenerationWatts}
                   onChange={(e) => setPowerGenerationWatts(Number(e.target.value))}
-                  className="odoo-input py-1 text-xs font-mono font-bold text-emerald-700"
+                  className="odoo-input py-1 text-xs font-mono font-extrabold text-emerald-800"
                 />
               </div>
             </div>
@@ -287,18 +288,18 @@ export const TechnicianRoofSignoffView = () => {
           {/* Finished Roof Photos */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-[#714B67]" />
                 <span>Finished Roof Inspection Photos ({roofPhotosList.length})</span>
               </label>
-              <span className="text-[10px] text-gray-500">Live Camera Proof</span>
+              <span className="text-xs text-slate-500 font-medium">Live Camera Proof</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {roofPhotosList.map((photoUrl, idx) => (
-                <div key={idx} className="relative rounded-lg overflow-hidden border border-gray-200 group aspect-video bg-gray-100">
+                <div key={idx} className="relative rounded-xl overflow-hidden border border-slate-200 group aspect-video bg-slate-100 shadow-xs">
                   <img src={photoUrl} alt="Roof verification" className="w-full h-full object-cover" />
-                  <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white p-1 text-[10px] text-center font-mono">
+                  <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 text-white p-1.5 text-[11px] text-center font-mono font-bold">
                     Roof Angle #{idx + 1} • Verified
                   </div>
                 </div>
@@ -308,35 +309,35 @@ export const TechnicianRoofSignoffView = () => {
 
           {/* Technician Operational Notes */}
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide">
+            <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wide">
               Technician Notes & Cable Conduit Verification
             </label>
             <textarea
               rows={2}
               value={technicianNotes}
               onChange={(e) => setTechnicianNotes(e.target.value)}
-              className="odoo-input text-xs"
+              className="odoo-input text-xs font-medium"
             />
           </div>
 
           {/* Interactive HTML5 Canvas Signature Pad */}
-          <div className="space-y-2 bg-amber-50/40 p-4 rounded-xl border border-amber-200">
+          <div className="space-y-2.5 bg-amber-50/70 p-5 rounded-xl border border-amber-300 shadow-xs">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
+              <label className="text-xs font-extrabold text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
                 <PenTool className="w-4 h-4 text-[#714B67]" />
                 <span>Homeowner Digital Acceptance Signature (Sign on Screen)</span>
               </label>
               <button
                 type="button"
                 onClick={clearSignatureCanvas}
-                className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-rose-600 transition-colors cursor-pointer"
+                className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-rose-600 transition-colors cursor-pointer bg-white px-2 py-1 rounded-md border border-slate-200 shadow-2xs"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear Canvas</span>
               </button>
             </div>
 
-            <div className="border-2 border-dashed border-gray-300 bg-white rounded-lg overflow-hidden cursor-crosshair">
+            <div className="border-2 border-dashed border-slate-300 bg-white rounded-xl overflow-hidden cursor-crosshair shadow-inner">
               <canvas
                 ref={canvasRef}
                 width={700}
@@ -351,13 +352,13 @@ export const TechnicianRoofSignoffView = () => {
                 className="w-full touch-none"
               />
             </div>
-            <div className="text-[10px] text-gray-500 text-center font-medium">
-              Homeowner signs above to certify physical roof mounting, electrical generation, and handover.
+            <div className="text-xs text-slate-600 text-center font-medium">
+              Homeowner signs above to certify physical roof mounting, electrical generation, and formal handover.
             </div>
           </div>
 
           {/* Submit Action */}
-          <div className="pt-4 border-t border-gray-200 flex justify-end">
+          <div className="pt-4 border-t border-slate-200 flex justify-end">
             <button
               type="submit"
               className="odoo-btn-primary gap-2 text-xs py-2.5 px-6 shadow-md"

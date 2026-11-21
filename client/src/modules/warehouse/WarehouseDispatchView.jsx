@@ -141,19 +141,21 @@ export const WarehouseDispatchView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner */}
-      <div className="bg-linear-to-r from-[#008784] to-[#714B67] rounded-xl p-5 text-white flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300">
-            <Truck className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+            <Truck className="w-4 h-4 text-amber-300" />
             <span>Scene 3 — Dispatch Day & Serial Numbers</span>
           </div>
-          <h2 className="text-xl font-bold mt-1">Warehouse Dispatch & Automated Warranty Clocks</h2>
-          <p className="text-xs text-white/80 max-w-2xl mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+            Warehouse Dispatch & Automated Warranty Clocks
+          </h2>
+          <p className="text-xs text-purple-100 max-w-2xl mt-1.5 leading-relaxed font-medium">
             Every inverter, battery, and panel batch is individually scanned prior to truck release. Upon delivery confirmation, the warranty clock starts automatically: 2 years for inverters & batteries, 20 years for solar panels.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 text-xs font-mono">
+        <div className="flex items-center gap-2 bg-white/10 px-3.5 py-2 rounded-lg border border-white/20 text-xs font-mono font-semibold">
           <Clock className="w-4 h-4 text-amber-300" />
           <span>Zero manual date entry required</span>
         </div>
@@ -161,7 +163,7 @@ export const WarehouseDispatchView = () => {
 
       {feedbackMessage.text && (
         <div
-          className={`p-3.5 rounded-lg text-xs font-medium flex items-center gap-2 border ${
+          className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 border shadow-xs ${
             feedbackMessage.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-rose-50 text-rose-800 border-rose-200'
@@ -179,31 +181,31 @@ export const WarehouseDispatchView = () => {
       {/* Dispatch Success Alert Modal */}
       {dispatchSuccessData && (
         <div className="bg-emerald-50 border border-emerald-300 p-5 rounded-xl shadow-xs space-y-3">
-          <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
+          <div className="flex items-center gap-2 text-emerald-950 font-extrabold text-sm">
             <PackageCheck className="w-5 h-5 text-emerald-600" />
             <span>Truck Dispatched & Warranty Clocks Active!</span>
           </div>
-          <p className="text-xs text-emerald-800">
-            Project Order <strong className="font-mono">{dispatchSuccessData.orderReference}</strong> has been marked as Dispatched under tracking reference <strong className="font-mono">{dispatchSuccessData.dispatchReference}</strong>.
+          <p className="text-xs text-emerald-900 font-medium">
+            Project Order <strong className="font-mono font-bold">{dispatchSuccessData.orderReference}</strong> has been marked as Dispatched under tracking reference <strong className="font-mono font-bold">{dispatchSuccessData.dispatchReference}</strong>.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs bg-white p-3 rounded-lg border border-emerald-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs bg-white p-3.5 rounded-xl border border-emerald-200">
             <div>
-              <span className="text-gray-500 block text-[11px]">Dispatched At:</span>
-              <span className="font-semibold text-gray-900">
+              <span className="text-slate-500 block text-[11px] font-medium">Dispatched At:</span>
+              <span className="font-bold text-slate-900">
                 {new Date(dispatchSuccessData.timestamp).toLocaleTimeString()}
               </span>
             </div>
             <div>
-              <span className="text-gray-500 block text-[11px]">Inverter Warranty:</span>
-              <span className="font-bold text-[#714B67]">2 Years (730 Days)</span>
+              <span className="text-slate-500 block text-[11px] font-medium">Inverter Warranty:</span>
+              <span className="font-extrabold text-[#714B67]">2 Years (730 Days)</span>
             </div>
             <div>
-              <span className="text-gray-500 block text-[11px]">Battery Warranty:</span>
-              <span className="font-bold text-[#714B67]">2 Years (730 Days)</span>
+              <span className="text-slate-500 block text-[11px] font-medium">Battery Warranty:</span>
+              <span className="font-extrabold text-[#714B67]">2 Years (730 Days)</span>
             </div>
             <div>
-              <span className="text-gray-500 block text-[11px]">Panels Warranty:</span>
-              <span className="font-bold text-emerald-700">20 Years (7,300 Days)</span>
+              <span className="text-slate-500 block text-[11px] font-medium">Panels Warranty:</span>
+              <span className="font-extrabold text-emerald-700">20 Years (7,300 Days)</span>
             </div>
           </div>
           <button
@@ -218,17 +220,17 @@ export const WarehouseDispatchView = () => {
       {/* Main Scanner Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Orders Ready for Packing */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
-          <div className="p-3 bg-gray-50 border-b border-gray-200 font-semibold text-xs text-gray-700 uppercase tracking-wide flex justify-between items-center">
+        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm">
+          <div className="p-3.5 bg-slate-50 border-b border-slate-200 font-extrabold text-xs text-slate-800 uppercase tracking-wide flex justify-between items-center">
             <span>Orders Ready to Pack ({ordersAwaitingDispatch.length})</span>
-            <span className="text-[10px] text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
               Advance Paid
             </span>
           </div>
 
-          <div className="divide-y divide-gray-100 max-h-[550px] overflow-y-auto">
+          <div className="divide-y divide-slate-100 max-h-[550px] overflow-y-auto">
             {ordersAwaitingDispatch.length === 0 ? (
-              <div className="p-6 text-center text-xs text-gray-400">
+              <div className="p-6 text-center text-xs text-slate-500 font-medium">
                 No orders currently waiting for dispatch. (Advance payment required)
               </div>
             ) : (
@@ -242,20 +244,20 @@ export const WarehouseDispatchView = () => {
                       setScannedSerialsList([]);
                       setFeedbackMessage({ type: '', text: '' });
                     }}
-                    className={`p-3.5 cursor-pointer transition-colors text-left ${
-                      isSelected ? 'bg-[#008784]/5 border-l-4 border-[#008784]' : 'hover:bg-gray-50'
+                    className={`p-4 cursor-pointer transition-colors text-left ${
+                      isSelected ? 'bg-[#714B67]/8 border-l-4 border-[#714B67]' : 'hover:bg-slate-50/80'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-mono text-xs font-bold text-[#008784]">
+                      <span className="font-mono text-xs font-bold text-[#714B67]">
                         {order.orderReference || order.quotationReference}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                         {order.orderWorkflowStatus}
                       </span>
                     </div>
-                    <div className="font-semibold text-xs text-gray-900">{order.customerFullName}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5">
+                    <div className="font-bold text-sm text-slate-900">{order.customerFullName}</div>
+                    <div className="text-xs text-slate-600 font-medium mt-0.5">
                       {order.systemCapacityKw} kW {order.systemVariant} • Advance: ₹{order.advancePaymentAmountInr.toLocaleString('en-IN')}
                     </div>
                   </div>
@@ -266,36 +268,36 @@ export const WarehouseDispatchView = () => {
         </div>
 
         {/* Right: Barcode Scanner & BOM Matching Slip */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 shadow-2xs space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm space-y-6">
           {selectedOrder ? (
             <>
-              <div className="flex flex-wrap items-center justify-between pb-4 border-b border-gray-200 gap-3">
+              <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-3">
                 <div>
-                  <span className="font-mono text-xs text-[#008784] font-bold">
+                  <span className="font-mono text-xs text-[#714B67] font-extrabold">
                     {selectedOrder.orderReference || selectedOrder.quotationReference}
                   </span>
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className="text-xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                     Dispatch Packing Slip: {selectedOrder.customerFullName}
                   </h3>
-                  <p className="text-xs text-gray-500">{selectedOrder.installationSiteAddress}</p>
+                  <p className="text-xs text-slate-600 font-medium mt-0.5">{selectedOrder.installationSiteAddress}</p>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-[11px] text-gray-400">System Configuration</div>
-                  <div className="text-sm font-bold text-[#714B67]">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">System Configuration</div>
+                  <div className="text-base font-extrabold text-[#714B67]">
                     {selectedOrder.systemCapacityKw} kW {selectedOrder.systemVariant}
                   </div>
                 </div>
               </div>
 
               {/* Barcode Input Terminal */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5">
+                  <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
                     <Barcode className="w-4 h-4 text-[#714B67]" />
                     <span>Scan Unit Serial Number (Laser / Barcode Reader)</span>
                   </label>
-                  <span className="text-[10px] text-gray-500 font-mono">Press Enter to Validate</span>
+                  <span className="text-[11px] text-slate-500 font-mono font-medium">Press Enter to Validate</span>
                 </div>
 
                 <form onSubmit={handleScanSubmit} className="flex gap-2">
@@ -304,21 +306,21 @@ export const WarehouseDispatchView = () => {
                     value={scannedInput}
                     onChange={(e) => setScannedInput(e.target.value)}
                     placeholder="Scan or type serial e.g. INV-2026-0036..."
-                    className="odoo-input font-mono text-sm uppercase font-semibold"
+                    className="odoo-input font-mono text-sm uppercase font-bold"
                     autoFocus
                   />
-                  <button type="submit" className="odoo-btn-primary text-xs px-4">
+                  <button type="submit" className="odoo-btn-primary text-xs px-5">
                     Verify
                   </button>
                 </form>
 
                 {/* Quick Scan Demo Shortcuts for Judges */}
-                <div className="pt-2 border-t border-gray-200/80">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 mb-1.5">
+                <div className="pt-2.5 border-t border-slate-200">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     <span>Quick Scan Samples (From Warehouse Stock):</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {availableStock
                       .filter((s) => s.assetStatus === 'WAREHOUSE_STOCK')
                       .slice(0, 6)
@@ -327,7 +329,7 @@ export const WarehouseDispatchView = () => {
                           key={stockItem.serialNumber}
                           type="button"
                           onClick={() => triggerQuickScanDemo(stockItem.serialNumber)}
-                          className="px-2 py-1 text-[10px] font-mono font-medium bg-white hover:bg-[#714B67]/10 hover:text-[#714B67] border border-gray-300 rounded text-gray-700 transition-colors cursor-pointer"
+                          className="px-2.5 py-1 text-xs font-mono font-bold bg-white hover:bg-[#714B67]/10 hover:text-[#714B67] border border-slate-300 rounded-lg text-slate-800 transition-colors cursor-pointer shadow-xs"
                         >
                           {stockItem.serialNumber} ({stockItem.assetCategory})
                         </button>
@@ -339,29 +341,29 @@ export const WarehouseDispatchView = () => {
               {/* Scanned Serials List & Required BOM Check */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-[#714B67]" />
                     <span>Hardware Units Scanned for Truck ({scannedSerialsList.length})</span>
                   </h4>
-                  <span className="text-[11px] text-gray-500">
+                  <span className="text-xs text-slate-500 font-medium">
                     Warranty Clock will initialize upon confirmation
                   </span>
                 </div>
 
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wide">
                       <tr>
-                        <th className="p-2.5">Serial Number</th>
-                        <th className="p-2.5">Component Category</th>
-                        <th className="p-2.5">Warranty Duration</th>
-                        <th className="p-2.5 text-right">Verification Status</th>
+                        <th className="p-3">Serial Number</th>
+                        <th className="p-3">Component Category</th>
+                        <th className="p-3">Warranty Duration</th>
+                        <th className="p-3 text-right">Verification Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-slate-100">
                       {scannedSerialsList.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="p-6 text-center text-gray-400">
+                          <td colSpan={4} className="p-6 text-center text-slate-400 font-medium">
                             No serial numbers scanned yet for this dispatch.
                           </td>
                         </tr>
@@ -371,12 +373,12 @@ export const WarehouseDispatchView = () => {
                           const durationText =
                             stockItem?.assetCategory === 'SOLAR_PANELS' ? '20 Years (7,300 Days)' : '2 Years (730 Days)';
                           return (
-                            <tr key={serial} className="hover:bg-gray-50">
-                              <td className="p-2.5 font-mono font-bold text-[#714B67]">{serial}</td>
-                              <td className="p-2.5 font-medium">{stockItem?.assetCategory || 'INVERTER'}</td>
-                              <td className="p-2.5 font-semibold text-emerald-700">{durationText}</td>
-                              <td className="p-2.5 text-right">
-                                <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                            <tr key={serial} className="hover:bg-slate-50/80">
+                              <td className="p-3 font-mono font-extrabold text-[#714B67]">{serial}</td>
+                              <td className="p-3 font-bold text-slate-900">{stockItem?.assetCategory || 'INVERTER'}</td>
+                              <td className="p-3 font-extrabold text-emerald-700">{durationText}</td>
+                              <td className="p-3 text-right">
+                                <span className="inline-flex items-center gap-1 text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   <span>Allocated</span>
                                 </span>
@@ -391,14 +393,14 @@ export const WarehouseDispatchView = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
-                <div className="text-xs text-gray-500">
-                  Total project value: ₹{selectedOrder.grossTotalAmountInr.toLocaleString('en-IN')}
+              <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
+                <div className="text-xs text-slate-600 font-medium">
+                  Total project value: <strong className="text-slate-900 font-extrabold font-mono">₹{selectedOrder.grossTotalAmountInr.toLocaleString('en-IN')}</strong>
                 </div>
                 <button
                   onClick={handleConfirmFinalDispatch}
                   disabled={scannedSerialsList.length === 0}
-                  className="odoo-btn-primary gap-2 text-xs py-2 px-5 disabled:opacity-50"
+                  className="odoo-btn-primary gap-2 text-xs py-2.5 px-6 disabled:opacity-50 shadow-sm"
                 >
                   <Truck className="w-4 h-4" />
                   <span>Confirm Dispatch & Start Warranty Clocks</span>
@@ -407,7 +409,7 @@ export const WarehouseDispatchView = () => {
               </div>
             </>
           ) : (
-            <div className="py-24 text-center text-gray-400 text-xs">
+            <div className="py-24 text-center text-slate-400 text-xs font-medium">
               Select an advance-paid order on the left to begin serial scanning
             </div>
           )}

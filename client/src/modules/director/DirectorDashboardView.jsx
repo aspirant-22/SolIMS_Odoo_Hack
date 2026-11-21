@@ -54,7 +54,6 @@ export const DirectorDashboardView = () => {
     loadFinancialData();
   }, [selectedTimePeriod]);
 
-  // 1-Click CSV Export Functionality
   const exportDirectorPnlCsv = () => {
     if (!financialSummary?.projectMarginAnalysis) return;
 
@@ -67,7 +66,7 @@ export const DirectorDashboardView = () => {
       'Gross Revenue (INR)',
       'Hardware COGS (INR)',
       'Technician Labor (INR)',
-      'Net Profit (INR)',
+      'Net Job Profit (INR)',
       'Margin (%)',
       'Advance Collected (INR)',
       'Balance Due (INR)',
@@ -107,27 +106,29 @@ export const DirectorDashboardView = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner */}
-      <div className="bg-linear-to-r from-[#714B67] to-[#008784] rounded-xl p-5 text-white flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300">
-            <BarChart3 className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+            <BarChart3 className="w-4 h-4 text-amber-300" />
             <span>Scene 6 — The Director's Month-End</span>
           </div>
-          <h2 className="text-xl font-bold mt-1">Executive P&L, Job Profitability & Subsidy Tracking</h2>
-          <p className="text-xs text-white/80 max-w-2xl mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+            Executive P&L, Job Profitability & Subsidy Tracking
+          </h2>
+          <p className="text-xs text-purple-100 max-w-2xl mt-1.5 leading-relaxed font-medium">
             Answers the Director's core questions in one click: which installations made or lost money, hardware vs payroll costs, government subsidy paperwork, and open repair tickets.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Time Filter Pills */}
-          <div className="bg-white/10 p-1 rounded-lg border border-white/20 flex items-center text-xs">
+          <div className="bg-white/10 p-1 rounded-xl border border-white/20 flex items-center text-xs">
             {['DAY', 'WEEK', 'MONTH'].map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedTimePeriod(period)}
-                className={`px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
-                  selectedTimePeriod === period ? 'bg-white text-[#714B67] font-bold shadow-xs' : 'text-white/80 hover:text-white'
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  selectedTimePeriod === period ? 'bg-white text-[#714B67] shadow-xs' : 'text-white/80 hover:text-white'
                 }`}
               >
                 {period === 'DAY' ? 'Today' : period === 'WEEK' ? 'This Week' : 'This Month'}
@@ -137,7 +138,7 @@ export const DirectorDashboardView = () => {
 
           <button
             onClick={exportDirectorPnlCsv}
-            className="bg-amber-400 hover:bg-amber-300 text-gray-900 font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-amber-300"
           >
             <Download className="w-4 h-4" />
             <span>1-Click CSV Export</span>
@@ -146,72 +147,72 @@ export const DirectorDashboardView = () => {
       </div>
 
       {/* Primary KPI Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Gross Revenue</div>
-          <div className="text-lg font-bold text-gray-900 mt-1 font-mono">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Gross Revenue</div>
+          <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeRevenueInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[10px] text-emerald-600 font-medium mt-1">40 projects/mo avg</div>
+          <div className="text-[11px] text-emerald-700 font-bold mt-1">40 projects/mo avg</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Hardware COGS</div>
-          <div className="text-lg font-bold text-gray-900 mt-1 font-mono">
+        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hardware COGS</div>
+          <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeHardwareCogsInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[10px] text-gray-500 mt-1">Panels, Inverters, Batteries</div>
+          <div className="text-[11px] text-slate-500 font-semibold mt-1">Panels, Inverters, Batteries</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Technician Payroll</div>
-          <div className="text-lg font-bold text-gray-900 mt-1 font-mono">
+        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Technician Payroll</div>
+          <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeLaborPayrollInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[10px] text-gray-500 mt-1">15-crew field payroll</div>
+          <div className="text-[11px] text-slate-500 font-semibold mt-1">15-crew field payroll</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Warranty Claims</div>
-          <div className="text-lg font-bold text-rose-700 mt-1 font-mono">
+        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Warranty Claims</div>
+          <div className="text-2xl font-extrabold text-rose-700 mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeWarrantyExpenseInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[10px] text-rose-600 mt-1">Monsoon repair costs</div>
+          <div className="text-[11px] text-rose-600 font-bold mt-1">Monsoon repair costs</div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-emerald-300 shadow-2xs bg-emerald-50/20">
-          <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">Net Profit</div>
-          <div className="text-lg font-bold text-emerald-700 mt-1 font-mono">
+        <div className="bg-emerald-50/50 p-4.5 rounded-xl border border-emerald-300 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">Net Profit</div>
+          <div className="text-2xl font-extrabold text-emerald-700 mt-1 font-mono tracking-tight">
             ₹{(kpis.overallNetProfitInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[10px] font-bold text-emerald-600 mt-1">
+          <div className="text-[11px] font-extrabold text-emerald-700 mt-1">
             {kpis.netProfitMarginPercent || 0}% Profit Margin
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-purple-200 shadow-2xs bg-purple-50/20">
-          <div className="text-[11px] font-bold text-purple-900 uppercase tracking-wide">Pending Subsidies</div>
-          <div className="text-lg font-bold text-[#714B67] mt-1 font-mono">
+        <div className="bg-purple-50/50 p-4.5 rounded-xl border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-extrabold text-purple-950 uppercase tracking-wider">Pending Subsidies</div>
+          <div className="text-2xl font-extrabold text-[#714B67] mt-1 font-mono tracking-tight">
             ₹{(kpis.totalSubsidiesExpectedInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[10px] text-purple-600 mt-1">PM Surya Ghar claims</div>
+          <div className="text-[11px] text-purple-800 font-bold mt-1">PM Surya Ghar claims</div>
         </div>
       </div>
 
       {/* Sub-Tabs: P&L per Job vs Double-Entry General Ledger */}
-      <div className="flex border-b border-gray-200 gap-4 text-xs font-semibold">
+      <div className="flex border-b border-slate-200 gap-6 text-sm font-extrabold">
         <button
           onClick={() => setActiveTab('PNL')}
-          className={`pb-2 transition-colors cursor-pointer ${
-            activeTab === 'PNL' ? 'text-[#714B67] border-b-2 border-[#714B67]' : 'text-gray-500 hover:text-gray-800'
+          className={`pb-2.5 transition-colors cursor-pointer ${
+            activeTab === 'PNL' ? 'text-[#714B67] border-b-2 border-[#714B67]' : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           Per-Installation Profit & Subsidy Matrix ({projectMargins.length})
         </button>
         <button
           onClick={() => setActiveTab('LEDGER')}
-          className={`pb-2 transition-colors cursor-pointer ${
-            activeTab === 'LEDGER' ? 'text-[#714B67] border-b-2 border-[#714B67]' : 'text-gray-500 hover:text-gray-800'
+          className={`pb-2.5 transition-colors cursor-pointer ${
+            activeTab === 'LEDGER' ? 'text-[#714B67] border-b-2 border-[#714B67]' : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           Double-Entry General Ledger ({generalLedgerEntries.length} Balanced Entries)
@@ -219,75 +220,75 @@ export const DirectorDashboardView = () => {
       </div>
 
       {activeTab === 'PNL' ? (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs">
+        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 font-semibold">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
                 <tr>
-                  <th className="p-3">Project Ref</th>
-                  <th className="p-3">Customer</th>
-                  <th className="p-3">Size / Type</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Revenue</th>
-                  <th className="p-3 text-right">Hardware COGS</th>
-                  <th className="p-3 text-right">Labor Pay</th>
-                  <th className="p-3 text-right">Net Profit</th>
-                  <th className="p-3 text-right">Margin</th>
-                  <th className="p-3">Govt Subsidy Status</th>
+                  <th className="p-3.5">Project Ref</th>
+                  <th className="p-3.5">Customer</th>
+                  <th className="p-3.5">Size / Type</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5 text-right">Revenue</th>
+                  <th className="p-3.5 text-right">Hardware COGS</th>
+                  <th className="p-3.5 text-right">Labor Pay</th>
+                  <th className="p-3.5 text-right">Net Profit</th>
+                  <th className="p-3.5 text-right">Margin</th>
+                  <th className="p-3.5">Govt Subsidy Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {projectMargins.map((job) => {
                   const isProfitable = job.netJobProfitInr >= 0;
                   return (
-                    <tr key={job.orderId} className="hover:bg-gray-50">
-                      <td className="p-3 font-mono font-bold text-[#714B67]">{job.orderReference}</td>
-                      <td className="p-3 font-medium text-gray-900">{job.customerFullName}</td>
-                      <td className="p-3 font-medium">
+                    <tr key={job.orderId} className="hover:bg-slate-50/80">
+                      <td className="p-3.5 font-mono font-extrabold text-[#714B67]">{job.orderReference}</td>
+                      <td className="p-3.5 font-bold text-slate-900">{job.customerFullName}</td>
+                      <td className="p-3.5 font-medium text-slate-800">
                         {job.systemCapacityKw} kW {job.systemVariant}
                       </td>
-                      <td className="p-3">
+                      <td className="p-3.5">
                         <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
                             job.status === 'Installed'
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : job.status === 'Dispatched'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-amber-100 text-amber-800'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
                           {job.status}
                         </span>
                       </td>
-                      <td className="p-3 text-right font-mono font-semibold">
+                      <td className="p-3.5 text-right font-mono font-extrabold text-slate-900">
                         ₹{job.grossRevenueInr.toLocaleString('en-IN')}
                       </td>
-                      <td className="p-3 text-right font-mono text-gray-600">
+                      <td className="p-3.5 text-right font-mono text-slate-700 font-medium">
                         ₹{job.hardwareCostInr.toLocaleString('en-IN')}
                       </td>
-                      <td className="p-3 text-right font-mono text-gray-600">
+                      <td className="p-3.5 text-right font-mono text-slate-700 font-medium">
                         ₹{job.technicianLaborCostInr.toLocaleString('en-IN')}
                       </td>
                       <td
-                        className={`p-3 text-right font-mono font-bold ${
+                        className={`p-3.5 text-right font-mono font-extrabold text-sm ${
                           isProfitable ? 'text-emerald-700' : 'text-rose-700'
                         }`}
                       >
                         ₹{job.netJobProfitInr.toLocaleString('en-IN')}
                       </td>
-                      <td className="p-3 text-right">
+                      <td className="p-3.5 text-right">
                         <span
-                          className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${
+                          className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
                             job.profitMarginPercentage >= 25
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
                           {job.profitMarginPercentage}%
                         </span>
                       </td>
-                      <td className="p-3">
-                        <span className="text-[10px] font-semibold text-purple-900 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                      <td className="p-3.5">
+                        <span className="text-[10px] font-extrabold text-purple-950 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
                           {job.subsidyStatus}
                         </span>
                       </td>
@@ -300,47 +301,47 @@ export const DirectorDashboardView = () => {
         </div>
       ) : (
         /* Double-Entry General Ledger */
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-2xs space-y-4 p-4">
-          <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-            <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm space-y-4 p-5">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+            <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
               <FileSpreadsheet className="w-4 h-4 text-[#714B67]" />
               <span>Immutable Odoo Double-Entry General Ledger (Debits === Credits)</span>
             </h4>
-            <span className="text-[10px] text-gray-400 font-mono">Pre-validated strict parity</span>
+            <span className="text-xs text-slate-500 font-mono font-bold">Strict Parity Enforced</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {generalLedgerEntries.map((entry) => (
-              <div key={entry._id} className="border border-gray-200 rounded-lg p-3 bg-gray-50/50 space-y-2">
+              <div key={entry._id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/60 space-y-2.5 shadow-2xs">
                 <div className="flex justify-between items-center text-xs">
                   <div>
-                    <span className="font-mono font-bold text-[#714B67]">{entry.entryReference}</span>
-                    <span className="text-gray-500 ml-2">[{entry.entryCategory}]</span>
-                    <span className="text-gray-700 font-medium ml-2">{entry.narrativeDescription}</span>
+                    <span className="font-mono font-extrabold text-[#714B67]">{entry.entryReference}</span>
+                    <span className="text-slate-500 font-bold ml-2">[{entry.entryCategory}]</span>
+                    <span className="text-slate-900 font-semibold ml-2">{entry.narrativeDescription}</span>
                   </div>
-                  <span className="text-[11px] text-gray-400 font-mono">
+                  <span className="text-xs text-slate-500 font-mono font-medium">
                     {new Date(entry.entryDate).toLocaleDateString()}
                   </span>
                 </div>
 
-                <table className="w-full text-left text-xs bg-white rounded border border-gray-200">
-                  <thead className="bg-gray-100 text-gray-500 text-[10px] uppercase font-semibold">
+                <table className="w-full text-left text-xs bg-white rounded-lg border border-slate-200 overflow-hidden">
+                  <thead className="bg-slate-100 text-slate-700 text-[10px] uppercase font-bold">
                     <tr>
-                      <th className="p-2">Account Code</th>
-                      <th className="p-2">Account Name</th>
-                      <th className="p-2 text-right">Debit (₹)</th>
-                      <th className="p-2 text-right">Credit (₹)</th>
+                      <th className="p-2.5">Account Code</th>
+                      <th className="p-2.5">Account Name</th>
+                      <th className="p-2.5 text-right">Debit (₹)</th>
+                      <th className="p-2.5 text-right">Credit (₹)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-slate-100">
                     {entry.journalLines.map((line, lIdx) => (
                       <tr key={lIdx}>
-                        <td className="p-2 font-mono text-gray-600">{line.accountCode}</td>
-                        <td className="p-2 font-medium text-gray-800">{line.accountName}</td>
-                        <td className="p-2 text-right font-mono">
+                        <td className="p-2.5 font-mono text-slate-600 font-semibold">{line.accountCode}</td>
+                        <td className="p-2.5 font-bold text-slate-900">{line.accountName}</td>
+                        <td className="p-2.5 text-right font-mono font-extrabold text-slate-900">
                           {line.debitAmountInr > 0 ? `₹${line.debitAmountInr.toLocaleString('en-IN')}` : '-'}
                         </td>
-                        <td className="p-2 text-right font-mono">
+                        <td className="p-2.5 text-right font-mono font-extrabold text-slate-900">
                           {line.creditAmountInr > 0 ? `₹${line.creditAmountInr.toLocaleString('en-IN')}` : '-'}
                         </td>
                       </tr>
