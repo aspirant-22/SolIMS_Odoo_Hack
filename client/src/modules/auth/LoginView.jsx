@@ -20,6 +20,7 @@ import {
   Check
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { AlertBanner } from '../../components/AlertBanner';
 
 const PERSONAS = [
   {
@@ -149,11 +150,12 @@ export const LoginView = () => {
 
         {/* Standard Credentials Form */}
         <div className="p-6">
-          {errorMessage && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-semibold flex items-center gap-2">
-              <span>{errorMessage}</span>
-            </div>
-          )}
+          <AlertBanner
+            type="error"
+            message={errorMessage}
+            onDismiss={() => setErrorMessage('')}
+            className="mb-4"
+          />
 
           <form onSubmit={handleStandardSubmit} className="space-y-4">
             <div>

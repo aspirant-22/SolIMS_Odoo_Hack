@@ -23,16 +23,33 @@ export const gatherSystemRuntimeTelemetry = async () => {
     journalEntries: await mongoose.connection.collection('journalentries').countDocuments().catch(() => 0)
   };
 
+  const recentAuditEntries = await mongoose.connection
+    .collection('journalentries')
+    .find({})
+    .sort({ createdAt: -1 })
+    .limit(8)
+    .toArray()
+    .catch(() => []);
+
+  const formattedLogs = recentAuditEntries.map((e) => ({
+    timestamp: new Date(e.createdAt || e.entryDate || Date.now()).toISOString(),
+    reference: e.entryReference || 'SYS-AUDIT',
+    category: e.entryCategory || 'SYSTEM',
+    narrative: e.narrativeDescription || 'Double-entry transaction posted',
+    amountInr: e.totalDebitAmountInr || 0
+  }));
+
   return {
     nodeEnvironment: process.env.NODE_ENV || 'development',
     serverUptimeSeconds: uptimeSeconds,
     serverUptimeFormatted: `${Math.floor(uptimeSeconds / 3600)}h ${Math.floor((uptimeSeconds % 3600) / 60)}m ${uptimeSeconds % 60}s`,
-    heapUsedMb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
-    heapTotalMb: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-    rssMemoryMb: Math.round(memoryUsage.rss / 1024 / 1024),
+    heapUsedMb: Math.round((memoryUsage.heapUsed / 1024 / 1024) * 100) / 100,
+    heapTotalMb: Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100,
+    rssMemoryMb: Math.round((memoryUsage.rss / 1024 / 1024) * 100) / 100,
     mongoDbState: mongoStateLabels[mongoConnectionState] || 'Unknown',
     databaseName: mongoose.connection.name || 'solims',
     activeRecordCounts: recentCollectionsCount,
+    recentAuditLogs: formattedLogs,
     timestamp: new Date().toISOString()
   };
 };

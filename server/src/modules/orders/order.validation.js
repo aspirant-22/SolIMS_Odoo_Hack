@@ -19,9 +19,14 @@ export const captureOrderPaymentValidationSchema = z.object({
 });
 
 export const assignInstallationCrewValidationSchema = z.object({
-  technicianIdsArray: z.array(z.string()).min(1, 'At least one technician must be assigned'),
+  technicianIdsArray: z.array(z.string()).optional(),
+  technicianUserIds: z.array(z.string()).optional(),
+  technicians: z.array(z.string()).optional(),
   scheduledInstallationDate: z.string().min(1, 'Scheduled date required')
-});
+}).refine(
+  (data) => (data.technicianIdsArray?.length || data.technicianUserIds?.length || data.technicians?.length),
+  { message: 'At least one technician must be assigned to installation crew', path: ['technicianIdsArray'] }
+);
 
 export const updateSubsidyStatusValidationSchema = z.object({
   subsidyStatus: z.enum(['NOT_SUBMITTED', 'DOCUMENTS_VERIFIED', 'INSPECTION_PENDING', 'SUBSIDY_DISBURSED'])

@@ -24,7 +24,13 @@ export const createServiceTicketValidationSchema = z.object({
   issueDescription: z.string().min(5, 'Issue description required')
 });
 
+export const recordTicketPaymentValidationSchema = z.object({
+  paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER', 'CHEQUE', 'CARD']).default('UPI'),
+  transactionReference: z.string().min(2, 'Transaction reference required'),
+  paymentAmountInr: z.number().positive().optional()
+});
+
 export const resolveTicketValidationSchema = z.object({
   resolutionNotes: z.string().min(3, 'Resolution notes required'),
-  customerConfirmedWorking: z.boolean().default(true)
+  customerConfirmedWorking: z.boolean()
 });

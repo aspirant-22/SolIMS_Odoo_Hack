@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Wrench as KWrench, Sun as KSun, Zap as KZap, PenLine as KPenLine } from 'lucide-react';
 import { KpiCard, KpiStrip } from '../../components/KpiCard';
+import { AlertBanner } from '../../components/AlertBanner';
 import {
   FileCheck2,
   Camera,
@@ -16,10 +17,20 @@ import {
   Zap,
   CheckCircle,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  UploadCloud,
+  Trash2,
+  Video,
+  VideoOff,
+  X
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+
+const DEFAULT_VERIFIED_ROOF_PHOTOS = [
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="600" height="400" fill="%231E293B"/><rect x="40" y="60" width="520" height="280" rx="8" fill="%230F172A" stroke="%2338BDF8" stroke-width="2"/><g fill="%230284C7" stroke="%2338BDF8" stroke-width="1.5"><rect x="60" y="80" width="110" height="110" rx="4"/><rect x="190" y="80" width="110" height="110" rx="4"/><rect x="320" y="80" width="110" height="110" rx="4"/><rect x="450" y="80" width="90" height="110" rx="4"/><rect x="60" y="210" width="110" height="110" rx="4"/><rect x="190" y="210" width="110" height="110" rx="4"/><rect x="320" y="210" width="110" height="110" rx="4"/><rect x="450" y="210" width="90" height="110" rx="4"/></g><rect x="0" y="350" width="600" height="50" fill="%230F172A" opacity="0.9"/><text x="20" y="380" fill="%23FBBF24" font-family="monospace" font-size="14" font-weight="bold">SolIMS Verified Roof Angle %231 • East Azimuth Array • 100%25 Shading Free</text></svg>',
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="600" height="400" fill="%230F172A"/><rect x="40" y="60" width="520" height="280" rx="8" fill="%231E293B" stroke="%2322C55E" stroke-width="2"/><g fill="%23135D3B" stroke="%2386EFAC" stroke-width="1.5"><rect x="70" y="90" width="120" height="100" rx="4"/><rect x="210" y="90" width="120" height="100" rx="4"/><rect x="350" y="90" width="120" height="100" rx="4"/><rect x="70" y="210" width="120" height="100" rx="4"/><rect x="210" y="210" width="120" height="100" rx="4"/><rect x="350" y="210" width="120" height="100" rx="4"/></g><rect x="0" y="350" width="600" height="50" fill="%230F172A" opacity="0.9"/><text x="20" y="380" fill="%2334D399" font-family="monospace" font-size="14" font-weight="bold">SolIMS Verified Roof Angle %232 • DC String Inverter &amp; Double Anchor Grounding</text></svg>'
+];
 
 export const TechnicianRoofSignoffView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -29,18 +40,113 @@ export const TechnicianRoofSignoffView = () => {
   const [finishTime, setFinishTime] = useState('16:45');
   const [confirmedCapacityKw, setConfirmedCapacityKw] = useState(3);
   const [powerGenerationWatts, setPowerGenerationWatts] = useState(2850);
-  const [roofPhotosList] = useState([
-    'https://images.unsplash.com/photo-1508873696983-2df5293cb395?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80'
-  ]);
+  const [roofPhotosList, setRoofPhotosList] = useState(DEFAULT_VERIFIED_ROOF_PHOTOS);
   const [technicianNotes, setTechnicianNotes] = useState('All array stands double-anchored. Inverter synced to grid, zero earth leakage.');
   const [submissionSuccess, setSubmissionSuccess] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Live Camera state & refs
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraStream, setCameraStream] = useState(null);
+  const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Canvas signature state
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignatureDrawn, setHasSignatureDrawn] = useState(false);
+
+  // Camera start / stop / capture handlers
+  const startCamera = async () => {
+    setCameraError('');
+    try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        throw new Error('Camera device access is not supported by this browser.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      setCameraStream(stream);
+      setIsCameraActive(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.warn('Camera access unavailable:', err);
+      setCameraError('Camera access denied or unavailable on this device. Use the fallback file uploader below.');
+      setIsCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+    setIsCameraActive(false);
+  };
+
+  const applyWatermarkAndSave = (sourceCanvas, label = 'Live Roof Proof') => {
+    const ctx = sourceCanvas.getContext('2d');
+    const width = sourceCanvas.width;
+    const height = sourceCanvas.height;
+
+    // Burn semi-transparent bottom banner
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+    ctx.fillRect(0, height - 38, width, 38);
+
+    // Green verification indicator
+    ctx.fillStyle = '#22C55E';
+    ctx.beginPath();
+    ctx.arc(18, height - 19, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Timestamp & Watermark string
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 13px monospace';
+    const timestamp = new Date().toLocaleString();
+    ctx.fillText(`SolIMS Verified • ${timestamp} • ${label}`, 32, height - 14);
+
+    const base64Jpeg = sourceCanvas.toDataURL('image/jpeg', 0.7);
+    setRoofPhotosList((prev) => [...prev, base64Jpeg]);
+  };
+
+  const snapPhotoFromCamera = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    applyWatermarkAndSave(canvas, 'Live Camera Capture');
+    stopCamera();
+  };
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width || 640;
+          canvas.height = img.height || 480;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          applyWatermarkAndSave(canvas, 'Technician Upload');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
 
   useEffect(() => {
     const fetchOrdersForSignoff = async () => {
@@ -177,12 +283,11 @@ export const TechnicianRoofSignoffView = () => {
         <KpiCard label="Signature" value={hasSignatureDrawn ? 'Captured' : 'Pending'} icon={KPenLine} tone={hasSignatureDrawn ? 'emerald' : 'amber'} trend={hasSignatureDrawn ? 'ready to submit' : 'needs client'} trendDir={hasSignatureDrawn ? 'up' : 'flat'} hint="digital sign-off" />
       </KpiStrip>
 
-      {errorMessage && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl flex items-center gap-2 font-semibold shadow-2xs">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
+      <AlertBanner
+        type="error"
+        message={errorMessage}
+        onDismiss={() => setErrorMessage('')}
+      />
 
       {submissionSuccess ? (
         <div className="bg-white rounded-2xl border border-emerald-200 p-8 text-center space-y-4 shadow-sm">
@@ -293,21 +398,117 @@ export const TechnicianRoofSignoffView = () => {
           </div>
 
           {/* Finished Roof Photos */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
+          <div className="space-y-3">
+            <div className="flex flex-wrap justify-between items-center gap-2">
               <label className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wide flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-[#135D3B]" />
                 <span>Finished Roof Inspection Photos ({roofPhotosList.length})</span>
               </label>
-              <span className="text-xs text-slate-500 font-medium">Live Camera Proof</span>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Upload from device storage"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Upload Image</span>
+                </button>
+
+                {!isCameraActive ? (
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs px-4 py-1.5 flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-amber-300" />
+                    <span>📸 Capture Live Roof Photo</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs px-3.5 py-1.5 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <VideoOff className="w-3.5 h-3.5" />
+                    <span>Close Camera</span>
+                  </button>
+                )}
+              </div>
             </div>
 
+            {cameraError && (
+              <AlertBanner
+                type="warning"
+                message={cameraError}
+                onDismiss={() => setCameraError('')}
+              />
+            )}
+
+            {/* Live Camera Viewfinder */}
+            {isCameraActive && (
+              <div className="relative rounded-2xl overflow-hidden border-2 border-[#135D3B] bg-slate-950 shadow-lg p-2 flex flex-col items-center">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full max-h-72 rounded-xl object-contain bg-black"
+                />
+                <div className="w-full flex items-center justify-between pt-3 px-2">
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span>LIVE_VIEWFINDER_ACTIVE</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={stopCamera}
+                      className="rounded-full border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold px-4 py-1.5 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={snapPhotoFromCamera}
+                      className="rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-5 py-1.5 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Snap Photo</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Photo Thumbnails */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {roofPhotosList.map((photoUrl, idx) => (
                 <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 group aspect-video bg-slate-100 shadow-2xs">
-                  <img src={photoUrl} alt="Roof verification" className="w-full h-full object-cover" />
-                  <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 text-white p-1.5 text-[11px] text-center font-mono font-bold">
-                    Roof Angle #{idx + 1} • Verified
+                  <img src={photoUrl} alt={`Roof Angle #${idx + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 inset-x-0 bg-slate-950/85 text-white p-1.5 text-[11px] text-center font-mono font-bold flex items-center justify-between px-2.5">
+                    <span>Angle #{idx + 1} • Verified</span>
+                    {roofPhotosList.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setRoofPhotosList((prev) => prev.filter((_, i) => i !== idx))}
+                        className="text-rose-400 hover:text-rose-200 p-0.5 rounded cursor-pointer"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -22,6 +22,7 @@ export const SystemDiagnosticsView = () => {
   const { currentUser } = useAuth();
   const [telemetry, setTelemetry] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLiveStreaming, setIsLiveStreaming] = useState(true);
 
   const fetchTelemetryData = async () => {
     setIsRefreshing(true);
@@ -39,9 +40,10 @@ export const SystemDiagnosticsView = () => {
 
   useEffect(() => {
     fetchTelemetryData();
-    const intervalTimer = setInterval(fetchTelemetryData, 10000);
+    if (!isLiveStreaming) return;
+    const intervalTimer = setInterval(fetchTelemetryData, 3000);
     return () => clearInterval(intervalTimer);
-  }, []);
+  }, [isLiveStreaming]);
 
   if (currentUser?.role !== 'ADMIN') {
     return (
@@ -68,14 +70,29 @@ export const SystemDiagnosticsView = () => {
           </p>
         </div>
 
-        <button
-          onClick={fetchTelemetryData}
-          disabled={isRefreshing}
-          className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-mono font-semibold text-xs px-5 py-2 shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>Refresh Telemetry</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsLiveStreaming((prev) => !prev)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-mono font-bold flex items-center gap-2 border transition-all cursor-pointer ${
+              isLiveStreaming
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-xs'
+                : 'bg-slate-100 text-slate-600 border-slate-300'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isLiveStreaming ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+            <span>{isLiveStreaming ? '🟢 LIVE STREAMING (3s)' : '⏸️ STREAM PAUSED'}</span>
+          </button>
+
+          <button
+            onClick={fetchTelemetryData}
+            disabled={isRefreshing}
+            className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-mono font-semibold text-xs px-4 py-1.5 shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh Now</span>
+          </button>
+        </div>
       </div>
 
       {telemetry && (
@@ -165,6 +182,27 @@ export const SystemDiagnosticsView = () => {
                 <div>• journalEntries: <span className="text-amber-300 font-extrabold">{telemetry.activeRecordCounts?.journalEntries}</span></div>
               </div>
             </div>
+
+            {/* Live Audit Log Stream */}
+            {telemetry.recentAuditLogs && telemetry.recentAuditLogs.length > 0 && (
+              <div className="pt-3 border-t border-slate-800 space-y-1.5">
+                <div className="text-slate-500 font-semibold flex items-center justify-between">
+                  <span>// Live Audit Stream & Real-Time Journal Ledger Logs</span>
+                  <span className="text-emerald-400 font-mono text-[10px]">Real-Time Feed</span>
+                </div>
+                <div className="space-y-1 max-h-36 overflow-y-auto font-mono text-[11px] text-slate-300 divide-y divide-slate-800/40">
+                  {telemetry.recentAuditLogs.map((log, lIdx) => (
+                    <div key={lIdx} className="flex items-center gap-2 py-1 hover:bg-slate-900/60 rounded px-1">
+                      <span className="text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                      <span className="text-amber-400 font-bold">{log.reference}</span>
+                      <span className="text-sky-300">[{log.category}]</span>
+                      <span className="text-slate-300 truncate flex-1">{log.narrative}</span>
+                      <span className="text-emerald-400 font-mono font-bold">₹{log.amountInr?.toLocaleString('en-IN')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between font-medium">
               <span>Security Tier: RBAC Enforced via HTTP-Only JWT Cookie & Zod Gates</span>

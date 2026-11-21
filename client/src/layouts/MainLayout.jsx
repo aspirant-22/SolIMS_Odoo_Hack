@@ -26,6 +26,19 @@ export const MainLayout = ({ currentModule, children }) => {
   const { currentUser, switchPersonaRole } = useAuth();
   const navigate = useNavigate();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [currentStage, setCurrentStage] = useState('Ready');
+
+  const moduleStages = {
+    inquiries: ['Draft', 'Survey_Scheduled', 'Survey_Completed', 'Approved'],
+    orders: ['Draft', 'Advance_Paid', 'Dispatched', 'Installed'],
+    warehouse: ['Waiting_Dispatch', 'Scanning_Serials', 'Ready_To_Ship', 'Dispatched'],
+    technician: ['Roster_Assigned', 'On_Roof', 'Testing_Watts', 'Signed_Off'],
+    warranty: ['Active_Coverage', 'Ticket_Logged', 'Payment_Checked', 'Resolved'],
+    director: ['Month_P&L', 'Margins', 'Subsidies', 'Ledger'],
+    diagnostics: ['Node_Active', 'Mongo_Cluster', 'Telemetry_Stream', 'Audit_Healthy']
+  };
+
+  const activeStages = moduleStages[currentModule] || ['Draft', 'Waiting', 'Ready', 'Done'];
 
   // Strict RBAC module whitelist
   const allNavigationItems = [
@@ -131,8 +144,9 @@ export const MainLayout = ({ currentModule, children }) => {
       {/* Control Panel Header */}
       <ControlPanelHeader
         breadcrumbHierarchy={moduleBreadcrumbTitles[currentModule] || ['SolIMS', 'Dashboard']}
-        workflowStages={['Draft', 'Waiting', 'Ready', 'Done']}
-        currentStage="Ready"
+        workflowStages={activeStages}
+        currentStage={currentStage}
+        onSelectStage={(st) => setCurrentStage(st)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 

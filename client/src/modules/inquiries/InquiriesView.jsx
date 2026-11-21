@@ -21,6 +21,7 @@ import {
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getStatusBadgeStyle } from '../../erpClientConfig';
+import { AlertBanner } from '../../components/AlertBanner';
 
 export const InquiriesView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -216,12 +217,11 @@ export const InquiriesView = () => {
         <KpiCard label="Approved" value={inquiriesList.filter((i) => i.inquiryWorkflowStatus === 'Approved').length} icon={KCheckCircle2} tone="emerald" trend="converted" trendDir="up" hint="to orders" />
       </KpiStrip>
 
-      {errorMessage && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl flex items-center gap-2 font-semibold shadow-2xs">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
+      <AlertBanner
+        type="error"
+        message={errorMessage}
+        onDismiss={() => setErrorMessage('')}
+      />
 
       {/* Main Grid: Inquiries List & Detail Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

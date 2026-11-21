@@ -67,6 +67,18 @@ const serviceTicketEntitySchema = new mongoose.Schema(
       required: true,
       default: 0
     },
+    paymentStatus: {
+      type: String,
+      enum: ['PENDING', 'PAID', 'NOT_REQUIRED'],
+      default: 'NOT_REQUIRED',
+      required: true
+    },
+    paymentDetails: {
+      paymentMode: { type: String, default: null },
+      transactionReference: { type: String, default: null },
+      paidAmountInr: { type: Number, default: 0 },
+      paidTimestamp: { type: Date, default: null }
+    },
     ticketWorkflowStatus: {
       type: String,
       enum: ['Draft', 'Diagnosed', 'Parts_Replaced', 'Done', 'Cancelled'],

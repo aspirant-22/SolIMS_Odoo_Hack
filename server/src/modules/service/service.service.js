@@ -9,6 +9,7 @@ import { SiteLogModel } from './siteLog.model.js';
 import { TicketModel } from './ticket.model.js';
 import { SerialAssetModel } from '../inventory/serialAsset.model.js';
 import { OrderModel } from '../orders/order.model.js';
+import { JournalEntryModel } from '../accounting/journalEntry.model.js';
 import { getNextSequenceNumber } from '../../core/sequenceRegistry.js';
 import { emitErpEvent } from '../../core/socketEmitter.js';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
@@ -127,6 +128,7 @@ export const createBreakdownServiceTicket = async (ticketDetails, creatorUserId)
     sparePartCostInr: sparePartCost,
     laborChargeCostInr: laborCharge,
     totalPayableAmountInr: totalPayable,
+    paymentStatus: (!isUnderWarranty && totalPayable > 0) ? 'PENDING' : 'NOT_REQUIRED',
     ticketWorkflowStatus: 'Draft',
     updatedBy: creatorUserId
   });
@@ -135,12 +137,69 @@ export const createBreakdownServiceTicket = async (ticketDetails, creatorUserId)
   return createdTicket;
 };
 
+export const recordServiceTicketPayment = async (ticketId, paymentPayload, recordingUserId) => {
+  const ticketRecord = await TicketModel.findById(ticketId);
+  if (!ticketRecord) throw new Error('Ticket not found');
+
+  if (ticketRecord.paymentStatus === 'PAID') {
+    return ticketRecord;
+  }
+
+  const { paymentMode = 'UPI', transactionReference = `TXN-${Date.now()}`, paymentAmountInr } = paymentPayload;
+  const collectedAmount = paymentAmountInr || ticketRecord.totalPayableAmountInr;
+
+  ticketRecord.paymentStatus = 'PAID';
+  ticketRecord.paymentDetails = {
+    paymentMode,
+    transactionReference,
+    paidAmountInr: collectedAmount,
+    paidTimestamp: new Date()
+  };
+  ticketRecord.ticketWorkflowStatus = 'Parts_Replaced';
+  ticketRecord.updatedBy = recordingUserId;
+  await ticketRecord.save();
+
+  // Immutable Double-Entry Ledger Posting: Cash/Bank (Debit) vs Service Revenue (Credit)
+  const journalRef = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.JOURNAL);
+  await JournalEntryModel.create({
+    entryReference: journalRef,
+    orderReference: ticketRecord.targetSerialNumber,
+    entryCategory: 'SERVICE_REVENUE',
+    narrativeDescription: `Out-of-warranty repair fee collected via ${paymentMode} ref: ${transactionReference} for ticket ${ticketRecord.ticketReference} (${ticketRecord.customerFullName})`,
+    journalLines: [
+      { accountCode: '1010', accountName: 'Cash & Bank Balance', debitAmountInr: collectedAmount, creditAmountInr: 0 },
+      { accountCode: '4010', accountName: 'Service & Repair Revenue', debitAmountInr: 0, creditAmountInr: collectedAmount }
+    ],
+    totalDebitAmountInr: collectedAmount,
+    totalCreditAmountInr: collectedAmount,
+    isBalanced: true,
+    updatedBy: recordingUserId
+  });
+
+  emitErpEvent('TICKET_PAYMENT_RECORDED', { ticket: ticketRecord });
+  return ticketRecord;
+};
+
 export const resolveServiceTicketWithConfirmation = async (ticketId, resolutionNotes, customerConfirmedWorking, resolvingUserId) => {
   const ticketRecord = await TicketModel.findById(ticketId);
   if (!ticketRecord) throw new Error('Ticket not found');
 
+  // Guardrail 1: Customer must confirm normal generation
+  if (customerConfirmedWorking !== true) {
+    const error = new Error('Customer confirmation required: Customer must confirm system is generating power normally before resolving ticket');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Guardrail 2: Out-of-warranty ticket payment gate
+  if (!ticketRecord.isUnderActiveWarranty && ticketRecord.totalPayableAmountInr > 0 && ticketRecord.paymentStatus !== 'PAID') {
+    const error = new Error(`Payment required: Out-of-warranty ticket ${ticketRecord.ticketReference} requires customer payment of ₹${ticketRecord.totalPayableAmountInr.toLocaleString('en-IN')} before closure`);
+    error.statusCode = 400;
+    throw error;
+  }
+
   ticketRecord.ticketWorkflowStatus = 'Done';
-  ticketRecord.resolutionConfirmationByCustomer = customerConfirmedWorking;
+  ticketRecord.resolutionConfirmationByCustomer = true;
   ticketRecord.technicianResolutionNotes = resolutionNotes;
   ticketRecord.resolvedTimestamp = new Date();
   ticketRecord.updatedBy = resolvingUserId;

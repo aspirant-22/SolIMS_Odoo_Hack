@@ -14,6 +14,13 @@ import { handleGetSystemTelemetry } from './diagnostics.controller.js';
 const diagnosticsApiRouter = Router();
 
 diagnosticsApiRouter.get(
+  '/',
+  verifyAuthentication,
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN),
+  handleGetSystemTelemetry
+);
+
+diagnosticsApiRouter.get(
   '/telemetry',
   verifyAuthentication,
   authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN),

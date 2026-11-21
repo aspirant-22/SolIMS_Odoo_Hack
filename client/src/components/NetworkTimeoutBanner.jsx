@@ -5,12 +5,20 @@
  * @DEPENDENCIES: react, lucide-react, AuthContext.jsx
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const NetworkTimeoutBanner = () => {
   const { hasNetworkTimeout, setHasNetworkTimeout } = useAuth();
+
+  useEffect(() => {
+    if (!hasNetworkTimeout) return;
+    const timer = setTimeout(() => {
+      setHasNetworkTimeout(false);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [hasNetworkTimeout, setHasNetworkTimeout]);
 
   if (!hasNetworkTimeout) return null;
 

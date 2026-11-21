@@ -15,6 +15,7 @@ import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, StatusPill } from '../../components/DataTable';
 import { formatCurrencyInr } from '../../erpClientConfig';
+import { AlertBanner } from '../../components/AlertBanner';
 
 export const OrdersView = () => {
   const { currentUser, setIsSystemProcessing } = useAuth();
@@ -76,11 +77,17 @@ export const OrdersView = () => {
     setIsSystemProcessing(true);
     setFeedbackMessage({ type: '', text: '' });
     try {
+      const targetTechId = currentUser?._id || '679000000000000000000003';
+      const scheduledDate = scheduledDateInput 
+        ? new Date(scheduledDateInput).toISOString() 
+        : new Date().toISOString();
+
       const response = await executeHttpRequest(`/api/orders/${selectedOrder._id}/assign-crew`, {
         method: 'POST',
         body: JSON.stringify({
-          technicianUserIds: [currentUser?._id],
-          scheduledInstallationDate: scheduledDateInput
+          technicianIdsArray: [targetTechId],
+          technicianUserIds: [targetTechId],
+          scheduledInstallationDate: scheduledDate
         })
       });
       if (response.success) {
@@ -88,7 +95,7 @@ export const OrdersView = () => {
         setSelectedOrder(response.order);
         setFeedbackMessage({
           type: 'success',
-          text: `Crew assigned for installation on ${scheduledDateInput}.`
+          text: `Crew assigned for installation on ${scheduledDateInput || 'scheduled date'}.`
         });
         await loadAllOrders();
       }
@@ -179,17 +186,11 @@ export const OrdersView = () => {
         </div>
       </div>
 
-      {feedbackMessage.text && (
-        <div
-          className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center gap-2 ${
-            feedbackMessage.type === 'error'
-              ? 'bg-rose-50 border-rose-200 text-rose-800'
-              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-          }`}
-        >
-          {feedbackMessage.type === 'error' ? '⚠️' : '✓'} {feedbackMessage.text}
-        </div>
-      )}
+      <AlertBanner
+        type={feedbackMessage.type}
+        message={feedbackMessage.text}
+        onDismiss={() => setFeedbackMessage({ type: '', text: '' })}
+      />
 
       {/* Main Grid: Orders Table & Detail View */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

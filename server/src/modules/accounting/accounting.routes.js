@@ -26,7 +26,7 @@ accountingApiRouter.get(
 accountingApiRouter.get(
   '/ledger',
   verifyAuthentication,
-  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN),
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
   handleGetGeneralLedger
 );
 

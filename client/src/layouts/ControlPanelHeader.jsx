@@ -21,6 +21,8 @@ export const ControlPanelHeader = ({
   breadcrumbHierarchy = ['SolIMS', 'Inquiries'],
   workflowStages = ['Draft', 'Waiting', 'Ready', 'Done'],
   currentStage = 'Draft',
+  onStageClick = null,
+  onSelectStage = null,
   primaryActionLabel = 'New',
   onPrimaryAction = null,
   secondaryActionLabel = 'Validate',
@@ -56,7 +58,11 @@ export const ControlPanelHeader = ({
 
       {/* Center / Right: Workflow Ribbon & Context Actions */}
       <div className="flex items-center gap-3">
-        <ProgressWorkflowRibbon stages={workflowStages} currentStage={currentStage} />
+        <ProgressWorkflowRibbon
+          stages={workflowStages}
+          currentStage={currentStage}
+          onStageClick={onStageClick || onSelectStage}
+        />
 
         <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
           {onPrimaryAction && (

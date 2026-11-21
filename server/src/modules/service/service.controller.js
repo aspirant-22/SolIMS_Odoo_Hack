@@ -9,6 +9,7 @@ import {
   submitTechnicianRoofSignoff,
   lookupAssetWarrantyStatus,
   createBreakdownServiceTicket,
+  recordServiceTicketPayment,
   resolveServiceTicketWithConfirmation,
   fetchAllServiceTickets
 } from './service.service.js';
@@ -37,6 +38,20 @@ export const handleCreateTicket = async (httpRequest, httpResponse, nextMiddlewa
   try {
     const ticket = await createBreakdownServiceTicket(httpRequest.validatedBody, httpRequest.authenticatedUser._id);
     return httpResponse.status(201).json({ success: true, ticket });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleRecordTicketPayment = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const paymentResult = await recordServiceTicketPayment(
+      id,
+      httpRequest.validatedBody || httpRequest.body,
+      httpRequest.authenticatedUser._id
+    );
+    return httpResponse.status(200).json({ success: true, ticket: paymentResult });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }

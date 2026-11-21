@@ -26,16 +26,21 @@ export const DirectorDashboardView = () => {
   const loadFinancialData = async () => {
     setIsSystemProcessing(true);
     try {
-      const [summaryRes, ledgerRes] = await Promise.all([
+      const [summaryResult, ledgerResult] = await Promise.allSettled([
         executeHttpRequest('/api/accounting/director-summary'),
         executeHttpRequest('/api/accounting/ledger')
       ]);
 
-      if (summaryRes.success) {
-        setFinancialSummary(summaryRes.summary);
+      if (summaryResult.status === 'fulfilled' && summaryResult.value?.success) {
+        setFinancialSummary(summaryResult.value.summary);
+      } else if (summaryResult.status === 'rejected') {
+        console.warn('Failed to load P&L summary:', summaryResult.reason);
       }
-      if (ledgerRes.success) {
-        setGeneralLedgerEntries(ledgerRes.ledger || []);
+
+      if (ledgerResult.status === 'fulfilled' && ledgerResult.value?.success) {
+        setGeneralLedgerEntries(ledgerResult.value.ledger || []);
+      } else if (ledgerResult.status === 'rejected') {
+        console.warn('Failed to load ledger:', ledgerResult.reason);
       }
     } catch (err) {
       console.error('Failed to load financial summary:', err);

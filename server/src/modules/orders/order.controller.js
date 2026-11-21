@@ -43,11 +43,12 @@ export const handleCaptureAdvancePayment = async (httpRequest, httpResponse, nex
 export const handleAssignCrew = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
     const { id } = httpRequest.params;
-    const { technicianIdsArray, scheduledInstallationDate } = httpRequest.validatedBody;
+    const body = httpRequest.validatedBody;
+    const technicianIds = body.technicianIdsArray || body.technicianUserIds || body.technicians || [httpRequest.authenticatedUser._id];
     const updatedOrder = await assignCrewToProjectOrder(
       id,
-      technicianIdsArray,
-      scheduledInstallationDate,
+      technicianIds,
+      body.scheduledInstallationDate,
       httpRequest.authenticatedUser._id
     );
     return httpResponse.status(200).json({ success: true, order: updatedOrder });

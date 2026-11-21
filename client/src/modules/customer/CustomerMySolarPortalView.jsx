@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { AlertBanner } from '../../components/AlertBanner';
 
 export const CustomerMySolarPortalView = () => {
   const { currentUser, logoutUser, switchPersonaRole, setIsSystemProcessing } = useAuth();
@@ -148,22 +149,11 @@ export const CustomerMySolarPortalView = () => {
 
       {/* MAIN CONTAINER */}
       <main className="max-w-7xl mx-auto p-6 space-y-6">
-        {feedbackMessage.text && (
-          <div
-            className={`p-4 rounded-2xl border text-xs font-bold flex items-center gap-2.5 shadow-2xs ${
-              feedbackMessage.type === 'error'
-                ? 'bg-rose-50 border-rose-200 text-rose-800'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-            }`}
-          >
-            {feedbackMessage.type === 'error' ? (
-              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
-            )}
-            <span>{feedbackMessage.text}</span>
-          </div>
-        )}
+        <AlertBanner
+          type={feedbackMessage.type}
+          message={feedbackMessage.text}
+          onDismiss={() => setFeedbackMessage({ type: '', text: '' })}
+        />
 
         {/* 2. PROJECT TRACKER RIBBON / HERO STRIP */}
         <section className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">

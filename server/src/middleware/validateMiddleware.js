@@ -17,9 +17,13 @@ export const validateRequestBody = (targetZodSchema) => {
         issue: errDetail.message
       }));
 
+      const errorDetailsString = descriptiveErrors?.map(e => `${e.field || 'body'}: ${e.issue}`).join(', ');
+
       return httpResponse.status(400).json({
         success: false,
-        message: 'Request payload validation failed at API boundary',
+        message: errorDetailsString
+          ? `Request payload validation failed at API boundary: ${errorDetailsString}`
+          : 'Request payload validation failed at API boundary',
         validationErrors: descriptiveErrors || schemaValidationError.message
       });
     }

@@ -13,12 +13,14 @@ import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
 import {
   submitRoofSignoffValidationSchema,
   createServiceTicketValidationSchema,
+  recordTicketPaymentValidationSchema,
   resolveTicketValidationSchema
 } from './service.validation.js';
 import {
   handleSubmitRoofSignoff,
   handleWarrantyLookup,
   handleCreateTicket,
+  handleRecordTicketPayment,
   handleResolveTicket,
   handleGetAllTickets
 } from './service.controller.js';
@@ -41,6 +43,14 @@ serviceApiRouter.post(
   verifyAuthentication,
   validateRequestBody(createServiceTicketValidationSchema),
   handleCreateTicket
+);
+
+serviceApiRouter.post(
+  '/tickets/:id/payment',
+  verifyAuthentication,
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS, ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF),
+  validateRequestBody(recordTicketPaymentValidationSchema),
+  handleRecordTicketPayment
 );
 
 serviceApiRouter.post(

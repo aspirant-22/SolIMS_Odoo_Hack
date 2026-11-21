@@ -17,11 +17,13 @@ import {
   Layers,
   Sparkles,
   ArrowRight,
-  PackageCheck
+  PackageCheck,
+  X
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getStatusBadgeStyle } from '../../erpClientConfig';
+import { AlertBanner } from '../../components/AlertBanner';
 
 export const WarehouseDispatchView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -171,26 +173,23 @@ export const WarehouseDispatchView = () => {
         <KpiCard label="Warranty clocks" value={scannedSerialsList.length} icon={KShieldCheck} tone="slate" trend="auto-start" hint="on dispatch" />
       </KpiStrip>
 
-      {feedbackMessage.text && (
-        <div
-          className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2.5 border shadow-2xs ${
-            feedbackMessage.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200'
-          }`}
-        >
-          {feedbackMessage.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
-          ) : (
-            <ShieldAlert className="w-4 h-4 shrink-0 text-rose-600" />
-          )}
-          <span>{feedbackMessage.text}</span>
-        </div>
-      )}
+      <AlertBanner
+        type={feedbackMessage.type}
+        message={feedbackMessage.text}
+        onDismiss={() => setFeedbackMessage({ type: '', text: '' })}
+      />
 
       {/* Dispatch Success Alert Modal */}
       {dispatchSuccessData && (
-        <div className="bg-white border border-slate-200/90 p-5 rounded-2xl shadow-sm space-y-3">
+        <div className="bg-white border border-emerald-200 p-5 rounded-2xl shadow-sm space-y-3 relative">
+          <button
+            type="button"
+            onClick={() => setDispatchSuccessData(null)}
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer transition-colors"
+            aria-label="Dismiss dispatch alert"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
             <PackageCheck className="w-5 h-5 text-[#135D3B]" />
             <span>Truck Dispatched & Warranty Clocks Active!</span>
