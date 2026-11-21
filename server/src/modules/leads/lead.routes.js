@@ -22,12 +22,14 @@ import {
   handleRecordSurveyResults,
   handleApproveSurvey,
   handleGetAllInquiries,
-  handleGetInquiryById
+  handleGetInquiryById,
+  handleTrackOrderOrInquiry
 } from './lead.controller.js';
 
 const leadApiRouter = Router();
 
 leadApiRouter.post('/', validateRequestBody(createLeadInquiryValidationSchema), handleCreateInquiry);
+leadApiRouter.get('/track/:query', handleTrackOrderOrInquiry);
 leadApiRouter.get('/', verifyAuthentication, handleGetAllInquiries);
 leadApiRouter.get('/:id', verifyAuthentication, handleGetInquiryById);
 

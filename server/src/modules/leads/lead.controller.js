@@ -75,3 +75,66 @@ export const handleGetInquiryById = async (httpRequest, httpResponse, nextMiddle
     return nextMiddlewareFunction(error);
   }
 };
+
+export const handleTrackOrderOrInquiry = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { query } = httpRequest.params;
+    const cleanQuery = (query || '').trim();
+    if (!cleanQuery) {
+      return httpResponse.status(400).json({ success: false, message: 'Tracking reference or phone number is required.' });
+    }
+
+    const { LeadModel } = await import('./lead.model.js');
+    const { OrderModel } = await import('../orders/order.model.js');
+
+    const leadMatch = await LeadModel.findOne({
+      $or: [
+        { inquiryReference: cleanQuery },
+        { customerPhoneNumber: cleanQuery }
+      ]
+    }).lean();
+
+    const orderMatch = await OrderModel.findOne({
+      $or: [
+        { orderReference: cleanQuery },
+        { quotationReference: cleanQuery },
+        { customerPhoneNumber: cleanQuery }
+      ]
+    }).lean();
+
+    if (!leadMatch && !orderMatch) {
+      return httpResponse.status(404).json({ success: false, message: 'No project order or inquiry found matching this code or phone number.' });
+    }
+
+    return httpResponse.status(200).json({
+      success: true,
+      result: {
+        lead: leadMatch ? {
+          inquiryReference: leadMatch.inquiryReference,
+          customerFullName: leadMatch.customerFullName,
+          customerPhoneNumber: leadMatch.customerPhoneNumber,
+          installationSiteAddress: leadMatch.installationSiteAddress,
+          requestedCapacityKw: leadMatch.requestedCapacityKw,
+          requestedVariant: leadMatch.requestedVariant,
+          inquiryWorkflowStatus: leadMatch.inquiryWorkflowStatus,
+          createdAt: leadMatch.createdAt,
+          approximateRoofAreaSqFt: leadMatch.approximateRoofAreaSqFt
+        } : null,
+        order: orderMatch ? {
+          orderReference: orderMatch.orderReference,
+          quotationReference: orderMatch.quotationReference,
+          customerFullName: orderMatch.customerFullName,
+          installationSiteAddress: orderMatch.installationSiteAddress,
+          systemCapacityKw: orderMatch.systemCapacityKw,
+          systemVariant: orderMatch.systemVariant,
+          orderWorkflowStatus: orderMatch.orderWorkflowStatus,
+          scheduledInstallationDate: orderMatch.scheduledInstallationDate,
+          subsidyApplicationStatus: orderMatch.subsidyApplicationStatus,
+          createdAt: orderMatch.createdAt
+        } : null
+      }
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};

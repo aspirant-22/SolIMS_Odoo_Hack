@@ -8,9 +8,11 @@
 import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import { LoginView } from './modules/auth/LoginView';
+import { PublicLandingView } from './modules/landing/PublicLandingView';
 import { MainLayout } from './layouts/MainLayout';
 
 import { InquiriesView } from './modules/inquiries/InquiriesView';
+import { OrdersView } from './modules/orders/OrdersView';
 import { WarehouseDispatchView } from './modules/warehouse/WarehouseDispatchView';
 import { TechnicianRoofSignoffView } from './modules/technician/TechnicianRoofSignoffView';
 import { WarrantyLookupTicketView } from './modules/warranty/WarrantyLookupTicketView';
@@ -20,6 +22,7 @@ import { SystemDiagnosticsView } from './modules/diagnostics/SystemDiagnosticsVi
 export const App = () => {
   const { currentUser, isInitializing } = useAuth();
   const [activeModule, setActiveModule] = useState('inquiries');
+  const [publicView, setPublicView] = useState('landing'); // 'landing' | 'login'
 
   if (isInitializing) {
     return (
@@ -33,13 +36,23 @@ export const App = () => {
   }
 
   if (!currentUser) {
-    return <LoginView />;
+    if (publicView === 'login') {
+      return <LoginView onBackToLanding={() => setPublicView('landing')} />;
+    }
+    return (
+      <PublicLandingView
+        onOpenStaffLogin={() => setPublicView('login')}
+        onSelectPublicSection={(section) => setPublicView(section)}
+      />
+    );
   }
 
   const renderActiveModuleView = () => {
     switch (activeModule) {
       case 'inquiries':
         return <InquiriesView />;
+      case 'orders':
+        return <OrdersView />;
       case 'warehouse':
         return <WarehouseDispatchView />;
       case 'technician':

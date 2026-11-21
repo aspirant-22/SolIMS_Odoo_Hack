@@ -274,7 +274,7 @@ export const OrdersView = () => {
                     className="w-full odoo-btn-primary gap-1.5 text-xs py-2.5 justify-center shadow-sm"
                   >
                     <CreditCard className="w-4 h-4 text-amber-300" />
-                    <span>Capture Advance Payment (>=20%)</span>
+                    <span>Capture Advance Payment (Min 20%)</span>
                   </button>
                 )}
 
@@ -331,7 +331,7 @@ export const OrdersView = () => {
               Capture Advance Payment ({selectedOrder.quotationReference})
             </h3>
             <p className="text-xs text-slate-600">
-              Capturing >= 20% advance triggers double-entry journal entry and transitions order from Draft to Advance_Paid.
+              Capturing 20% or more advance triggers double-entry journal entry and transitions order from Draft to Advance_Paid.
             </p>
             <form onSubmit={handleCaptureAdvanceSubmit} className="space-y-3 text-xs">
               <div>

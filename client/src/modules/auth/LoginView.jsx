@@ -14,11 +14,12 @@ import {
   Home,
   ArrowRight,
   Sparkles,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const LoginView = () => {
+export const LoginView = ({ onBackToLanding }) => {
   const { loginUser, switchPersonaRole } = useAuth();
   const [emailInput, setEmailInput] = useState('admin@solims.com');
   const [passwordInput, setPasswordInput] = useState('admin123');
@@ -166,6 +167,19 @@ export const LoginView = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          {onBackToLanding && (
+            <div className="mt-4 pt-3 border-t border-slate-200 text-center">
+              <button
+                type="button"
+                onClick={onBackToLanding}
+                className="text-xs font-bold text-slate-600 hover:text-[#14532D] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to SolIMS Public Website & Calculator</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
