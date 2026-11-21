@@ -23,6 +23,13 @@ import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getStatusBadgeStyle } from '../../erpClientConfig';
 import { AlertBanner } from '../../components/AlertBanner';
+import {
+  validateAdvanceAmount,
+  validatePhone10,
+  validateEmail,
+  validatePositiveField,
+  validateRequiredText
+} from '../../utils/validators';
 
 export const InquiriesView = () => {
   const { currentUser, setIsSystemProcessing } = useAuth();
@@ -33,7 +40,7 @@ export const InquiriesView = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [generatedQuoteResult, setGeneratedQuoteResult] = useState(null);
   const [advanceAmountInput, setAdvanceAmountInput] = useState(50000);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
   const [approvalQueueOnly, setApprovalQueueOnly] = useState(false);
 
   const isTechnician = currentUser?.role === 'STAFF';
@@ -83,7 +90,21 @@ export const InquiriesView = () => {
 
   const handleCreateInquirySubmit = async (e) => {
     e.preventDefault();
+    const nameErr = validateRequiredText(newInquiryData.customerFullName, 'Customer Full Name');
+    if (nameErr) return setFeedbackMessage({ type: 'error', text: nameErr });
+    const phoneErr = validatePhone10(newInquiryData.customerPhoneNumber);
+    if (phoneErr) return setFeedbackMessage({ type: 'error', text: phoneErr });
+    const emailErr = validateEmail(newInquiryData.customerEmailAddress);
+    if (emailErr) return setFeedbackMessage({ type: 'error', text: emailErr });
+    const addrErr = validateRequiredText(newInquiryData.installationSiteAddress, 'Site Address');
+    if (addrErr) return setFeedbackMessage({ type: 'error', text: addrErr });
+    const roofErr = validatePositiveField(newInquiryData.approximateRoofAreaSqFt, 'Roof Area');
+    if (roofErr) return setFeedbackMessage({ type: 'error', text: roofErr });
+    const billErr = validatePositiveField(newInquiryData.averageMonthlyElectricityBillInr, 'Monthly Bill');
+    if (billErr) return setFeedbackMessage({ type: 'error', text: billErr });
+
     setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest('/api/leads', {
         method: 'POST',
@@ -93,9 +114,13 @@ export const InquiriesView = () => {
         setIsCreateModalOpen(false);
         await loadAllInquiries();
         setSelectedInquiry(response.lead);
+        setFeedbackMessage({
+          type: 'success',
+          text: `Solar inquiry registered successfully [Ref: ${response.lead.inquiryReference}]. Stage 1 assessment email sent to ${response.lead.customerEmailAddress}.`
+        });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Creation failed');
+      setFeedbackMessage({ type: 'error', text: err.message || 'Creation failed' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -105,6 +130,7 @@ export const InquiriesView = () => {
     e.preventDefault();
     if (!selectedInquiry) return;
     setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest(`/api/leads/${selectedInquiry._id}/record-survey`, {
         method: 'POST',
@@ -114,9 +140,13 @@ export const InquiriesView = () => {
         setIsSurveyModalOpen(false);
         setSelectedInquiry(response.lead);
         await loadAllInquiries();
+        setFeedbackMessage({
+          type: 'success',
+          text: `Roof survey measurements recorded successfully for ${response.lead.customerFullName}! Ready for Director / Operations approval.`
+        });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Survey submission failed');
+      setFeedbackMessage({ type: 'error', text: err.message || 'Survey submission failed' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -125,6 +155,7 @@ export const InquiriesView = () => {
   const handleApproveSurvey = async (isApproved) => {
     if (!selectedInquiry) return;
     setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest(`/api/leads/${selectedInquiry._id}/approve-survey`, {
         method: 'POST',
@@ -133,9 +164,15 @@ export const InquiriesView = () => {
       if (response.success) {
         setSelectedInquiry(response.lead);
         await loadAllInquiries();
+        setFeedbackMessage({
+          type: 'success',
+          text: isApproved
+            ? `Site survey approved successfully for ${response.lead.customerFullName}! Ready to generate commercial proposal & BOM.`
+            : `Site survey rejected.`
+        });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Approval update failed');
+      setFeedbackMessage({ type: 'error', text: err.message || 'Approval update failed' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -144,7 +181,7 @@ export const InquiriesView = () => {
   const handleResendStage1EmailClick = async () => {
     if (!selectedInquiry) return;
     setIsSystemProcessing(true);
-    setErrorMessage('');
+    setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest(`/api/leads/${selectedInquiry._id}/resend-stage1-email`, {
         method: 'POST'
@@ -152,9 +189,13 @@ export const InquiriesView = () => {
       if (response.success) {
         setSelectedInquiry(response.lead);
         await loadAllInquiries();
+        setFeedbackMessage({
+          type: 'success',
+          text: `Stage 1 inquiry assessment email resent to ${selectedInquiry.customerEmailAddress}.`
+        });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to resend Stage 1 simulated email');
+      setFeedbackMessage({ type: 'error', text: err.message || 'Failed to resend Stage 1 simulated email' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -163,19 +204,27 @@ export const InquiriesView = () => {
   const handleGenerateQuoteClick = async () => {
     if (!selectedInquiry) return;
     setIsSystemProcessing(true);
-    setErrorMessage('');
+    setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest('/api/orders/generate-quote', {
         method: 'POST',
         body: JSON.stringify({ leadInquiryId: selectedInquiry._id })
       });
-      if (response.success) {
+      if (response.success && response.quote) {
         setGeneratedQuoteResult(response.quote);
+        const minAdvance = Math.ceil((response.quote.netPayableAmountInr || 0) * 0.2);
+        setAdvanceAmountInput(minAdvance);
         setIsQuoteModalOpen(true);
         await loadAllInquiries();
+        setFeedbackMessage({
+          type: 'success',
+          text: response.alreadyGenerated
+            ? `Existing Quote & BOM loaded (Ref: ${response.quote.quotationReference}).`
+            : `Commercial Proposal & Auto-Populated BOM generated successfully (Ref: ${response.quote.quotationReference}).`
+        });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Quote generation blocked');
+      setFeedbackMessage({ type: 'error', text: err.message || 'Quote generation blocked' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -183,23 +232,32 @@ export const InquiriesView = () => {
 
   const handleConfirmAdvancePayment = async () => {
     if (!generatedQuoteResult) return;
+    const validation = validateAdvanceAmount(advanceAmountInput, generatedQuoteResult.netPayableAmountInr);
+    if (!validation.ok) {
+      setFeedbackMessage({ type: 'error', text: validation.error });
+      return;
+    }
     setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest(`/api/orders/${generatedQuoteResult._id}/advance-payment`, {
         method: 'POST',
         body: JSON.stringify({
-          paymentAmountInr: Number(advanceAmountInput),
+          paymentAmountInr: validation.value,
           paymentMode: 'UPI',
           transactionReference: `UPI-ADV-${Date.now().toString().slice(-6)}`
         })
       });
-      if (response.success) {
+      if (response.success && response.order) {
         setIsQuoteModalOpen(false);
-        alert(`Advance payment confirmed! Project Order ${response.order.orderReference} created. Warehouse packing unlocked.`);
+        setFeedbackMessage({
+          type: 'success',
+          text: `Advance payment of ₹${validation.value.toLocaleString('en-IN')} recorded successfully! Project Order ${response.order.orderReference} created. Double-entry JournalEntry posted (Debit 1010 Bank / Credit 1200 Accounts Receivable). Warehouse packing unlocked.`
+        });
         await loadAllInquiries();
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Advance payment capture failed');
+      setFeedbackMessage({ type: 'error', text: err.message || 'Advance payment capture failed' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -242,9 +300,9 @@ export const InquiriesView = () => {
       </KpiStrip>
 
       <AlertBanner
-        type="error"
-        message={errorMessage}
-        onDismiss={() => setErrorMessage('')}
+        type={feedbackMessage.type}
+        message={feedbackMessage.text}
+        onDismiss={() => setFeedbackMessage({ type: '', text: '' })}
       />
 
       {/* Main Grid: Inquiries List & Detail Workspace */}
@@ -350,14 +408,17 @@ export const InquiriesView = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Director & Operations ONLY: Auto-Generate BOM Quote on Approved */}
-                  {isDirectorOrOps && selectedInquiry.inquiryWorkflowStatus === 'Approved' && (
+                  {/* Director & Operations ONLY: View or Auto-Generate BOM Quote on Approved / Quoted */}
+                  {isDirectorOrOps &&
+                    (selectedInquiry.inquiryWorkflowStatus === 'Approved' ||
+                      selectedInquiry.inquiryWorkflowStatus === 'Quoted' ||
+                      selectedInquiry.quoteGeneratedReference) && (
                     <button
                       onClick={handleGenerateQuoteClick}
                       className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Zap className="w-4 h-4 text-amber-300" />
-                      <span>Auto-Generate BOM Quote</span>
+                      <span>View / Generate BOM</span>
                     </button>
                   )}
 
@@ -404,10 +465,10 @@ export const InquiriesView = () => {
                   )}
 
                   {isDirectorOrOps &&
-                    (selectedInquiry.inquiryWorkflowStatus === 'Draft' ||
-                      selectedInquiry.inquiryWorkflowStatus === 'Survey_Scheduled') && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                      <span>⏳ Awaiting Technician Measurements</span>
+                    (!selectedInquiry.surveyDetails?.surveyCompletedAt ||
+                      ['Draft', 'Survey_Scheduled'].includes(selectedInquiry.inquiryWorkflowStatus)) && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
+                      <span>⏳ Pending: Technician to Record Survey Measurements</span>
                     </span>
                   )}
                 </div>
@@ -862,17 +923,23 @@ export const InquiriesView = () => {
               <p className="text-[11px] text-slate-600 font-medium">
                 Once customer pays advance, warehouse sees what to pack and installation crew sees the job on their schedule automatically without phone calls.
               </p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  value={advanceAmountInput}
-                  onChange={(e) => setAdvanceAmountInput(e.target.value)}
-                  className="odoo-input max-w-[160px] text-xs font-mono font-bold"
-                  placeholder="Advance Amount"
-                />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex-1">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Advance Amount (₹) — Minimum 20%: ₹
+                    {Math.ceil((generatedQuoteResult.netPayableAmountInr || 0) * 0.2).toLocaleString('en-IN')}
+                  </label>
+                  <input
+                    type="number"
+                    value={advanceAmountInput}
+                    onChange={(e) => setAdvanceAmountInput(e.target.value)}
+                    className="odoo-input font-mono font-bold text-sm"
+                    placeholder="Enter advance amount"
+                  />
+                </div>
                 <button
                   onClick={handleConfirmAdvancePayment}
-                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs py-2 px-5 shadow-sm transition-all cursor-pointer"
+                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs py-3 px-6 shadow-sm transition-all cursor-pointer shrink-0 mt-auto"
                 >
                   Confirm Advance & Dispatch to Warehouse
                 </button>

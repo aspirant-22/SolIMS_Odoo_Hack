@@ -1,8 +1,8 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: order.controller.js
- * @RESPONSIBILITY: Express controllers handling HTTP requests for quotation creation, advance collection, and crew scheduling.
- * @DEPENDENCIES: order.service.js
+ * @RESPONSIBILITY: Express controllers handling HTTP requests for quotation creation, advance/leftover collection, crew scheduling and customer-scoped portal data.
+ * @DEPENDENCIES: order.service.js, customerScope.js
  */
 
 import {
@@ -15,14 +15,35 @@ import {
   activateCustomerForProjectOrder,
   resendStage2ActivationEmail,
   fetchMyCustomerProjectOrder,
-  fetchAllTechnicians
+  fetchAllTechnicians,
+  fetchQuoteForLead,
+  fetchCustomerPortalBundle
 } from './order.service.js';
+import {
+  isCustomerUser,
+  buildOrderScopeFilter,
+  orderBelongsToCustomer,
+  buildHttpError
+} from '../../core/customerScope.js';
 
 export const handleGenerateQuote = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
     const { leadInquiryId, customDiscountInr } = httpRequest.validatedBody;
-    const generatedQuote = await generateQuoteForLeadInquiry(leadInquiryId, customDiscountInr, httpRequest.authenticatedUser._id);
-    return httpResponse.status(201).json({ success: true, quote: generatedQuote });
+    const { quote, alreadyGenerated } = await generateQuoteForLeadInquiry(
+      leadInquiryId,
+      customDiscountInr,
+      httpRequest.authenticatedUser._id
+    );
+    return httpResponse.status(alreadyGenerated ? 200 : 201).json({ success: true, quote, alreadyGenerated });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleGetQuoteByLead = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const quote = await fetchQuoteForLead(httpRequest.params.leadId);
+    return httpResponse.status(200).json({ success: true, quote });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }
@@ -48,12 +69,11 @@ export const handleCaptureAdvancePayment = async (httpRequest, httpResponse, nex
 export const handleAssignCrew = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
     const { id } = httpRequest.params;
-    const body = httpRequest.validatedBody;
-    const technicianIds = body.technicianIdsArray || body.technicianUserIds || body.technicians || [httpRequest.authenticatedUser._id];
+    const { inverterTechnician, rooftopTechnician, wiringTechnician, scheduledInstallationDate } = httpRequest.validatedBody;
     const updatedOrder = await assignCrewToProjectOrder(
       id,
-      technicianIds,
-      body.scheduledInstallationDate,
+      { inverterTechnician, rooftopTechnician, wiringTechnician },
+      scheduledInstallationDate,
       httpRequest.authenticatedUser._id
     );
     return httpResponse.status(200).json({ success: true, order: updatedOrder });
@@ -64,7 +84,10 @@ export const handleAssignCrew = async (httpRequest, httpResponse, nextMiddleware
 
 export const handleGetAllOrders = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
-    const ordersList = await fetchAllProjectOrders();
+    const scopeFilter = isCustomerUser(httpRequest.authenticatedUser)
+      ? buildOrderScopeFilter(httpRequest.authenticatedUser)
+      : {};
+    const ordersList = await fetchAllProjectOrders(scopeFilter);
     return httpResponse.status(200).json({ success: true, count: ordersList.length, orders: ordersList });
   } catch (error) {
     return nextMiddlewareFunction(error);
@@ -76,6 +99,9 @@ export const handleGetOrderById = async (httpRequest, httpResponse, nextMiddlewa
     const { id } = httpRequest.params;
     const foundOrder = await fetchProjectOrderById(id);
     if (!foundOrder) return httpResponse.status(404).json({ success: false, message: 'Order not found' });
+    if (isCustomerUser(httpRequest.authenticatedUser) && !orderBelongsToCustomer(foundOrder, httpRequest.authenticatedUser)) {
+      return httpResponse.status(403).json({ success: false, message: 'You can only view your own project order.' });
+    }
     return httpResponse.status(200).json({ success: true, order: foundOrder });
   } catch (error) {
     return nextMiddlewareFunction(error);
@@ -88,7 +114,7 @@ export const handleActivateCustomerAccount = async (httpRequest, httpResponse, n
     const result = await activateCustomerForProjectOrder(id, httpRequest.authenticatedUser._id);
     return httpResponse.status(200).json({
       success: true,
-      message: 'Stage 2 Customer Account Activated & Welcome Email Dispatched',
+      message: 'Customer portal account activated and welcome email sent.',
       ...result
     });
   } catch (error) {
@@ -102,7 +128,7 @@ export const handleResendStage2Email = async (httpRequest, httpResponse, nextMid
     const result = await resendStage2ActivationEmail(id);
     return httpResponse.status(200).json({
       success: true,
-      message: 'Stage 2 Welcome & Credentials Email Resent',
+      message: 'Welcome and credentials email sent again.',
       ...result
     });
   } catch (error) {
@@ -112,9 +138,7 @@ export const handleResendStage2Email = async (httpRequest, httpResponse, nextMid
 
 export const handleGetMyProjectOrder = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
-    const userEmail = httpRequest.authenticatedUser?.email;
-    const userPhone = httpRequest.authenticatedUser?.phoneNumber;
-    const projectOrder = await fetchMyCustomerProjectOrder(userEmail, userPhone);
+    const projectOrder = await fetchMyCustomerProjectOrder(httpRequest.authenticatedUser);
     return httpResponse.status(200).json({
       success: true,
       order: projectOrder
@@ -124,10 +148,27 @@ export const handleGetMyProjectOrder = async (httpRequest, httpResponse, nextMid
   }
 };
 
+export const handleGetMyPortalBundle = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const bundle = await fetchCustomerPortalBundle(httpRequest.authenticatedUser);
+    return httpResponse.status(200).json({ success: true, ...bundle });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
 export const handleRecordOrderPayment = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
     const { id } = httpRequest.params;
-    const { paymentAmountInr, paymentMode, transactionReference, paymentNotes } = httpRequest.body || {};
+    const { paymentAmountInr, paymentMode, transactionReference } = httpRequest.validatedBody;
+
+    if (isCustomerUser(httpRequest.authenticatedUser)) {
+      const ownedOrder = await fetchProjectOrderById(id);
+      if (!ownedOrder || !orderBelongsToCustomer(ownedOrder, httpRequest.authenticatedUser)) {
+        throw buildHttpError(403, 'You can only pay for your own project order.');
+      }
+    }
+
     const updatedOrder = await processPaymentForOrder(
       id,
       paymentAmountInr,
@@ -137,7 +178,7 @@ export const handleRecordOrderPayment = async (httpRequest, httpResponse, nextMi
     );
     return httpResponse.status(200).json({
       success: true,
-      message: 'Online payment received & double-entry journal posted',
+      message: 'Payment received successfully.',
       order: updatedOrder
     });
   } catch (error) {

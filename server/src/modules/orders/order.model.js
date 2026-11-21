@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: order.model.js
- * @RESPONSIBILITY: Mongoose schema defining commercial quotations, confirmed project orders, BOM line items, and payment status.
+ * @RESPONSIBILITY: Mongoose schema defining commercial quotations, confirmed project orders, BOM line items, payments, specialised installation crews and the immutable crew modification log.
  * @DEPENDENCIES: mongoose, erpConfig.js
  */
 
@@ -26,6 +26,52 @@ const billOfMaterialItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const paymentRecordSchema = new mongoose.Schema(
+  {
+    paymentKind: { type: String, enum: ['ADVANCE', 'BALANCE'], required: true },
+    amountInr: { type: Number, required: true },
+    paymentMode: { type: String, default: 'UPI' },
+    transactionReference: { type: String, default: '' },
+    invoiceReference: { type: String, default: '' },
+    recordedAt: { type: Date, default: Date.now },
+    recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    recordedByName: { type: String, default: '' }
+  },
+  { _id: false }
+);
+
+const crewChangeSchema = new mongoose.Schema(
+  {
+    field: { type: String, required: true },
+    label: { type: String, required: true },
+    oldValue: { type: String, default: '' },
+    newValue: { type: String, default: '' }
+  },
+  { _id: false }
+);
+
+// Append-only audit trail: entries are only ever pushed by order.service.js, never edited or removed.
+const crewModificationLogEntrySchema = new mongoose.Schema(
+  {
+    action: { type: String, enum: ['ASSIGNED', 'MODIFIED'], required: true },
+    changedAt: { type: Date, default: Date.now },
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    changedByName: { type: String, default: '' },
+    changes: [crewChangeSchema]
+  },
+  { _id: false }
+);
+
+const dispatchPlanItemSchema = new mongoose.Schema(
+  {
+    stockItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'StockItem', required: true },
+    itemName: { type: String, required: true },
+    stockGroup: { type: String, default: '' },
+    quantity: { type: Number, required: true }
+  },
+  { _id: false }
+);
+
 const projectOrderEntitySchema = new mongoose.Schema(
   {
     quotationReference: { type: String, required: true, unique: true },
@@ -43,14 +89,22 @@ const projectOrderEntitySchema = new mongoose.Schema(
     netPayableAmountInr: { type: Number, required: true },
     advancePaymentAmountInr: { type: Number, default: 0 },
     balancePaymentDueInr: { type: Number, required: true },
+    paymentHistory: [paymentRecordSchema],
+    // Lifecycle: Draft -> Advance_Paid -> BALANCE_DUE (leftover pay) -> Packed -> Dispatched -> Installed -> Done
     orderWorkflowStatus: {
       type: String,
-      enum: ['Draft', 'Advance_Paid', 'Packed', 'Dispatched', 'Installed', 'Done', 'Cancelled'],
+      enum: ['Draft', 'Advance_Paid', 'BALANCE_DUE', 'Packed', 'Dispatched', 'Installed', 'Done', 'Cancelled'],
       default: 'Draft',
       required: true
     },
     assignedTechnicians: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    inverterTechnician: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    rooftopTechnician: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    wiringTechnician: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     scheduledInstallationDate: { type: Date, default: null },
+    crewModificationLog: [crewModificationLogEntrySchema],
+    dispatchEquipmentPlan: [dispatchPlanItemSchema],
+    dispatchEquipmentReserved: { type: Boolean, default: false },
     subsidyApplicationStatus: {
       type: String,
       enum: ['NOT_SUBMITTED', 'DOCUMENTS_VERIFIED', 'INSPECTION_PENDING', 'SUBSIDY_DISBURSED'],
@@ -66,8 +120,16 @@ const projectOrderEntitySchema = new mongoose.Schema(
     stage2EmailDispatchedAt: { type: Date, default: null },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true }, id: false }
 );
+
+// Friendly aliases used by the QA brief: advancePaid / balanceDue
+projectOrderEntitySchema.virtual('advancePaid').get(function advancePaidAlias() {
+  return this.advancePaymentAmountInr;
+});
+projectOrderEntitySchema.virtual('balanceDue').get(function balanceDueAlias() {
+  return this.balancePaymentDueInr;
+});
 
 projectOrderEntitySchema.plugin(auditPlugin);
 

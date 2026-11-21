@@ -23,6 +23,7 @@ import {
   handleApproveSurvey,
   handleGetAllInquiries,
   handleGetInquiryById,
+  handleGetInquiryQuoteSummary,
   handleTrackOrderOrInquiry,
   handleResendStage1Email
 } from './lead.controller.js';
@@ -33,6 +34,12 @@ leadApiRouter.post('/', validateRequestBody(createLeadInquiryValidationSchema), 
 leadApiRouter.get('/track/:query', handleTrackOrderOrInquiry);
 leadApiRouter.post('/:id/resend-stage1-email', handleResendStage1Email);
 leadApiRouter.get('/', verifyAuthentication, handleGetAllInquiries);
+leadApiRouter.get(
+  '/:id/quote',
+  verifyAuthentication,
+  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
+  handleGetInquiryQuoteSummary
+);
 leadApiRouter.get('/:id', verifyAuthentication, handleGetInquiryById);
 
 leadApiRouter.post(

@@ -74,6 +74,7 @@ export const ERP_CLIENT_CONFIG = Object.freeze({
     'In Progress': { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
     In_Progress: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
     Advance_Paid: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    BALANCE_DUE: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' },
     Packed: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
     Parts_Replaced: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
 

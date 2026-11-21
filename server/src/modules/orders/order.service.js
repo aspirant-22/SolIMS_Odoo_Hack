@@ -12,6 +12,16 @@ import { getNextSequenceNumber } from '../../core/sequenceRegistry.js';
 import { emitErpEvent } from '../../core/socketEmitter.js';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
 import { provisionCustomerUserAccount } from '../auth/auth.service.js';
+import { UserModel } from '../auth/user.model.js';
+import { SiteLogModel } from '../service/siteLog.model.js';
+import { TicketModel } from '../service/ticket.model.js';
+import { SerialAssetModel } from '../inventory/serialAsset.model.js';
+import {
+  buildOrderScopeFilter,
+  buildLeadScopeFilter,
+  buildCustomerPhoneRegex,
+  buildHttpError
+} from '../../core/customerScope.js';
 import {
   dispatchSimulatedEmail,
   renderStage2ActivationEmailTemplate
@@ -127,16 +137,61 @@ export const calculateEstimatedSubsidyAmount = (capacityKw, isSubsidyEligible) =
   return ERP_SYSTEM_CONFIG.SUBSIDY_BENCHMARKS.THREE_KW_AND_ABOVE_INR;
 };
 
+const formatInr = (amount) => `₹${Number(amount).toLocaleString('en-IN')}`;
+
+export const ORDER_POPULATE_PATHS = [
+  { path: 'assignedTechnicians', select: 'fullName email phoneNumber assignedSpecialization role' },
+  { path: 'inverterTechnician', select: 'fullName email phoneNumber assignedSpecialization role' },
+  { path: 'rooftopTechnician', select: 'fullName email phoneNumber assignedSpecialization role' },
+  { path: 'wiringTechnician', select: 'fullName email phoneNumber assignedSpecialization role' }
+];
+
+const ORDER_PROGRESS_RANK = {
+  Cancelled: -1,
+  Draft: 0,
+  Advance_Paid: 1,
+  BALANCE_DUE: 1,
+  Packed: 2,
+  Dispatched: 3,
+  Installed: 4,
+  Done: 5
+};
+
+const PAID_ADVANCE_STATUSES = ['Advance_Paid', 'BALANCE_DUE', 'Packed', 'Dispatched', 'Installed', 'Done'];
+
+const resolveActorName = async (userId) => {
+  if (!userId) return 'System';
+  const actor = await UserModel.findById(userId).select('fullName');
+  return actor?.fullName || 'System';
+};
+
 export const generateQuoteForLeadInquiry = async (leadInquiryId, customDiscountInr = 0, creatorUserId) => {
   const leadRecord = await LeadModel.findById(leadInquiryId);
-  if (!leadRecord) throw new Error('Lead inquiry not found');
-  if (leadRecord.inquiryWorkflowStatus !== 'Approved') {
-    throw new Error('Guardrail violation: Quotation can only be generated after technical survey approval');
+  if (!leadRecord) throw buildHttpError(404, 'Lead inquiry not found');
+
+  // Re-clickable BOM: if a quote already exists for this lead, simply re-open it instead of re-running the creation guard.
+  const existingQuote = await OrderModel.findOne({
+    $or: [
+      { leadInquiryId: leadRecord._id },
+      ...(leadRecord.quoteGeneratedReference ? [{ quotationReference: leadRecord.quoteGeneratedReference }] : [])
+    ]
+  })
+    .sort({ createdAt: -1 })
+    .populate(ORDER_POPULATE_PATHS);
+  if (existingQuote) {
+    return { quote: existingQuote, alreadyGenerated: true };
   }
 
+  const statusNormalized = String(leadRecord.inquiryWorkflowStatus || leadRecord.status || '').toUpperCase();
+  const isEligibleForFirstQuote = ['APPROVED', 'QUOTED'].includes(statusNormalized) || Boolean(leadRecord.quoteGeneratedReference);
+  if (!isEligibleForFirstQuote) {
+    throw buildHttpError(400, 'Guardrail violation: Quotation can only be generated after technical survey approval');
+  }
+
+  const discount = Number(customDiscountInr) || 0;
   const generatedQuoteRef = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.QUOTE);
   const calculatedBom = computeAutomatedBillOfMaterials(leadRecord.requestedCapacityKw, leadRecord.requestedVariant);
-  const grossTotal = calculatedBom.reduce((sum, item) => sum + item.totalPriceInr, 0) - customDiscountInr;
+  const grossTotal = calculatedBom.reduce((sum, item) => sum + item.totalPriceInr, 0) - discount;
   const subsidyAmount = calculateEstimatedSubsidyAmount(leadRecord.requestedCapacityKw, leadRecord.isSubsidyEligible);
   const netPayable = Math.max(0, grossTotal - subsidyAmount);
 
@@ -163,27 +218,103 @@ export const generateQuoteForLeadInquiry = async (leadInquiryId, customDiscountI
   await leadRecord.save();
 
   emitErpEvent('QUOTATION_GENERATED', { quote: createdOrderQuote });
-  return createdOrderQuote;
+  return { quote: createdOrderQuote, alreadyGenerated: false };
 };
 
-export const processAdvancePaymentForOrder = async (orderId, paymentAmountInr, paymentMode, transactionReference, recordingUserId) => {
-  const orderRecord = await OrderModel.findById(orderId);
-  if (!orderRecord) throw new Error('Order not found');
+export const fetchQuoteForLead = async (leadInquiryId) => {
+  return OrderModel.findOne({ leadInquiryId }).sort({ createdAt: -1 }).populate(ORDER_POPULATE_PATHS);
+};
 
-  const minimumRequiredAdvance = orderRecord.netPayableAmountInr * ERP_SYSTEM_CONFIG.MINIMUM_ADVANCE_PERCENTAGE;
-  if (paymentAmountInr < minimumRequiredAdvance) {
-    throw new Error(`Minimum advance requirement not met: Required ₹${minimumRequiredAdvance.toLocaleString('en-IN')}`);
+const appendPaymentRecord = async (orderRecord, { paymentKind, amount, paymentMode, transactionReference, recordingUserId }) => {
+  const invoiceReference = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.INVOICE);
+  orderRecord.paymentHistory.push({
+    paymentKind,
+    amountInr: amount,
+    paymentMode,
+    transactionReference,
+    invoiceReference,
+    recordedAt: new Date(),
+    recordedBy: recordingUserId || null,
+    recordedByName: await resolveActorName(recordingUserId)
+  });
+};
+
+const postPaymentJournalEntry = async ({ orderRecord, amount, entryCategory, narrative, recordingUserId }) => {
+  // Immutable double-entry posting: Debit 1010 Bank / Credit 1200 Accounts Receivable
+  const journalRef = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.JOURNAL);
+  return JournalEntryModel.create({
+    entryReference: journalRef,
+    orderReference: orderRecord.orderReference || orderRecord.quotationReference,
+    entryCategory,
+    narrativeDescription: narrative,
+    journalLines: [
+      { accountCode: '1010', accountName: 'Cash / Bank Current Account', debitAmountInr: amount, creditAmountInr: 0 },
+      { accountCode: '1200', accountName: 'Accounts Receivable - Solar Projects', debitAmountInr: 0, creditAmountInr: amount }
+    ],
+    updatedBy: recordingUserId || null
+  });
+};
+
+const normalizePaymentAmount = (rawAmount) => {
+  const amount = Number(rawAmount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw buildHttpError(400, 'Invalid input: Please enter a valid positive number.');
   }
+  return Math.round(amount * 100) / 100;
+};
+
+export const processAdvancePaymentForOrder = async (orderId, paymentAmountInr, paymentMode = 'UPI', transactionReference, recordingUserId) => {
+  const orderRecord = await OrderModel.findById(orderId);
+  if (!orderRecord) throw buildHttpError(404, 'Order not found');
+
+  const amount = normalizePaymentAmount(paymentAmountInr);
+
+  if (orderRecord.orderWorkflowStatus !== 'Draft' || orderRecord.advancePaymentAmountInr > 0) {
+    throw buildHttpError(
+      409,
+      'An advance payment has already been recorded for this order. Use "Record Leftover Payment" to collect the remaining balance.'
+    );
+  }
+
+  const minimumRequiredAdvance = Math.ceil(orderRecord.netPayableAmountInr * ERP_SYSTEM_CONFIG.MINIMUM_ADVANCE_PERCENTAGE);
+  if (amount < minimumRequiredAdvance) {
+    throw buildHttpError(
+      400,
+      `Advance payment must be at least 20% of the total quote amount (Minimum: ${formatInr(minimumRequiredAdvance)}).`
+    );
+  }
+  if (amount > orderRecord.netPayableAmountInr) {
+    throw buildHttpError(400, `Advance payment cannot be more than the total quote amount (${formatInr(orderRecord.netPayableAmountInr)}).`);
+  }
+
+  const resolvedMode = paymentMode || 'UPI';
+  const resolvedReference = transactionReference || `${resolvedMode}-ADV-${Date.now().toString().slice(-6)}`;
 
   if (!orderRecord.orderReference) {
     orderRecord.orderReference = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.ORDER);
   }
 
-  orderRecord.advancePaymentAmountInr += paymentAmountInr;
-  orderRecord.balancePaymentDueInr = Math.max(0, orderRecord.netPayableAmountInr - orderRecord.advancePaymentAmountInr);
-  orderRecord.orderWorkflowStatus = 'Advance_Paid';
+  orderRecord.advancePaymentAmountInr = amount;
+  orderRecord.balancePaymentDueInr = Math.max(0, Math.round((orderRecord.netPayableAmountInr - amount) * 100) / 100);
+  // Leftover Pay stage: remaining balance is tracked explicitly until fully settled
+  orderRecord.orderWorkflowStatus = orderRecord.balancePaymentDueInr > 0 ? 'BALANCE_DUE' : 'Advance_Paid';
   orderRecord.updatedBy = recordingUserId;
+  await appendPaymentRecord(orderRecord, {
+    paymentKind: 'ADVANCE',
+    amount,
+    paymentMode: resolvedMode,
+    transactionReference: resolvedReference,
+    recordingUserId
+  });
   await orderRecord.save();
+
+  await postPaymentJournalEntry({
+    orderRecord,
+    amount,
+    entryCategory: 'ADVANCE_PAYMENT',
+    narrative: `Advance payment of ${formatInr(amount)} collected via ${resolvedMode} (Ref: ${resolvedReference}) for ${orderRecord.customerFullName}`,
+    recordingUserId
+  });
 
   // Stage 2 Progressive Onboarding: Automatically Provision Customer Portal Account & Dispatch Simulated Email
   let customerActivationResult = null;
@@ -193,26 +324,14 @@ export const processAdvancePaymentForOrder = async (orderId, paymentAmountInr, p
     console.warn('[ONBOARDING] Stage 2 auto-activation warning:', onboardingErr.message);
   }
 
-  // Immutable Double-Entry Ledger Posting: Bank (Debit) vs Customer Advance Liability (Credit)
-  const journalRef = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.JOURNAL);
-  await JournalEntryModel.create({
-    entryReference: journalRef,
-    orderReference: orderRecord.orderReference,
-    entryCategory: 'ADVANCE_PAYMENT',
-    narrativeDescription: `Advance payment collected via ${paymentMode} ref: ${transactionReference} for ${orderRecord.customerFullName}`,
-    journalLines: [
-      { accountCode: '1010', accountName: 'Cash / Bank Current Account', debitAmountInr: paymentAmountInr, creditAmountInr: 0 },
-      { accountCode: '2010', accountName: 'Customer Advance Liabilities', debitAmountInr: 0, creditAmountInr: paymentAmountInr }
-    ],
-    updatedBy: recordingUserId
-  });
-
+  const refreshedOrder = await OrderModel.findById(orderRecord._id).populate(ORDER_POPULATE_PATHS);
   emitErpEvent('ORDER_CONFIRMED', {
-    order: orderRecord,
+    order: refreshedOrder,
     customerActivation: customerActivationResult
   });
-  return orderRecord;
+  return refreshedOrder;
 };
+
 
 /**
  * Stage 2 Progressive Customer Account Activation & Simulated Email Dispatch
@@ -297,29 +416,203 @@ export const resendStage2ActivationEmail = async (orderId) => {
   return activateCustomerForProjectOrder(orderId, null);
 };
 
-export const fetchMyCustomerProjectOrder = async (userEmail, userPhoneNumber) => {
-  const queryOr = [];
-  if (userEmail) queryOr.push({ customerEmailAddress: userEmail.toLowerCase().trim() });
-  if (userPhoneNumber) queryOr.push({ customerPhoneNumber: userPhoneNumber.trim() });
-
-  if (queryOr.length === 0) return null;
-
-  return OrderModel.findOne({ $or: queryOr })
-    .populate('assignedTechnicians', 'fullName email phoneNumber')
+export const fetchMyCustomerProjectOrder = async (user) => {
+  const orders = await OrderModel.find(buildOrderScopeFilter(user))
+    .populate(ORDER_POPULATE_PATHS)
     .populate('customerUserId', 'fullName email phoneNumber')
     .sort({ createdAt: -1 });
+  return pickPrimaryOrder(orders);
 };
 
-export const assignCrewToProjectOrder = async (orderId, technicianIdsArray, scheduledInstallationDate, assigningUserId) => {
-  const orderRecord = await OrderModel.findById(orderId);
-  if (!orderRecord) throw new Error('Order not found');
+export const pickPrimaryOrder = (orders = []) => {
+  if (orders.length === 0) return null;
+  return [...orders].sort((a, b) => {
+    const rankDiff = (ORDER_PROGRESS_RANK[b.orderWorkflowStatus] ?? 0) - (ORDER_PROGRESS_RANK[a.orderWorkflowStatus] ?? 0);
+    if (rankDiff !== 0) return rankDiff;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  })[0];
+};
 
-  orderRecord.assignedTechnicians = technicianIdsArray;
-  orderRecord.scheduledInstallationDate = new Date(scheduledInstallationDate);
+/**
+ * Customer Portal bundle: everything returned here is scoped to the authenticated CUSTOMER only
+ * (matched by user id, email or phone) - never to a seeded demo customer.
+ */
+export const fetchCustomerPortalBundle = async (user) => {
+  const orders = await OrderModel.find(buildOrderScopeFilter(user))
+    .populate(ORDER_POPULATE_PATHS)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const primaryOrder = pickPrimaryOrder(orders);
+  const orderReferences = orders.map((o) => o.orderReference).filter(Boolean);
+
+  const leads = await LeadModel.find(buildLeadScopeFilter(user))
+    .select('-onboardingAccessToken')
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .lean();
+
+  const siteLog = primaryOrder
+    ? await SiteLogModel.findOne({ orderId: primaryOrder._id })
+        .sort({ createdAt: -1 })
+        .populate('leadTechnicianUser', 'fullName assignedSpecialization')
+        .lean()
+    : null;
+
+  const phoneRegex = buildCustomerPhoneRegex(user);
+  const assetClauses = [{ assignedCustomerId: user._id }];
+  if (orderReferences.length > 0) assetClauses.push({ orderReference: { $in: orderReferences } });
+  if (phoneRegex) assetClauses.push({ customerPhoneNumber: phoneRegex });
+
+  const rawAssets = await SerialAssetModel.find({
+    $or: assetClauses,
+    warrantyExpiresTimestamp: { $ne: null }
+  })
+    .sort({ dispatchConfirmedTimestamp: -1 })
+    .lean();
+
+  const now = Date.now();
+  const assets = rawAssets.map((asset) => {
+    const startedAt = asset.dispatchConfirmedTimestamp ? new Date(asset.dispatchConfirmedTimestamp).getTime() : now;
+    const expiresAt = new Date(asset.warrantyExpiresTimestamp).getTime();
+    return {
+      ...asset,
+      elapsedDays: Math.max(0, Math.floor((now - startedAt) / 86400000)),
+      remainingWarrantyDays: Math.max(0, Math.ceil((expiresAt - now) / 86400000)),
+      isUnderActiveWarranty: expiresAt > now
+    };
+  });
+
+  const serials = assets.map((a) => a.serialNumber);
+  const ticketClauses = [];
+  if (phoneRegex) ticketClauses.push({ customerPhoneNumber: phoneRegex });
+  if (serials.length > 0) ticketClauses.push({ targetSerialNumber: { $in: serials } });
+  const tickets = ticketClauses.length > 0
+    ? await TicketModel.find({ $or: ticketClauses }).sort({ createdAt: -1 }).lean()
+    : [];
+
+  const invoices = [];
+  for (const order of orders) {
+    const history = order.paymentHistory || [];
+    if (history.length === 0 && order.advancePaymentAmountInr > 0) {
+      invoices.push({
+        invoiceReference: `INV/${(order.orderReference || order.quotationReference || '').replace(/\//g, '-')}`,
+        orderReference: order.orderReference || order.quotationReference,
+        paymentKind: 'ADVANCE',
+        amountInr: order.advancePaymentAmountInr,
+        paymentMode: 'UPI',
+        recordedAt: order.updatedAt
+      });
+    }
+    history.forEach((entry) => {
+      invoices.push({ ...entry, orderReference: order.orderReference || order.quotationReference });
+    });
+  }
+  invoices.sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt));
+
+  return {
+    profile: { fullName: user.fullName, email: user.email, phoneNumber: user.phoneNumber },
+    leads,
+    orders,
+    order: primaryOrder,
+    siteLog,
+    assets,
+    tickets,
+    invoices
+  };
+};
+
+const CREW_ROLE_FIELDS = [
+  { field: 'inverterTechnician', label: 'Inverter Specialist' },
+  { field: 'rooftopTechnician', label: 'Rooftop Mounting Technician' },
+  { field: 'wiringTechnician', label: 'High-Voltage Wiring Technician' }
+];
+
+const toCalendarDayKey = (dateValue) => (dateValue ? new Date(dateValue).toISOString().slice(0, 10) : '');
+const formatCalendarDay = (dateValue) =>
+  dateValue
+    ? new Date(dateValue).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    : 'Not scheduled';
+
+export const assignCrewToProjectOrder = async (orderId, crewSelection, scheduledInstallationDate, assigningUserId) => {
+  const orderRecord = await OrderModel.findById(orderId);
+  if (!orderRecord) throw buildHttpError(404, 'Order not found');
+
+  if (orderRecord.orderWorkflowStatus === 'Draft') {
+    throw buildHttpError(409, 'Please record the advance payment before assigning the installation crew.');
+  }
+  if (orderRecord.orderWorkflowStatus === 'Cancelled') {
+    throw buildHttpError(409, 'This order has been cancelled, so the crew cannot be changed.');
+  }
+
+  // Validate the scheduled date (date-only strings are anchored at noon UTC so they never shift a calendar day)
+  const rawDate = String(scheduledInstallationDate || '').trim();
+  const newScheduledDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? new Date(`${rawDate}T12:00:00.000Z`) : new Date(rawDate);
+  if (Number.isNaN(newScheduledDate.getTime())) {
+    throw buildHttpError(400, 'Please enter a valid installation date.');
+  }
+  const dateChanged = toCalendarDayKey(newScheduledDate) !== toCalendarDayKey(orderRecord.scheduledInstallationDate);
+  if (dateChanged && toCalendarDayKey(newScheduledDate) < new Date().toISOString().slice(0, 10)) {
+    throw buildHttpError(400, 'Installation date cannot be in the past. Please choose today or a future date.');
+  }
+
+  // Validate every selected technician is an active STAFF member
+  const selectedIds = CREW_ROLE_FIELDS.map(({ field }) => String(crewSelection[field]));
+  const previousIds = CREW_ROLE_FIELDS.map(({ field }) => (orderRecord[field] ? String(orderRecord[field]) : null)).filter(Boolean);
+  const involvedUsers = await UserModel.find({ _id: { $in: [...new Set([...selectedIds, ...previousIds])] } }).select('fullName role isActive');
+  const userLookup = new Map(involvedUsers.map((u) => [String(u._id), u]));
+
+  for (const { field, label } of CREW_ROLE_FIELDS) {
+    const picked = userLookup.get(String(crewSelection[field]));
+    if (!picked || picked.role !== ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF || !picked.isActive) {
+      throw buildHttpError(400, `The selected ${label} is not an available technician. Please choose someone from the list.`);
+    }
+  }
+
+  const changes = [];
+  for (const { field, label } of CREW_ROLE_FIELDS) {
+    const oldId = orderRecord[field] ? String(orderRecord[field]) : '';
+    const newId = String(crewSelection[field]);
+    if (oldId !== newId) {
+      changes.push({
+        field,
+        label,
+        oldValue: oldId ? (userLookup.get(oldId)?.fullName || 'Unknown technician') : 'Not assigned',
+        newValue: userLookup.get(newId).fullName
+      });
+    }
+  }
+  if (dateChanged) {
+    changes.push({
+      field: 'scheduledInstallationDate',
+      label: 'Scheduled Installation Date',
+      oldValue: formatCalendarDay(orderRecord.scheduledInstallationDate),
+      newValue: formatCalendarDay(newScheduledDate)
+    });
+  }
+
+  if (changes.length === 0) {
+    throw buildHttpError(409, 'No changes detected: the crew and installation date are already set exactly like this.');
+  }
+
+  const isFirstAssignment = (orderRecord.crewModificationLog || []).length === 0;
+  orderRecord.crewModificationLog.push({
+    action: isFirstAssignment ? 'ASSIGNED' : 'MODIFIED',
+    changedAt: new Date(),
+    changedBy: assigningUserId || null,
+    changedByName: await resolveActorName(assigningUserId),
+    changes
+  });
+
+  CREW_ROLE_FIELDS.forEach(({ field }) => {
+    orderRecord[field] = crewSelection[field];
+  });
+  orderRecord.assignedTechnicians = [...new Set(selectedIds)];
+  orderRecord.scheduledInstallationDate = newScheduledDate;
   orderRecord.updatedBy = assigningUserId;
   await orderRecord.save();
 
-  await orderRecord.populate('assignedTechnicians', 'fullName email phoneNumber assignedSpecialization role');
+  await orderRecord.populate(ORDER_POPULATE_PATHS);
   emitErpEvent('CREW_ASSIGNED', { order: orderRecord });
   return orderRecord;
 };
@@ -332,53 +625,61 @@ export const processPaymentForOrder = async (
   recordingUserId = null
 ) => {
   const orderRecord = await OrderModel.findById(orderId);
-  if (!orderRecord) throw new Error('Order not found');
+  if (!orderRecord) throw buildHttpError(404, 'Order not found');
 
-  const amount = Number(paymentAmountInr);
-  if (isNaN(amount) || amount <= 0) {
-    throw new Error('Valid positive payment amount is required');
+  const amount = normalizePaymentAmount(paymentAmountInr);
+
+  // An unpaid quote can only be activated through the advance path, which enforces the 20% minimum
+  if (orderRecord.orderWorkflowStatus === 'Draft') {
+    return processAdvancePaymentForOrder(orderId, amount, paymentMode, transactionReference, recordingUserId);
   }
 
-  orderRecord.advancePaymentAmountInr += amount;
-  orderRecord.balancePaymentDueInr = Math.max(0, orderRecord.netPayableAmountInr - orderRecord.advancePaymentAmountInr);
+  if (orderRecord.balancePaymentDueInr <= 0) {
+    throw buildHttpError(409, 'This order is already fully paid. There is no balance left to collect.');
+  }
+  if (amount > orderRecord.balancePaymentDueInr) {
+    throw buildHttpError(400, `The payment is more than the balance due. The remaining balance is ${formatInr(orderRecord.balancePaymentDueInr)}.`);
+  }
 
-  if (
-    orderRecord.orderWorkflowStatus === 'Draft' &&
-    orderRecord.advancePaymentAmountInr >= orderRecord.netPayableAmountInr * ERP_SYSTEM_CONFIG.MINIMUM_ADVANCE_PERCENTAGE
-  ) {
+  const resolvedMode = paymentMode || 'UPI';
+  const resolvedReference = transactionReference || `${resolvedMode}-BAL-${Date.now().toString().slice(-6)}`;
+
+  orderRecord.advancePaymentAmountInr = Math.round((orderRecord.advancePaymentAmountInr + amount) * 100) / 100;
+  orderRecord.balancePaymentDueInr = Math.max(0, Math.round((orderRecord.netPayableAmountInr - orderRecord.advancePaymentAmountInr) * 100) / 100);
+  if (orderRecord.balancePaymentDueInr === 0 && orderRecord.orderWorkflowStatus === 'BALANCE_DUE') {
     orderRecord.orderWorkflowStatus = 'Advance_Paid';
   }
-
   if (recordingUserId) orderRecord.updatedBy = recordingUserId;
-  await orderRecord.save();
-  await orderRecord.populate('assignedTechnicians', 'fullName email phoneNumber assignedSpecialization role');
 
-  // Immutable Double-Entry Ledger Posting: Debit Bank (1010) vs Credit Accounts Receivable (1200)
-  const journalRef = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.JOURNAL);
-  await JournalEntryModel.create({
-    entryReference: journalRef,
-    orderReference: orderRecord.orderReference || orderRecord.quotationReference,
+  await appendPaymentRecord(orderRecord, {
+    paymentKind: 'BALANCE',
+    amount,
+    paymentMode: resolvedMode,
+    transactionReference: resolvedReference,
+    recordingUserId
+  });
+  await orderRecord.save();
+
+  await postPaymentJournalEntry({
+    orderRecord,
+    amount,
     entryCategory: 'CUSTOMER_PAYMENT',
-    narrativeDescription: `Online payment of ₹${amount.toLocaleString('en-IN')} via ${paymentMode} (Ref: ${transactionReference || 'ONLINE-PORTAL'}) for ${orderRecord.customerFullName}`,
-    journalLines: [
-      { accountCode: '1010', accountName: 'Cash / Bank Current Account', debitAmountInr: amount, creditAmountInr: 0 },
-      { accountCode: '1200', accountName: 'Accounts Receivable - Solar Projects', debitAmountInr: 0, creditAmountInr: amount }
-    ],
-    updatedBy: recordingUserId
+    narrative: `Leftover payment of ${formatInr(amount)} via ${resolvedMode} (Ref: ${resolvedReference}) for ${orderRecord.customerFullName}`,
+    recordingUserId
   });
 
+  await orderRecord.populate(ORDER_POPULATE_PATHS);
   emitErpEvent('PAYMENT_RECEIVED', {
     order: orderRecord,
     paymentAmountInr: amount,
-    paymentMode,
-    transactionReference
+    paymentMode: resolvedMode,
+    transactionReference: resolvedReference
   });
 
   return orderRecord;
 };
 
 export const fetchAllTechnicians = async () => {
-  const { UserModel } = await import('../auth/user.model.js');
   return UserModel.find({ role: ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF, isActive: true })
     .select('_id fullName email phoneNumber assignedSpecialization role')
     .sort({ fullName: 1 });
@@ -386,11 +687,10 @@ export const fetchAllTechnicians = async () => {
 
 export const fetchAllProjectOrders = async (filterQuery = {}) => {
   return OrderModel.find(filterQuery)
-    .populate('assignedTechnicians', 'fullName email phoneNumber assignedSpecialization role')
+    .populate(ORDER_POPULATE_PATHS)
     .sort({ createdAt: -1 });
 };
 
 export const fetchProjectOrderById = async (orderId) => {
-  return OrderModel.findById(orderId)
-    .populate('assignedTechnicians', 'fullName email phoneNumber assignedSpecialization role');
+  return OrderModel.findById(orderId).populate(ORDER_POPULATE_PATHS);
 };

@@ -1,75 +1,82 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: AlertBanner.jsx
- * @RESPONSIBILITY: Reusable accessible alert/toast banner with auto-dismiss timers and explicit close button.
- * @DEPENDENCIES: react, lucide-react
+ * @RESPONSIBILITY: Prominent accessible toast / alert banner: big green ✅ for success, big red ⚠️ for errors, plain non-technical language and a × close button.
+ * @DEPENDENCIES: react, friendlyMessage.js
  */
 
-import React, { useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { toFriendlyMessage } from '../utils/friendlyMessage';
 
 export const AlertBanner = ({
   type = 'info',
   message = '',
-  onDismiss = () => {},
+  onDismiss = () => { },
   autoDismissMs = null,
-  className = ''
+  className = '',
+  inline = false
 }) => {
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+
+  const friendlyText = useMemo(() => toFriendlyMessage(message, type), [message, type]);
+
   useEffect(() => {
-    if (!message) return;
-    const timeoutDuration = autoDismissMs !== null 
-      ? autoDismissMs 
-      : (type === 'success' ? 6000 : 10000);
-
-    if (timeoutDuration <= 0) return;
-
-    const timer = setTimeout(() => {
-      onDismiss();
-    }, timeoutDuration);
-
+    if (!friendlyText) return undefined;
+    const timeoutDuration = autoDismissMs !== null ? autoDismissMs : (type === 'success' ? 7000 : 12000);
+    if (timeoutDuration <= 0) return undefined;
+    const timer = setTimeout(() => dismissRef.current && dismissRef.current(), timeoutDuration);
     return () => clearTimeout(timer);
-  }, [message, type, autoDismissMs, onDismiss]);
+  }, [friendlyText, type, autoDismissMs]);
 
-  if (!message) return null;
+  if (!friendlyText) return null;
 
   const isSuccess = type === 'success';
   const isError = type === 'error';
   const isWarning = type === 'warning';
 
-  let bannerStyle = 'bg-slate-100 text-slate-800 border-slate-200';
-  let IconComponent = Info;
-  let iconColor = 'text-slate-600';
-
+  let tone = {
+    wrapper: 'bg-white border-slate-300 text-slate-900',
+    badge: 'bg-slate-100 border-slate-200',
+    icon: 'ℹ️',
+    title: 'Please note'
+  };
   if (isSuccess) {
-    bannerStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-    IconComponent = CheckCircle2;
-    iconColor = 'text-emerald-700';
+    tone = { wrapper: 'bg-emerald-50 border-emerald-500 text-emerald-950', badge: 'bg-emerald-100 border-emerald-300', icon: '✅', title: 'Success!' };
   } else if (isError) {
-    bannerStyle = 'bg-rose-50 text-rose-800 border-rose-200';
-    IconComponent = AlertCircle;
-    iconColor = 'text-rose-600';
+    tone = { wrapper: 'bg-rose-50 border-rose-500 text-rose-950', badge: 'bg-rose-100 border-rose-300', icon: '⚠️', title: 'Something needs your attention' };
   } else if (isWarning) {
-    bannerStyle = 'bg-amber-50 text-amber-900 border-amber-200';
-    IconComponent = AlertTriangle;
-    iconColor = 'text-amber-600';
+    tone = { wrapper: 'bg-amber-50 border-amber-500 text-amber-950', badge: 'bg-amber-100 border-amber-300', icon: '⚠️', title: 'Please check' };
   }
+
+  const positionClasses = inline
+    ? 'w-full'
+    : 'fixed top-20 left-1/2 -translate-x-1/2 z-[70] w-[min(94vw,36rem)]';
 
   return (
     <div
       role="alert"
-      className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center justify-between gap-3 border shadow-2xs transition-all animate-in fade-in slide-in-from-top-1 ${bannerStyle} ${className}`}
+      aria-live={isError ? 'assertive' : 'polite'}
+      data-alert-type={type}
+      className={`${positionClasses} flex items-start gap-4 p-4 rounded-2xl border-2 shadow-xl ${tone.wrapper} ${className}`}
     >
-      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-        <IconComponent className={`w-4 h-4 shrink-0 ${iconColor}`} />
-        <span className="leading-relaxed break-words">{message}</span>
+      <div
+        className={`shrink-0 w-14 h-14 rounded-full border flex items-center justify-center text-4xl leading-none ${tone.badge}`}
+        aria-hidden="true"
+      >
+        {tone.icon}
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className="font-heading font-black text-sm tracking-tight">{tone.title}</div>
+        <p className="text-[13px] font-semibold leading-relaxed mt-0.5 break-words">{friendlyText}</p>
       </div>
       <button
         type="button"
         onClick={onDismiss}
-        aria-label="Dismiss alert"
-        className="shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors cursor-pointer"
+        aria-label="Close notification"
+        className="shrink-0 w-8 h-8 rounded-full text-2xl leading-none font-bold text-slate-500 hover:text-slate-900 hover:bg-black/10 transition-colors cursor-pointer flex items-center justify-center"
       >
-        <X className="w-4 h-4" />
+        ×
       </button>
     </div>
   );

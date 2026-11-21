@@ -20,6 +20,11 @@ import { useAuth } from '../../context/AuthContext';
 import { DataTable, StatusPill } from '../../components/DataTable';
 import { formatCurrencyInr } from '../../erpClientConfig';
 import { AlertBanner } from '../../components/AlertBanner';
+import {
+  validateAdvanceAmount,
+  validatePaymentAgainstBalance,
+  validateDateField
+} from '../../utils/validators';
 
 export const OrdersView = () => {
   const { currentUser, setIsSystemProcessing } = useAuth();
@@ -27,11 +32,17 @@ export const OrdersView = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [advanceAmountInput, setAdvanceAmountInput] = useState(50000);
   const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
+  const [isLeftoverModalOpen, setIsLeftoverModalOpen] = useState(false);
+  const [leftoverAmountInput, setLeftoverAmountInput] = useState(0);
+  const [leftoverPaymentMode, setLeftoverPaymentMode] = useState('UPI');
+  const [leftoverTxnRef, setLeftoverTxnRef] = useState('');
   const [isAssignCrewModalOpen, setIsAssignCrewModalOpen] = useState(false);
   const [scheduledDateInput, setScheduledDateInput] = useState('2026-11-28');
   const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
   const [techniciansList, setTechniciansList] = useState([]);
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
+  const [inverterTechId, setInverterTechId] = useState('');
+  const [rooftopTechId, setRooftopTechId] = useState('');
+  const [wiringTechId, setWiringTechId] = useState('');
 
   const loadAllOrders = async () => {
     try {
@@ -41,15 +52,15 @@ export const OrdersView = () => {
       ]);
       if (ordersRes.success) {
         setOrdersList(ordersRes.orders || []);
-        if (ordersRes.orders?.length > 0 && !selectedOrder) {
-          setSelectedOrder(ordersRes.orders[0]);
+        if (ordersRes.orders?.length > 0) {
+          setSelectedOrder((prev) => {
+            if (!prev) return ordersRes.orders[0];
+            return ordersRes.orders.find((o) => o._id === prev._id) || ordersRes.orders[0];
+          });
         }
       }
       if (techsRes.success && techsRes.technicians?.length > 0) {
         setTechniciansList(techsRes.technicians);
-        if (!selectedTechnicianId) {
-          setSelectedTechnicianId(techsRes.technicians[0]._id);
-        }
       }
     } catch (err) {
       console.error('Failed to load orders / technicians:', err);
@@ -60,27 +71,96 @@ export const OrdersView = () => {
     loadAllOrders();
   }, []);
 
+  const openCrewModal = () => {
+    if (!selectedOrder) return;
+    const defaultTechId = techniciansList[0]?._id || '';
+    const secondTechId = techniciansList[1]?._id || defaultTechId;
+    const thirdTechId = techniciansList[2]?._id || defaultTechId;
+
+    setInverterTechId(
+      (typeof selectedOrder.inverterTechnician === 'object' ? selectedOrder.inverterTechnician?._id : selectedOrder.inverterTechnician) || defaultTechId
+    );
+    setRooftopTechId(
+      (typeof selectedOrder.rooftopTechnician === 'object' ? selectedOrder.rooftopTechnician?._id : selectedOrder.rooftopTechnician) || secondTechId
+    );
+    setWiringTechId(
+      (typeof selectedOrder.wiringTechnician === 'object' ? selectedOrder.wiringTechnician?._id : selectedOrder.wiringTechnician) || thirdTechId
+    );
+    setScheduledDateInput(
+      selectedOrder.scheduledInstallationDate
+        ? new Date(selectedOrder.scheduledInstallationDate).toISOString().slice(0, 10)
+        : '2026-11-28'
+    );
+    setIsAssignCrewModalOpen(true);
+  };
+
   const handleCaptureAdvanceSubmit = async (e) => {
     e.preventDefault();
     if (!selectedOrder) return;
+    const validation = validateAdvanceAmount(advanceAmountInput, selectedOrder.netPayableAmountInr);
+    if (!validation.ok) {
+      setFeedbackMessage({ type: 'error', text: validation.error });
+      return;
+    }
+
     setIsSystemProcessing(true);
     setFeedbackMessage({ type: '', text: '' });
     try {
       const response = await executeHttpRequest(`/api/orders/${selectedOrder._id}/advance-payment`, {
         method: 'POST',
-        body: JSON.stringify({ advanceAmountInr: Number(advanceAmountInput) })
+        body: JSON.stringify({
+          paymentAmountInr: validation.value,
+          paymentMode: 'UPI',
+          transactionReference: `UPI-ADV-${Date.now().toString().slice(-6)}`
+        })
       });
-      if (response.success) {
+      if (response.success && response.order) {
         setIsAdvanceModalOpen(false);
         setSelectedOrder(response.order);
         setFeedbackMessage({
           type: 'success',
-          text: `Advance payment captured! Stage 2 Customer Account Activated & Welcome Email Dispatched to ${response.order.customerEmailAddress}.`
+          text: `Advance payment of ₹${validation.value.toLocaleString('en-IN')} recorded successfully! Double-entry JournalEntry posted (Debit 1010 Bank / Credit 1200 Accounts Receivable). Remaining balance updated.`
         });
         await loadAllOrders();
       }
     } catch (err) {
       setFeedbackMessage({ type: 'error', text: err.message || 'Payment capture failed' });
+    } finally {
+      setIsSystemProcessing(false);
+    }
+  };
+
+  const handleCaptureLeftoverSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    const validation = validatePaymentAgainstBalance(leftoverAmountInput, selectedOrder.balancePaymentDueInr);
+    if (!validation.ok) {
+      setFeedbackMessage({ type: 'error', text: validation.error });
+      return;
+    }
+
+    setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
+    try {
+      const response = await executeHttpRequest(`/api/orders/${selectedOrder._id}/payment`, {
+        method: 'POST',
+        body: JSON.stringify({
+          paymentAmountInr: validation.value,
+          paymentMode: leftoverPaymentMode,
+          transactionReference: leftoverTxnRef || `${leftoverPaymentMode}/2026/BAL${Date.now().toString().slice(-6)}`
+        })
+      });
+      if (response.success && response.order) {
+        setIsLeftoverModalOpen(false);
+        setSelectedOrder(response.order);
+        setFeedbackMessage({
+          type: 'success',
+          text: `Leftover balance payment of ₹${validation.value.toLocaleString('en-IN')} recorded successfully! Double-entry JournalEntry posted (Debit 1010 Bank / Credit 1200 Accounts Receivable). Remaining balance updated.`
+        });
+        await loadAllOrders();
+      }
+    } catch (err) {
+      setFeedbackMessage({ type: 'error', text: err.message || 'Leftover payment recording failed' });
     } finally {
       setIsSystemProcessing(false);
     }
@@ -109,43 +189,48 @@ export const OrdersView = () => {
     }
   };
 
+  const hasAssignedCrew = Boolean(
+    selectedOrder?.inverterTechnician ||
+    selectedOrder?.rooftopTechnician ||
+    selectedOrder?.wiringTechnician ||
+    (selectedOrder?.assignedTechnicians && selectedOrder.assignedTechnicians.length > 0)
+  );
+
   const handleAssignCrewSubmit = async (e) => {
     e.preventDefault();
     if (!selectedOrder) return;
+
+    const dateErr = validateDateField(scheduledDateInput, 'Scheduled Installation Date', { allowPast: false });
+    if (dateErr) {
+      setFeedbackMessage({ type: 'error', text: dateErr });
+      return;
+    }
+
+    if (!inverterTechId || !rooftopTechId || !wiringTechId) {
+      setFeedbackMessage({ type: 'error', text: 'Please select all 3 specialized technicians (Inverter, Rooftop, and Wiring).' });
+      return;
+    }
+
     setIsSystemProcessing(true);
     setFeedbackMessage({ type: '', text: '' });
     try {
-      const chosenTech = techniciansList.find((t) => t._id === selectedTechnicianId) || techniciansList[0];
-      const targetTechId = selectedTechnicianId || chosenTech?._id || currentUser?._id || '679000000000000000000003';
-      const scheduledDate = scheduledDateInput
-        ? new Date(scheduledDateInput).toISOString()
-        : new Date().toISOString();
-
       const response = await executeHttpRequest(`/api/orders/${selectedOrder._id}/assign-crew`, {
         method: 'POST',
         body: JSON.stringify({
-          technicianIdsArray: [targetTechId],
-          technicianUserIds: [targetTechId],
-          scheduledInstallationDate: scheduledDate
+          inverterTechnician: inverterTechId,
+          rooftopTechnician: rooftopTechId,
+          wiringTechnician: wiringTechId,
+          scheduledInstallationDate: scheduledDateInput
         })
       });
       if (response.success && response.order) {
         setIsAssignCrewModalOpen(false);
         setSelectedOrder(response.order);
-
-        const assignedTech = response.order.assignedTechnicians?.[0] || chosenTech;
-        const techName = typeof assignedTech === 'object' && assignedTech?.fullName
-          ? assignedTech.fullName
-          : (chosenTech?.fullName || 'Senior Certified Solar Technician');
-        const formattedDate = new Date(scheduledDate).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        });
-
         setFeedbackMessage({
           type: 'success',
-          text: `✅ Crew Assigned: ${techName} scheduled for ${formattedDate}`
+          text: hasAssignedCrew
+            ? `Installation crew and schedule modified successfully! Changes logged to immutable audit trail.`
+            : `Specialized 3-technician crew assigned successfully for ${new Date(scheduledDateInput).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}!`
         });
         await loadAllOrders();
       }
@@ -368,53 +453,77 @@ export const OrdersView = () => {
                 </button>
               </div>
 
-              {/* QA FIX 1: Permanent Assigned Installation Crew & Schedule Card */}
-              {((selectedOrder.assignedTechnicians && selectedOrder.assignedTechnicians.length > 0) || selectedOrder.scheduledInstallationDate) && (
-                <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-300 space-y-2 text-xs">
+              {/* Permanent Assigned Installation Crew & Schedule Card */}
+              {((selectedOrder.assignedTechnicians && selectedOrder.assignedTechnicians.length > 0) ||
+                selectedOrder.inverterTechnician ||
+                selectedOrder.rooftopTechnician ||
+                selectedOrder.wiringTechnician ||
+                selectedOrder.scheduledInstallationDate) && (
+                <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-300 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 font-bold text-[#0F291E]">
                       <UserCheck className="w-4 h-4 text-emerald-600" />
-                      <span>Assigned Installation Crew & Schedule</span>
+                      <span>Specialized Installation Crew & Schedule</span>
                     </div>
                     <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                       Crew Assigned ✓
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 pt-1">
-                    {selectedOrder.assignedTechnicians && selectedOrder.assignedTechnicians.length > 0 ? (
-                      selectedOrder.assignedTechnicians.map((tech, idx) => {
-                        const isObj = typeof tech === 'object' && tech !== null;
-                        const name = isObj ? tech.fullName : 'Ramesh Sharma';
-                        const phone = isObj ? tech.phoneNumber : '+91 98765 43210';
-                        const role = isObj
-                          ? (tech.assignedSpecialization || tech.role || 'Certified Lead Solar Installer')
-                          : 'Certified Lead Solar Installer';
-                        return (
-                          <div key={idx} className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs flex items-center justify-between">
-                            <div>
-                              <div className="font-bold text-slate-900 text-xs">{name}</div>
-                              <div className="text-[11px] text-slate-500 font-medium">
-                                {role} {phone ? `• ${phone}` : ''}
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-mono font-bold text-[#135D3B] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              Lead Technician
-                            </span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="bg-white p-2.5 rounded-xl border border-emerald-200 text-slate-600 text-[11px]">
-                        Technician dispatched for site installation.
+                  <div className="space-y-2 pt-1">
+                    {/* Inverter Specialist */}
+                    <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">
+                          {selectedOrder.inverterTechnician?.fullName ||
+                            (typeof selectedOrder.inverterTechnician === 'string' ? 'Specialist Assigned' : 'Ramesh Sharma')}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          {selectedOrder.inverterTechnician?.phoneNumber || '+91 98765 43210'}
+                        </div>
                       </div>
-                    )}
+                      <span className="text-[10px] font-mono font-bold text-[#135D3B] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Inverter Specialist
+                      </span>
+                    </div>
+
+                    {/* Rooftop Mounting Technician */}
+                    <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">
+                          {selectedOrder.rooftopTechnician?.fullName ||
+                            (typeof selectedOrder.rooftopTechnician === 'string' ? 'Specialist Assigned' : 'Amit Verma')}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          {selectedOrder.rooftopTechnician?.phoneNumber || '+91 98111 22334'}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#135D3B] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Rooftop Mounting Lead
+                      </span>
+                    </div>
+
+                    {/* High-Voltage Wiring Technician */}
+                    <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">
+                          {selectedOrder.wiringTechnician?.fullName ||
+                            (typeof selectedOrder.wiringTechnician === 'string' ? 'Specialist Assigned' : 'Vikram Singh')}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">
+                          {selectedOrder.wiringTechnician?.phoneNumber || '+91 98444 55667'}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#135D3B] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        HV Wiring Technician
+                      </span>
+                    </div>
 
                     {selectedOrder.scheduledInstallationDate && (
-                      <div className="text-[11px] text-slate-700 font-medium flex items-center gap-1.5 pt-1">
+                      <div className="text-[11px] text-slate-700 font-medium flex items-center gap-1.5 pt-1 border-t border-emerald-200/60">
                         <Calendar className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                         <span>
-                          Installation Date:{' '}
+                          Scheduled Installation Date:{' '}
                           <strong className="text-slate-900 font-bold">
                             {new Date(selectedOrder.scheduledInstallationDate).toLocaleDateString('en-IN', {
                               weekday: 'short',
@@ -430,11 +539,47 @@ export const OrdersView = () => {
                 </div>
               )}
 
+              {/* Immutable Crew & Schedule Modification Log Card */}
+              {selectedOrder.crewModificationLog?.length > 0 && (
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="font-bold text-slate-800 uppercase tracking-wide text-[11px]">
+                      Crew & Schedule Modification Log ({selectedOrder.crewModificationLog.length})
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">Immutable Audit Trail</span>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {selectedOrder.crewModificationLog.map((logEntry, idx) => (
+                      <div key={idx} className="p-2.5 bg-white rounded-xl border border-slate-200 text-[11px] space-y-1">
+                        <div className="flex items-center justify-between text-slate-500 text-[10px]">
+                          <span className="font-bold text-slate-700">
+                            {logEntry.action} by {logEntry.changedByName || 'Director'}
+                          </span>
+                          <span>
+                            {new Date(logEntry.changedAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                        {logEntry.changes?.map((ch, chIdx) => (
+                          <div key={chIdx} className="text-slate-600">
+                            <strong className="text-slate-800">{ch.label}:</strong> {ch.oldValue} ➔{' '}
+                            <strong className="text-emerald-700">{ch.newValue}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="space-y-2">
                 {selectedOrder.orderWorkflowStatus === 'Draft' && (
                   <button
-                    onClick={() => setIsAdvanceModalOpen(true)}
+                    onClick={() => {
+                      const minAdv = Math.ceil(selectedOrder.netPayableAmountInr * 0.2);
+                      setAdvanceAmountInput(minAdv);
+                      setIsAdvanceModalOpen(true);
+                    }}
                     className="w-full rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2.5 shadow-sm text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <CreditCard className="w-4 h-4 text-amber-300" />
@@ -442,14 +587,27 @@ export const OrdersView = () => {
                   </button>
                 )}
 
-                {(selectedOrder.orderWorkflowStatus === 'Advance_Paid' ||
-                  selectedOrder.orderWorkflowStatus === 'Packed') && (
+                {selectedOrder.balancePaymentDueInr > 0 && selectedOrder.orderWorkflowStatus !== 'Draft' && (
                   <button
-                    onClick={() => setIsAssignCrewModalOpen(true)}
+                    onClick={() => {
+                      setLeftoverAmountInput(selectedOrder.balancePaymentDueInr);
+                      setLeftoverTxnRef(`UPI/2026/BAL${Math.floor(100000 + Math.random() * 900000)}`);
+                      setIsLeftoverModalOpen(true);
+                    }}
+                    className="w-full rounded-full bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2.5 shadow-sm text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Record Leftover / Balance Payment ({formatCurrencyInr(selectedOrder.balancePaymentDueInr)})</span>
+                  </button>
+                )}
+
+                {selectedOrder.orderWorkflowStatus !== 'Draft' && selectedOrder.orderWorkflowStatus !== 'Cancelled' && (
+                  <button
+                    onClick={openCrewModal}
                     className="w-full rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-5 py-2.5 shadow-xs text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <UserCheck className="w-4 h-4" />
-                    <span>Assign Installation Crew & Date</span>
+                    <span>{hasAssignedCrew ? 'Modify Installation Crew and Date' : 'Assign Installation Crew and Date'}</span>
                   </button>
                 )}
               </div>
@@ -495,12 +653,12 @@ export const OrdersView = () => {
               Capture Advance Payment ({selectedOrder.quotationReference})
             </h3>
             <p className="text-xs text-slate-600">
-              Capturing 20% or more advance triggers double-entry journal entry and transitions order from Draft to Advance_Paid.
+              Capturing 20% or more advance triggers double-entry journal entry and transitions order from Draft to Advance_Paid / BALANCE_DUE.
             </p>
             <form onSubmit={handleCaptureAdvanceSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Advance Amount (₹) — Min 20%: {formatCurrencyInr(selectedOrder.netPayableAmountInr * 0.2)}
+                  Advance Amount (₹) — Minimum 20%: {formatCurrencyInr(Math.ceil(selectedOrder.netPayableAmountInr * 0.2))}
                 </label>
                 <input
                   type="number"
@@ -508,6 +666,7 @@ export const OrdersView = () => {
                   value={advanceAmountInput}
                   onChange={(e) => setAdvanceAmountInput(e.target.value)}
                   className="odoo-input font-mono font-bold text-sm"
+                  placeholder="Enter advance amount"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
@@ -530,34 +689,149 @@ export const OrdersView = () => {
         </div>
       )}
 
-      {/* Assign Crew Modal */}
-      {isAssignCrewModalOpen && selectedOrder && (
+      {/* Leftover / Balance Payment Modal */}
+      {isLeftoverModalOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md p-6 space-y-4">
-            <h3 className="font-extrabold text-base text-[#0F291E]">Assign Installation Crew & Schedule</h3>
-            <form onSubmit={handleAssignCrewSubmit} className="space-y-3.5 text-xs">
+            <h3 className="font-extrabold text-base text-[#0F291E]">
+              Record Leftover / Balance Payment ({selectedOrder.orderReference || selectedOrder.quotationReference})
+            </h3>
+            <p className="text-xs text-slate-600">
+              Record remaining balance payment before or upon site commissioning. Immutable double-entry posting: Debit 1010 Bank / Credit 1200 Accounts Receivable.
+            </p>
+            <form onSubmit={handleCaptureLeftoverSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Certified Installation Technician / Crew Lead *</label>
-                <select
-                  value={selectedTechnicianId}
-                  onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                  className="odoo-input font-bold"
+                <label className="block font-bold text-slate-700 mb-1">
+                  Payment Amount (₹) — Remaining Balance: {formatCurrencyInr(selectedOrder.balancePaymentDueInr)}
+                </label>
+                <input
+                  type="number"
                   required
+                  min={1}
+                  max={selectedOrder.balancePaymentDueInr}
+                  value={leftoverAmountInput}
+                  onChange={(e) => setLeftoverAmountInput(e.target.value)}
+                  className="odoo-input font-mono font-bold text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Payment Mode</label>
+                <select
+                  value={leftoverPaymentMode}
+                  onChange={(e) => setLeftoverPaymentMode(e.target.value)}
+                  className="odoo-input font-bold"
                 >
-                  {techniciansList.length > 0 ? (
-                    techniciansList.map((tech) => (
-                      <option key={tech._id} value={tech._id}>
-                        {tech.fullName} ({tech.assignedSpecialization || 'Senior Solar Installer'}) {tech.phoneNumber ? `• ${tech.phoneNumber}` : ''}
-                      </option>
-                    ))
-                  ) : (
-                    <option value={currentUser?._id || ''}>
-                      {currentUser?.fullName || 'Ramesh Sharma'} (Certified Solar Installer)
-                    </option>
-                  )}
+                  <option value="UPI">UPI Payment</option>
+                  <option value="NetBanking">NetBanking / NEFT / RTGS</option>
+                  <option value="Cheque">Bank Cheque</option>
+                  <option value="Cash">Cash Deposit</option>
                 </select>
               </div>
 
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Transaction Reference</label>
+                <input
+                  type="text"
+                  required
+                  value={leftoverTxnRef}
+                  onChange={(e) => setLeftoverTxnRef(e.target.value)}
+                  className="odoo-input font-mono text-xs font-bold"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsLeftoverModalOpen(false)}
+                  className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-4 py-2 text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm cursor-pointer"
+                >
+                  Confirm Leftover Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Specialized 3-Technician Crew Assignment Modal */}
+      {isAssignCrewModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-lg p-6 space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h3 className="font-extrabold text-base text-[#0F291E]">
+                {hasAssignedCrew ? 'Modify Installation Crew and Date' : 'Assign Installation Crew and Date'}
+              </h3>
+              <span className="text-[10px] font-mono text-slate-500">
+                {selectedOrder.orderReference || selectedOrder.quotationReference}
+              </span>
+            </div>
+
+            <form onSubmit={handleAssignCrewSubmit} className="space-y-3.5 text-xs">
+              {/* 1. Inverter Specialist */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  1. Inverter Specialist (`inverterTechnician`) *
+                </label>
+                <select
+                  value={inverterTechId}
+                  onChange={(e) => setInverterTechId(e.target.value)}
+                  className="odoo-input font-bold"
+                  required
+                >
+                  {techniciansList.map((tech) => (
+                    <option key={tech._id} value={tech._id}>
+                      {tech.fullName} ({tech.assignedSpecialization || 'Inverter Lead'}) {tech.phoneNumber ? `• ${tech.phoneNumber}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. Rooftop Mounting Technician */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  2. Rooftop Mounting Technician (`rooftopTechnician`) *
+                </label>
+                <select
+                  value={rooftopTechId}
+                  onChange={(e) => setRooftopTechId(e.target.value)}
+                  className="odoo-input font-bold"
+                  required
+                >
+                  {techniciansList.map((tech) => (
+                    <option key={tech._id} value={tech._id}>
+                      {tech.fullName} ({tech.assignedSpecialization || 'Rooftop Installer'}) {tech.phoneNumber ? `• ${tech.phoneNumber}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. High-Voltage Wiring Technician */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  3. High-Voltage Wiring Technician (`wiringTechnician`) *
+                </label>
+                <select
+                  value={wiringTechId}
+                  onChange={(e) => setWiringTechId(e.target.value)}
+                  className="odoo-input font-bold"
+                  required
+                >
+                  {techniciansList.map((tech) => (
+                    <option key={tech._id} value={tech._id}>
+                      {tech.fullName} ({tech.assignedSpecialization || 'HV Wiring Specialist'}) {tech.phoneNumber ? `• ${tech.phoneNumber}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Scheduled Installation Date */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Scheduled Installation Date *</label>
                 <input
@@ -568,6 +842,7 @@ export const OrdersView = () => {
                   className="odoo-input font-bold"
                 />
               </div>
+
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
@@ -580,7 +855,7 @@ export const OrdersView = () => {
                   type="submit"
                   className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm cursor-pointer"
                 >
-                  Confirm Crew Schedule
+                  {hasAssignedCrew ? 'Modify Installation Crew and Date' : 'Assign Installation Crew and Date'}
                 </button>
               </div>
             </form>

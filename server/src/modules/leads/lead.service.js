@@ -7,6 +7,7 @@
 
 import crypto from 'crypto';
 import { LeadModel } from './lead.model.js';
+import { OrderModel } from '../orders/order.model.js';
 import { getNextSequenceNumber } from '../../core/sequenceRegistry.js';
 import { emitErpEvent } from '../../core/socketEmitter.js';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
@@ -290,4 +291,20 @@ export const fetchAllLeadInquiries = async (filterQuery = {}) => {
 export const fetchLeadInquiryById = async (leadInquiryId) => {
   return LeadModel.findById(leadInquiryId)
     .populate('surveyDetails.assignedTechnician', 'fullName email phoneNumber');
+};
+
+/**
+ * Returns the inquiry together with any BOM / quote that was already generated for it, so that
+ * "View / Generate BOM" can re-open the existing summary without re-running the first-time creation guard.
+ */
+export const fetchLeadQuoteSummary = async (leadInquiryId) => {
+  const leadRecord = await LeadModel.findById(leadInquiryId);
+  if (!leadRecord) return null;
+
+  const existingQuote = await OrderModel.findOne({ leadInquiryId: leadRecord._id }).sort({ createdAt: -1 });
+  return {
+    lead: leadRecord,
+    quote: existingQuote,
+    isQuoteGenerated: Boolean(existingQuote) || leadRecord.inquiryWorkflowStatus === 'Quoted'
+  };
 };

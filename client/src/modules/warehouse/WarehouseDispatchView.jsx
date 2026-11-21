@@ -32,28 +32,42 @@ export const WarehouseDispatchView = () => {
   const [scannedInput, setScannedInput] = useState('');
   const [scannedSerialsList, setScannedSerialsList] = useState([]);
   const [availableStock, setAvailableStock] = useState([]);
+  const [stockCatalog, setStockCatalog] = useState([]);
+  const [selectedPanelId, setSelectedPanelId] = useState('');
+  const [panelQuantity, setPanelQuantity] = useState(6);
+  const [selectedInverterId, setSelectedInverterId] = useState('');
+  const [selectedBatteryId, setSelectedBatteryId] = useState('');
+  const [selectedControllerId, setSelectedControllerId] = useState('');
   const [dispatchSuccessData, setDispatchSuccessData] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
 
   const loadDispatchData = async () => {
     try {
-      const [ordersRes, inventoryRes] = await Promise.all([
+      const [ordersRes, inventoryRes, stockRes] = await Promise.all([
         executeHttpRequest('/api/orders'),
-        executeHttpRequest('/api/inventory')
+        executeHttpRequest('/api/inventory'),
+        executeHttpRequest('/api/inventory/stock').catch(() => ({ success: false, stock: [] }))
       ]);
 
       if (ordersRes.success) {
         const actionableOrders = (ordersRes.orders || []).filter(
-          (o) => o.orderWorkflowStatus === 'Advance_Paid' || o.orderWorkflowStatus === 'Packed'
+          (o) => ['Advance_Paid', 'BALANCE_DUE', 'Packed'].includes(o.orderWorkflowStatus)
         );
         setOrdersAwaitingDispatch(actionableOrders);
-        if (actionableOrders.length > 0 && !selectedOrder) {
-          setSelectedOrder(actionableOrders[0]);
+        if (actionableOrders.length > 0) {
+          setSelectedOrder((prev) => {
+            if (!prev) return actionableOrders[0];
+            return actionableOrders.find((o) => o._id === prev._id) || actionableOrders[0];
+          });
         }
       }
 
       if (inventoryRes.success) {
         setAvailableStock(inventoryRes.inventory || []);
+      }
+
+      if (stockRes?.success && Array.isArray(stockRes.stock)) {
+        setStockCatalog(stockRes.stock);
       }
     } catch (err) {
       console.error('Failed to load dispatch data:', err);
@@ -63,6 +77,117 @@ export const WarehouseDispatchView = () => {
   useEffect(() => {
     loadDispatchData();
   }, []);
+
+  // Update default equipment dropdown selections whenever selectedOrder or stockCatalog updates
+  useEffect(() => {
+    if (!selectedOrder || stockCatalog.length === 0) return;
+
+    const panels = stockCatalog.filter((s) => s.stockGroup === 'SOLAR_PANELS');
+    if (panels.length > 0 && !selectedPanelId) {
+      setSelectedPanelId(panels[0]._id);
+    }
+    setPanelQuantity(selectedOrder.systemCapacityKw ? selectedOrder.systemCapacityKw * 2 : 6);
+
+    const inverterGroup = selectedOrder.systemVariant === 'OFF_GRID' ? 'OFF_GRID_INVERTERS' : 'ON_GRID_INVERTERS';
+    const inverters = stockCatalog.filter((s) => s.stockGroup === inverterGroup) || stockCatalog.filter((s) => s.stockGroup.includes('INVERTER'));
+    if (inverters.length > 0) {
+      setSelectedInverterId(inverters[0]._id);
+    }
+
+    const batteries = stockCatalog.filter((s) => s.stockGroup === 'LITHIUM_BATTERIES');
+    if (batteries.length > 0) {
+      setSelectedBatteryId(batteries[0]._id);
+    }
+
+    const controllers = stockCatalog.filter((s) => s.stockGroup === 'MPPT_CONTROLLERS');
+    if (controllers.length > 0) {
+      setSelectedControllerId(controllers[0]._id);
+    }
+  }, [selectedOrder, stockCatalog]);
+
+  const handleReserveEquipment = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedOrder) return;
+
+    // Strict Out-of-Stock Guard
+    const panelItem = stockCatalog.find((s) => s._id === selectedPanelId);
+    if (!panelItem || panelItem.availableUnits <= 0 || panelQuantity > panelItem.availableUnits) {
+      const name = panelItem?.itemName || 'Solar Panels';
+      setFeedbackMessage({
+        type: 'error',
+        text: `Insufficient stock: ${name} is currently out of stock in the warehouse.`
+      });
+      return;
+    }
+
+    const inverterItem = stockCatalog.find((s) => s._id === selectedInverterId);
+    if (!inverterItem || inverterItem.availableUnits <= 0) {
+      const name = inverterItem?.itemName || 'Inverter';
+      setFeedbackMessage({
+        type: 'error',
+        text: `Insufficient stock: ${name} is currently out of stock in the warehouse.`
+      });
+      return;
+    }
+
+    const selections = [
+      { stockItemId: panelItem._id, quantity: Number(panelQuantity) },
+      { stockItemId: inverterItem._id, quantity: 1 }
+    ];
+
+    if (selectedOrder.systemVariant === 'OFF_GRID' || selectedBatteryId) {
+      const batteryItem = stockCatalog.find((s) => s._id === selectedBatteryId);
+      if (batteryItem) {
+        if (batteryItem.availableUnits <= 0) {
+          setFeedbackMessage({
+            type: 'error',
+            text: `Insufficient stock: ${batteryItem.itemName} is currently out of stock in the warehouse.`
+          });
+          return;
+        }
+        selections.push({ stockItemId: batteryItem._id, quantity: 1 });
+      }
+    }
+
+    if (selectedOrder.systemVariant === 'OFF_GRID' || selectedControllerId) {
+      const controllerItem = stockCatalog.find((s) => s._id === selectedControllerId);
+      if (controllerItem) {
+        if (controllerItem.availableUnits <= 0) {
+          setFeedbackMessage({
+            type: 'error',
+            text: `Insufficient stock: ${controllerItem.itemName} is currently out of stock in the warehouse.`
+          });
+          return;
+        }
+        selections.push({ stockItemId: controllerItem._id, quantity: 1 });
+      }
+    }
+
+    setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
+    try {
+      const response = await executeHttpRequest('/api/inventory/stock/reserve', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId: selectedOrder._id,
+          selections
+        })
+      });
+      if (response.success) {
+        setSelectedOrder(response.order);
+        if (response.stock) setStockCatalog(response.stock);
+        setFeedbackMessage({
+          type: 'success',
+          text: `Equipment reserved and allocated to packing slip for ${selectedOrder.customerFullName}!`
+        });
+        await loadDispatchData();
+      }
+    } catch (err) {
+      setFeedbackMessage({ type: 'error', text: err.message || 'Equipment reservation failed' });
+    } finally {
+      setIsSystemProcessing(false);
+    }
+  };
 
   const handleScanSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -298,6 +423,139 @@ export const WarehouseDispatchView = () => {
                     {selectedOrder.systemCapacityKw} kW {selectedOrder.systemVariant}
                   </div>
                 </div>
+              </div>
+
+              {/* Equipment Selector with Live Warehouse Stock & Out-of-Stock Guard */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <PackageCheck className="w-4 h-4 text-[#135D3B]" />
+                    <h4 className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wider">
+                      Equipment Selection & Live Warehouse Stock
+                    </h4>
+                  </div>
+                  {selectedOrder.dispatchEquipmentReserved && (
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+                      Stock Reserved ✓
+                    </span>
+                  )}
+                </div>
+
+                <form onSubmit={handleReserveEquipment} className="space-y-3.5 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Solar Panels Selector */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="font-bold text-slate-700">1. Solar Panels (DCR 540W) *</label>
+                        <span className="text-[10px] text-slate-500 font-mono">Qty: {panelQuantity} units</span>
+                      </div>
+                      <select
+                        value={selectedPanelId}
+                        onChange={(e) => setSelectedPanelId(e.target.value)}
+                        className="odoo-input font-bold"
+                        required
+                      >
+                        {stockCatalog.filter((s) => s.stockGroup === 'SOLAR_PANELS').map((item) => (
+                          <option key={item._id} value={item._id}>
+                            {item.itemName} — {item.availableUnits} in stock
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Inverter Selector */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="font-bold text-slate-700">2. Solar Inverter *</label>
+                        <span className="text-[10px] text-slate-500 font-mono">Qty: 1 unit</span>
+                      </div>
+                      <select
+                        value={selectedInverterId}
+                        onChange={(e) => setSelectedInverterId(e.target.value)}
+                        className="odoo-input font-bold"
+                        required
+                      >
+                        {stockCatalog.filter((s) => s.stockGroup.includes('INVERTER')).map((item) => (
+                          <option key={item._id} value={item._id}>
+                            {item.itemName} — {item.availableUnits} in stock
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Battery Selector */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="font-bold text-slate-700">3. Lithium Solar Battery</label>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          {selectedOrder.systemVariant === 'OFF_GRID' ? 'Required (Off-Grid)' : 'Optional'}
+                        </span>
+                      </div>
+                      <select
+                        value={selectedBatteryId}
+                        onChange={(e) => setSelectedBatteryId(e.target.value)}
+                        className="odoo-input font-bold"
+                      >
+                        <option value="">-- No Battery / Standalone On-Grid --</option>
+                        {stockCatalog.filter((s) => s.stockGroup === 'LITHIUM_BATTERIES').map((item) => (
+                          <option key={item._id} value={item._id}>
+                            {item.itemName} — {item.availableUnits} in stock
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* MPPT Controller Selector */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="font-bold text-slate-700">4. MPPT Charge Controller</label>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          {selectedOrder.systemVariant === 'OFF_GRID' ? 'Required (Off-Grid)' : 'Optional'}
+                        </span>
+                      </div>
+                      <select
+                        value={selectedControllerId}
+                        onChange={(e) => setSelectedControllerId(e.target.value)}
+                        className="odoo-input font-bold"
+                      >
+                        <option value="">-- Built-in Grid Synchronizer --</option>
+                        {stockCatalog.filter((s) => s.stockGroup === 'MPPT_CONTROLLERS').map((item) => (
+                          <option key={item._id} value={item._id}>
+                            {item.itemName} — {item.availableUnits} in stock
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Live stock balance automatically guarded: Insufficient stock prevents dispatch release.
+                    </p>
+                    <button
+                      type="submit"
+                      className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs px-5 py-2 shadow-sm transition-all cursor-pointer"
+                    >
+                      {selectedOrder.dispatchEquipmentReserved ? 'Update Reserved Equipment' : 'Reserve Equipment Stock'}
+                    </button>
+                  </div>
+                </form>
+
+                {selectedOrder.dispatchEquipmentPlan?.length > 0 && (
+                  <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 text-xs space-y-1">
+                    <span className="font-bold text-emerald-950 block text-[11px]">
+                      Currently Reserved for this Dispatch Packing Slip:
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px] text-emerald-900">
+                      {selectedOrder.dispatchEquipmentPlan.map((planItem, idx) => (
+                        <div key={idx} className="bg-white p-2 rounded-lg border border-emerald-200">
+                          <strong className="block text-slate-900 truncate">{planItem.itemName}</strong>
+                          <span className="text-emerald-700 font-bold">{planItem.quantity} units</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Barcode Input Terminal */}

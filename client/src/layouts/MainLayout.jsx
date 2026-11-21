@@ -15,9 +15,11 @@ import {
   BarChart3,
   Terminal,
   Layers,
+  Boxes,
   Mail
 } from 'lucide-react';
 import { ControlPanelHeader } from './ControlPanelHeader';
+import { ORDER_LIFECYCLE_STAGES } from './ProgressWorkflowRibbon';
 import { ProcessingOverlay } from '../components/ProcessingOverlay';
 import { NetworkTimeoutBanner } from '../components/NetworkTimeoutBanner';
 import { CommandPaletteModal } from './CommandPaletteModal';
@@ -33,8 +35,9 @@ export const MainLayout = ({ currentModule, children }) => {
 
   const moduleStages = {
     inquiries: ['Draft', 'Survey_Scheduled', 'Survey_Completed', 'Approved'],
-    orders: ['Draft', 'Advance_Paid', 'Dispatched', 'Installed'],
+    orders: ORDER_LIFECYCLE_STAGES,
     warehouse: ['Waiting_Dispatch', 'Scanning_Serials', 'Ready_To_Ship', 'Dispatched'],
+    inventory: ['In_Stock', 'Low_Stock', 'Restocking', 'Replenished'],
     technician: ['Roster_Assigned', 'On_Roof', 'Testing_Watts', 'Signed_Off'],
     warranty: ['Active_Coverage', 'Ticket_Logged', 'Payment_Checked', 'Resolved'],
     director: ['Month_P&L', 'Margins', 'Subsidies', 'Ledger'],
@@ -48,6 +51,7 @@ export const MainLayout = ({ currentModule, children }) => {
     { id: 'inquiries', path: '/inquiries', label: 'Inquiries & Proposals', icon: Sun, scene: 'Scene 1 & 2', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
     { id: 'orders', path: '/orders', label: 'Orders & BOM', icon: Layers, scene: 'BOM & Advance', roles: ['ADMIN', 'OPERATIONS'] },
     { id: 'warehouse', path: '/dispatch', label: 'Warehouse & Serials', icon: Truck, scene: 'Scene 3', roles: ['ADMIN', 'OPERATIONS'] },
+    { id: 'inventory', path: '/inventory', label: 'Inventory Stock', icon: Boxes, scene: 'Live Stock Levels', roles: ['ADMIN', 'OPERATIONS'] },
     { id: 'technician', path: '/field-install', label: 'Roof Sign-off Mobile', icon: FileCheck2, scene: 'Scene 4', roles: ['ADMIN', 'STAFF'] },
     { id: 'warranty', path: '/warranty', label: 'Rainy Warranty & Tickets', icon: ShieldCheck, scene: 'Scene 5', roles: ['ADMIN', 'OPERATIONS', 'STAFF'] },
     { id: 'director', path: '/director', label: 'Director P&L & Subsidies', icon: BarChart3, scene: 'Scene 6', roles: ['ADMIN', 'OPERATIONS'] },
@@ -61,6 +65,7 @@ export const MainLayout = ({ currentModule, children }) => {
     inquiries: ['SolIMS ERP', 'Inquiries & Proposals', 'Rooftop Survey Pipeline'],
     orders: ['SolIMS ERP', 'Confirmed Orders & BOM', 'Advance Locks & Crew Scheduling'],
     warehouse: ['SolIMS ERP', 'Warehouse Logistics', 'Serial Number Dispatch & Warranty Initialization'],
+    inventory: ['SolIMS ERP', 'Warehouse Logistics', 'Live Inventory Stock Levels & Restocking'],
     technician: ['SolIMS ERP', 'Field Operations', 'Technician Mobile Roof Sign-off & Digital Signature'],
     warranty: ['SolIMS ERP', 'Customer Support', 'Rainy Season Breakdown & Live Warranty Evaluation'],
     director: ['SolIMS ERP', 'Executive Governance', "Director's Month-End P&L, Margins & Subsidies"],
@@ -92,11 +97,10 @@ export const MainLayout = ({ currentModule, children }) => {
                 <NavLink
                   key={item.id}
                   to={item.path}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                    isActive
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${isActive
                       ? 'border-b-2 border-[#135D3B] text-[#135D3B] font-semibold bg-[#E6F4EC]'
                       : 'text-slate-600 hover:text-[#135D3B] hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   <IconComp className="w-3.5 h-3.5" />
                   <span>{item.label}</span>
@@ -112,25 +116,22 @@ export const MainLayout = ({ currentModule, children }) => {
             <span className="text-[10px] text-slate-500 font-bold uppercase px-2">Switch:</span>
             <button
               onClick={() => switchPersonaRole('ADMIN')}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                userRole === 'ADMIN' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
-              }`}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${userRole === 'ADMIN' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
+                }`}
             >
               Director
             </button>
             <button
               onClick={() => switchPersonaRole('OPERATIONS')}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                userRole === 'OPERATIONS' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
-              }`}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${userRole === 'OPERATIONS' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
+                }`}
             >
               Ops
             </button>
             <button
               onClick={() => switchPersonaRole('STAFF')}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                userRole === 'STAFF' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
-              }`}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${userRole === 'STAFF' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
+                }`}
             >
               Tech
             </button>

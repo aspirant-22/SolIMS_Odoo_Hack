@@ -17,6 +17,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { InquiriesView } from './modules/inquiries/InquiriesView';
 import { OrdersView } from './modules/orders/OrdersView';
 import { WarehouseDispatchView } from './modules/warehouse/WarehouseDispatchView';
+import { InventoryStockView } from './modules/inventory/InventoryStockView';
 import { TechnicianRoofSignoffView } from './modules/technician/TechnicianRoofSignoffView';
 import { WarrantyLookupTicketView } from './modules/warranty/WarrantyLookupTicketView';
 import { DirectorDashboardView } from './modules/director/DirectorDashboardView';
@@ -35,6 +36,7 @@ const ERP_ROUTES = [
   { path: '/inquiries', module: 'inquiries', roles: ['ADMIN', 'OPERATIONS', 'STAFF'], element: <InquiriesView /> },
   { path: '/orders', module: 'orders', roles: ['ADMIN', 'OPERATIONS'], element: <OrdersView /> },
   { path: '/dispatch', module: 'warehouse', roles: ['ADMIN', 'OPERATIONS'], element: <WarehouseDispatchView /> },
+  { path: '/inventory', module: 'inventory', roles: ['ADMIN', 'OPERATIONS'], element: <InventoryStockView /> },
   { path: '/field-install', module: 'technician', roles: ['ADMIN', 'STAFF'], element: <TechnicianRoofSignoffView /> },
   { path: '/warranty', module: 'warranty', roles: ['ADMIN', 'OPERATIONS', 'STAFF'], element: <WarrantyLookupTicketView /> },
   { path: '/director', module: 'director', roles: ['ADMIN', 'OPERATIONS'], element: <DirectorDashboardView /> },
@@ -44,12 +46,14 @@ const ERP_ROUTES = [
 const ActivateAccountRoute = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { switchPersonaRole, refreshSession } = useAuth();
+  const { refreshSession } = useAuth();
   const token = searchParams.get('token') || searchParams.get('magicToken');
 
   React.useEffect(() => {
     let isCancelled = false;
     (async () => {
+      // Never fall back to a demo persona: a customer must activate with their own token / credentials,
+      // otherwise they would see another homeowner's data.
       try {
         if (token) {
           const res = await executeHttpRequest('/api/auth/magic-login', {
@@ -62,19 +66,13 @@ const ActivateAccountRoute = () => {
             return;
           }
         }
-        if (!isCancelled) {
-          await switchPersonaRole('CUSTOMER');
-          navigate('/my-solar', { replace: true });
-        }
       } catch (e) {
-        if (!isCancelled) {
-          await switchPersonaRole('CUSTOMER');
-          navigate('/my-solar', { replace: true });
-        }
+        // fall through to the login page
       }
+      if (!isCancelled) navigate('/login', { replace: true });
     })();
     return () => { isCancelled = true; };
-  }, [token, navigate, switchPersonaRole, refreshSession]);
+  }, [token, navigate, refreshSession]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -121,7 +119,7 @@ export const App = () => {
           element={
             !currentUser ? <Navigate to="/login" replace />
               : role === 'CUSTOMER' ? <CustomerMySolarPortalView />
-              : <Navigate to={home} replace />
+                : <Navigate to={home} replace />
           }
         />
 
@@ -133,7 +131,7 @@ export const App = () => {
             element={
               !currentUser ? <Navigate to="/login" replace />
                 : r.roles.includes(role) ? <MainLayout currentModule={r.module}>{r.element}</MainLayout>
-                : <Navigate to={home} replace />
+                  : <Navigate to={home} replace />
             }
           />
         ))}

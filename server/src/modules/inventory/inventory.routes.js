@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: inventory.routes.js
- * @RESPONSIBILITY: Express router defining routes for stock inventory, serial scanning, and dispatch processing.
+ * @RESPONSIBILITY: Express router defining routes for stock inventory, restocking, packing-slip reservation, serial scanning, and dispatch processing.
  * @DEPENDENCIES: express, authMiddleware.js, rbacMiddleware.js, validateMiddleware.js, inventory.validation.js, inventory.controller.js
  */
 
@@ -12,22 +12,48 @@ import { validateRequestBody } from '../../middleware/validateMiddleware.js';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
 import {
   scanSerialForDispatchValidationSchema,
-  confirmDispatchOrderValidationSchema
+  confirmDispatchOrderValidationSchema,
+  restockStockItemValidationSchema,
+  reserveEquipmentValidationSchema
 } from './inventory.validation.js';
 import {
   handleScanSerialForOrder,
   handleConfirmDispatch,
-  handleGetWarehouseInventory
+  handleGetWarehouseInventory,
+  handleGetStockLevels,
+  handleRestockItem,
+  handleReserveEquipment
 } from './inventory.controller.js';
 
+const { ADMIN, OPERATIONS, STAFF } = ERP_SYSTEM_CONFIG.RBAC_ROLES;
 const inventoryApiRouter = Router();
 
-inventoryApiRouter.get('/', verifyAuthentication, handleGetWarehouseInventory);
+// Serialised hardware list (warehouse scanner + warranty desk). Customers never see warehouse data.
+inventoryApiRouter.get('/', verifyAuthentication, authorizeRoles(ADMIN, OPERATIONS, STAFF), handleGetWarehouseInventory);
+
+// Quantity stock levels - Director & Operations only
+inventoryApiRouter.get('/stock', verifyAuthentication, authorizeRoles(ADMIN, OPERATIONS), handleGetStockLevels);
+
+inventoryApiRouter.post(
+  '/stock/reserve',
+  verifyAuthentication,
+  authorizeRoles(ADMIN, OPERATIONS),
+  validateRequestBody(reserveEquipmentValidationSchema),
+  handleReserveEquipment
+);
+
+inventoryApiRouter.post(
+  '/stock/:id/restock',
+  verifyAuthentication,
+  authorizeRoles(ADMIN, OPERATIONS),
+  validateRequestBody(restockStockItemValidationSchema),
+  handleRestockItem
+);
 
 inventoryApiRouter.post(
   '/scan-serial',
   verifyAuthentication,
-  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
+  authorizeRoles(ADMIN, OPERATIONS),
   validateRequestBody(scanSerialForDispatchValidationSchema),
   handleScanSerialForOrder
 );
@@ -35,7 +61,7 @@ inventoryApiRouter.post(
 inventoryApiRouter.post(
   '/confirm-dispatch',
   verifyAuthentication,
-  authorizeRoles(ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN, ERP_SYSTEM_CONFIG.RBAC_ROLES.OPERATIONS),
+  authorizeRoles(ADMIN, OPERATIONS),
   validateRequestBody(confirmDispatchOrderValidationSchema),
   handleConfirmDispatch
 );

@@ -12,8 +12,10 @@ import {
   executeSurveyApprovalDecision,
   fetchAllLeadInquiries,
   fetchLeadInquiryById,
+  fetchLeadQuoteSummary,
   resendStage1InquiryEmail
 } from './lead.service.js';
+import { isCustomerUser, buildLeadScopeFilter, leadBelongsToCustomer } from '../../core/customerScope.js';
 
 export const handleCreateInquiry = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
@@ -71,7 +73,11 @@ export const handleApproveSurvey = async (httpRequest, httpResponse, nextMiddlew
 
 export const handleGetAllInquiries = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
-    const leadsList = await fetchAllLeadInquiries();
+    // A logged-in CUSTOMER only ever sees their own inquiries (matched by email / phone)
+    const scopeFilter = isCustomerUser(httpRequest.authenticatedUser)
+      ? buildLeadScopeFilter(httpRequest.authenticatedUser)
+      : {};
+    const leadsList = await fetchAllLeadInquiries(scopeFilter);
     return httpResponse.status(200).json({ success: true, count: leadsList.length, leads: leadsList });
   } catch (error) {
     return nextMiddlewareFunction(error);
@@ -83,7 +89,20 @@ export const handleGetInquiryById = async (httpRequest, httpResponse, nextMiddle
     const { id } = httpRequest.params;
     const foundLead = await fetchLeadInquiryById(id);
     if (!foundLead) return httpResponse.status(404).json({ success: false, message: 'Inquiry not found' });
+    if (isCustomerUser(httpRequest.authenticatedUser) && !leadBelongsToCustomer(foundLead, httpRequest.authenticatedUser)) {
+      return httpResponse.status(403).json({ success: false, message: 'You can only view your own inquiry.' });
+    }
     return httpResponse.status(200).json({ success: true, lead: foundLead });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleGetInquiryQuoteSummary = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const summary = await fetchLeadQuoteSummary(httpRequest.params.id);
+    if (!summary) return httpResponse.status(404).json({ success: false, message: 'Inquiry not found' });
+    return httpResponse.status(200).json({ success: true, ...summary });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }

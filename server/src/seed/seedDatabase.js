@@ -14,6 +14,8 @@ import { LeadModel } from '../modules/leads/lead.model.js';
 import { OrderModel } from '../modules/orders/order.model.js';
 import { SerialAssetModel } from '../modules/inventory/serialAsset.model.js';
 import { StockMoveModel } from '../modules/inventory/stockMove.model.js';
+import { StockItemModel } from '../modules/inventory/stockItem.model.js';
+import { DEFAULT_STOCK_CATALOG } from '../modules/inventory/inventory.service.js';
 import { SiteLogModel } from '../modules/service/siteLog.model.js';
 import { TicketModel } from '../modules/service/ticket.model.js';
 import { JournalEntryModel } from '../modules/accounting/journalEntry.model.js';
@@ -86,7 +88,7 @@ export const seedHistoricalHardwareInventory = async (adminUserId) => {
   const hardwareStockPool = [];
   const componentCategories = ['INVERTER', 'BATTERY', 'CHARGE_CONTROLLER', 'SOLAR_PANELS'];
 
-  for (let index = 1; index <= 60; index++) {
+  for (let index = 1; index <= 300; index++) {
     const assignedCategory = componentCategories[index % componentCategories.length];
     const serialCode = `${assignedCategory.substring(0, 3)}-2026-${String(index).padStart(4, '0')}`;
     let duration = ERP_SYSTEM_CONFIG.WARRANTY_DAYS.INVERTER;
@@ -96,9 +98,9 @@ export const seedHistoricalHardwareInventory = async (adminUserId) => {
       serialNumber: serialCode,
       assetCategory: assignedCategory,
       modelDesignation: `SolIMS Enterprise Pro ${assignedCategory} Gen-4`,
-      assetStatus: index <= 35 ? 'ACTIVE_IN_FIELD' : 'WAREHOUSE_STOCK',
+      assetStatus: index <= 150 ? 'ACTIVE_IN_FIELD' : 'WAREHOUSE_STOCK',
       warrantyDurationDays: duration,
-      warrantyExpiresTimestamp: index <= 35 ? new Date(Date.now() + duration * 86400000) : null,
+      warrantyExpiresTimestamp: index <= 150 ? new Date(Date.now() + duration * 86400000) : null,
       updatedBy: adminUserId
     });
   }
@@ -156,7 +158,7 @@ export const seedHistoricalLeadsAndSurveys = async (allUsersList) => {
     { name: 'Bhupendra Patel', phone: '+91 98250 11992', city: 'Ahmedabad', kw: 4, variant: 'OFF_GRID' }
   ];
 
-  for (let idx = 0; idx < 30; idx++) {
+  for (let idx = 0; idx < 120; idx++) {
     const profile = customerProfiles[idx % customerProfiles.length];
     const inquiryCode = `INQ/2026/${String(idx + 1).padStart(4, '0')}`;
     const assignedTech = techUsers[idx % techUsers.length];
@@ -202,26 +204,94 @@ export const seedOrdersAndInstallations = async (insertedLeads, allUsersList) =>
   const adminUser = allUsersList.find((u) => u.role === ERP_SYSTEM_CONFIG.RBAC_ROLES.ADMIN);
   const techUsers = allUsersList.filter((u) => u.role === ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF);
   const sampleOrders = [];
+  const pad = (n) => String(n).padStart(4, '0');
 
-  for (let idx = 0; idx < 20; idx++) {
+  for (let idx = 0; idx < 60; idx++) {
     const lead = insertedLeads[idx];
-    const quoteRef = `QT/2026/${String(idx + 1).padStart(4, '0')}`;
-    const orderRef = `ORD/2026/${String(idx + 1).padStart(4, '0')}`;
+    const quoteRef = `QT/2026/${pad(idx + 1)}`;
+    const orderRef = `ORD/2026/${pad(idx + 1)}`;
 
+    // Lifecycle spread: Draft -> Advance_Paid -> BALANCE_DUE (leftover pay) -> Packed -> Dispatched -> Installed
     let orderStatus = 'Installed';
     if (idx === 0) orderStatus = 'Draft';
-    else if (idx === 1) orderStatus = 'Advance_Paid';
+    else if (idx === 1) orderStatus = 'BALANCE_DUE';
     else if (idx === 2) orderStatus = 'Packed';
     else if (idx === 3) orderStatus = 'Dispatched';
+    else if (idx >= 40) orderStatus = ['Draft', 'BALANCE_DUE', 'Advance_Paid', 'Packed', 'Dispatched'][idx % 5];
 
     const grossAmount = lead.requestedCapacityKw * 60000 + (lead.requestedVariant === 'OFF_GRID' ? 50000 : 0);
     const subsidy = lead.requestedCapacityKw >= 3 ? 78000 : lead.requestedCapacityKw * 30000;
     const netAmount = grossAmount - subsidy;
-    const advance = orderStatus === 'Draft' ? 0 : Math.round(netAmount * 0.4);
+
+    const isDraft = orderStatus === 'Draft';
+    const isFullyPaid = ['Advance_Paid', 'Installed'].includes(orderStatus) && !(orderStatus === 'Installed' && idx % 6 === 0);
+    const initialAdvance = isDraft ? 0 : Math.round(netAmount * 0.4);
+    const totalPaid = isDraft ? 0 : (isFullyPaid ? netAmount : initialAdvance);
+    const hasCrew = !isDraft;
+
+    const paymentHistory = [];
+    if (!isDraft) {
+      paymentHistory.push({
+        paymentKind: 'ADVANCE',
+        amountInr: initialAdvance,
+        paymentMode: 'UPI',
+        transactionReference: `UPI-ADV-${100000 + idx}`,
+        invoiceReference: `INV/2026/${pad(idx * 2 + 1)}`,
+        recordedAt: new Date(Date.now() - (60 - idx) * 86400000),
+        recordedBy: adminUser._id,
+        recordedByName: adminUser.fullName
+      });
+      if (totalPaid > initialAdvance) {
+        paymentHistory.push({
+          paymentKind: 'BALANCE',
+          amountInr: totalPaid - initialAdvance,
+          paymentMode: 'NEFT_RTGS',
+          transactionReference: `NEFT-BAL-${200000 + idx}`,
+          invoiceReference: `INV/2026/${pad(idx * 2 + 2)}`,
+          recordedAt: new Date(Date.now() - (30 - (idx % 25)) * 86400000),
+          recordedBy: adminUser._id,
+          recordedByName: adminUser.fullName
+        });
+      }
+    }
+
+    // Specialised 3-technician crew: Inverter Specialist, Rooftop Mounting Technician, High-Voltage Wiring Technician
+    const inverterTech = techUsers[2 + 2 * (idx % 7)];
+    const rooftopTech = techUsers[1 + 2 * (idx % 7)];
+    const wiringTech = techUsers[0];
+    const scheduledDate = new Date(Date.now() + ((idx % 10) - 3) * 86400000);
+
+    const crewModificationLog = [];
+    if (hasCrew) {
+      const originalDate = new Date(scheduledDate.getTime() - 2 * 86400000);
+      crewModificationLog.push({
+        action: 'ASSIGNED',
+        changedAt: new Date(Date.now() - 20 * 86400000),
+        changedBy: adminUser._id,
+        changedByName: adminUser.fullName,
+        changes: [
+          { field: 'inverterTechnician', label: 'Inverter Specialist', oldValue: 'Not assigned', newValue: inverterTech.fullName },
+          { field: 'rooftopTechnician', label: 'Rooftop Mounting Technician', oldValue: 'Not assigned', newValue: rooftopTech.fullName },
+          { field: 'wiringTechnician', label: 'High-Voltage Wiring Technician', oldValue: 'Not assigned', newValue: wiringTech.fullName },
+          { field: 'scheduledInstallationDate', label: 'Scheduled Installation Date', oldValue: 'Not scheduled', newValue: originalDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) }
+        ]
+      });
+      if (idx % 4 === 0) {
+        crewModificationLog.push({
+          action: 'MODIFIED',
+          changedAt: new Date(Date.now() - 5 * 86400000),
+          changedBy: adminUser._id,
+          changedByName: adminUser.fullName,
+          changes: [
+            { field: 'scheduledInstallationDate', label: 'Scheduled Installation Date', oldValue: originalDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }), newValue: scheduledDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) }
+          ]
+        });
+      }
+    }
 
     sampleOrders.push({
       quotationReference: quoteRef,
-      orderReference: orderStatus !== 'Draft' ? orderRef : null,
+      orderReference: !isDraft ? orderRef : null,
       leadInquiryId: lead._id,
       customerFullName: lead.customerFullName,
       customerPhoneNumber: lead.customerPhoneNumber,
@@ -254,27 +324,50 @@ export const seedOrdersAndInstallations = async (insertedLeads, allUsersList) =>
       grossTotalAmountInr: grossAmount,
       estimatedSubsidyAmountInr: subsidy,
       netPayableAmountInr: netAmount,
-      advancePaymentAmountInr: advance,
-      balancePaymentDueInr: netAmount - advance,
+      advancePaymentAmountInr: totalPaid,
+      balancePaymentDueInr: netAmount - totalPaid,
+      paymentHistory,
       orderWorkflowStatus: orderStatus,
-      assignedTechnicians: [techUsers[0]._id, techUsers[1]._id],
-      scheduledInstallationDate: new Date(),
+      assignedTechnicians: hasCrew ? [inverterTech._id, rooftopTech._id, wiringTech._id] : [],
+      inverterTechnician: hasCrew ? inverterTech._id : null,
+      rooftopTechnician: hasCrew ? rooftopTech._id : null,
+      wiringTechnician: hasCrew ? wiringTech._id : null,
+      scheduledInstallationDate: hasCrew ? scheduledDate : null,
+      crewModificationLog,
       subsidyApplicationStatus: idx < 10 ? 'INSPECTION_PENDING' : 'DOCUMENTS_VERIFIED',
       updatedBy: adminUser._id
     });
   }
 
   const insertedOrders = await OrderModel.insertMany(sampleOrders);
-  console.log(`[SEED] Created ${insertedOrders.length} quotation and confirmed project orders`);
+  console.log(`[SEED] Created ${insertedOrders.length} quotation and confirmed project orders (3-technician crews + crew modification logs + payment history)`);
   return insertedOrders;
+};
+
+export const seedWarehouseStockCatalog = async (adminUserId) => {
+  const stockDocuments = DEFAULT_STOCK_CATALOG.map((item, index) => ({
+    ...item,
+    totalDispatchedUnits: 20 + index * 3,
+    restockHistory: [{
+      quantityAdded: item.availableUnits + item.reservedUnits,
+      restockedAt: new Date(Date.now() - (index + 3) * 86400000),
+      restockedBy: adminUserId,
+      restockedByName: 'Opening stock',
+      note: 'Opening warehouse balance'
+    }],
+    updatedBy: adminUserId
+  }));
+  const insertedStock = await StockItemModel.insertMany(stockDocuments);
+  console.log(`[SEED] Created ${insertedStock.length} warehouse stock catalog items (available / reserved units)`);
+  return insertedStock;
 };
 
 export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList) => {
   const techUser = allUsersList.find((u) => u.role === ERP_SYSTEM_CONFIG.RBAC_ROLES.STAFF);
   const sampleSiteLogs = [];
 
-  for (let idx = 0; idx < 10; idx++) {
-    const order = insertedOrders[idx + 4]; // installed orders
+  const installedOrders = insertedOrders.filter((o) => o.orderWorkflowStatus === 'Installed');
+  for (const order of installedOrders) {
     sampleSiteLogs.push({
       orderId: order._id,
       orderReference: order.orderReference,
@@ -338,7 +431,7 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
     }
   ];
 
-  for (let i = 3; i <= 15; i++) {
+  for (let i = 3; i <= 40; i++) {
     ticketsList.push({
       ticketReference: `TKT/2026/${String(i).padStart(4, '0')}`,
       customerFullName: `Service Customer #${i}`,
@@ -365,7 +458,7 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
 export const seedDoubleEntryLedger = async (insertedOrders, adminUserId) => {
   const journalEntries = [];
 
-  for (let idx = 0; idx < 15; idx++) {
+  for (let idx = 0; idx < 60; idx++) {
     const order = insertedOrders[idx];
     const journalRef = `JRN/2026/${String(idx + 1).padStart(4, '0')}`;
     const advanceAmount = order.advancePaymentAmountInr || 50000;
@@ -378,7 +471,7 @@ export const seedDoubleEntryLedger = async (insertedOrders, adminUserId) => {
       narrativeDescription: `Advance received for solar project ${order.customerFullName}`,
       journalLines: [
         { accountCode: '1010', accountName: 'Cash & Bank Balance', debitAmountInr: advanceAmount, creditAmountInr: 0 },
-        { accountCode: '2010', accountName: 'Customer Advance Liabilities', debitAmountInr: 0, creditAmountInr: advanceAmount }
+        { accountCode: '1200', accountName: 'Accounts Receivable - Solar Projects', debitAmountInr: 0, creditAmountInr: advanceAmount }
       ],
       totalDebitAmountInr: advanceAmount,
       totalCreditAmountInr: advanceAmount,
@@ -401,6 +494,7 @@ export const executeDatabaseSeedRoutine = async () => {
     OrderModel.deleteMany({}),
     SerialAssetModel.deleteMany({}),
     StockMoveModel.deleteMany({}),
+    StockItemModel.deleteMany({}),
     SiteLogModel.deleteMany({}),
     TicketModel.deleteMany({}),
     JournalEntryModel.deleteMany({})
@@ -410,6 +504,7 @@ export const executeDatabaseSeedRoutine = async () => {
   const adminUser = seededUsers[0];
 
   await seedHistoricalHardwareInventory(adminUser._id);
+  await seedWarehouseStockCatalog(adminUser._id);
   const seededLeads = await seedHistoricalLeadsAndSurveys(seededUsers);
   const seededOrders = await seedOrdersAndInstallations(seededLeads, seededUsers);
   await seedServiceTicketsAndSiteLogs(seededOrders, seededUsers);
@@ -418,14 +513,22 @@ export const executeDatabaseSeedRoutine = async () => {
 
   // Self-Healing ir.sequence counter synchronization
   console.log('[SEED] Synchronizing atomic ir.sequence registries...');
-  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.INQUIRY, 30);
-  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.QUOTE, 20);
-  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.ORDER, 20);
+  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.INQUIRY, 120);
+  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.QUOTE, 60);
+  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.ORDER, 60);
   await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.DISPATCH, 10);
-  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.TICKET, 15);
-  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.JOURNAL, 15);
+  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.TICKET, 40);
+  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.JOURNAL, 60);
+  await synchronizeSequenceCounter(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.INVOICE, 120);
 
-  console.log('[SEED] ✨ Seeding completed successfully with 150+ realistic records & synchronized sequences!');
+  const [userCount, assetCount, leadCount, orderCount, siteLogCount, ticketCount, journalCount, stockCount] = await Promise.all([
+    UserModel.countDocuments(), SerialAssetModel.countDocuments(), LeadModel.countDocuments(), OrderModel.countDocuments(),
+    SiteLogModel.countDocuments(), TicketModel.countDocuments(), JournalEntryModel.countDocuments(), StockItemModel.countDocuments()
+  ]);
+  const totalRecords = userCount + assetCount + leadCount + orderCount + siteLogCount + ticketCount + journalCount + stockCount;
+  console.log(`[SEED] Record totals: users=${userCount} assets=${assetCount} leads=${leadCount} orders=${orderCount} siteLogs=${siteLogCount} tickets=${ticketCount} journals=${journalCount} stockItems=${stockCount} => ${totalRecords} records (+ simulated emails)`);
+
+  console.log('[SEED] ✨ Seeding completed successfully with realistic records & synchronized sequences!');
   await disconnectDatabase();
 };
 

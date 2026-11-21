@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: validateMiddleware.js
- * @RESPONSIBILITY: Enforces Zod boundary validation schemas against incoming HTTP request bodies.
+ * @RESPONSIBILITY: Validates request bodies against Zod schemas and returns plain-language field errors.
  * @DEPENDENCIES: zod
  */
 
@@ -12,19 +12,19 @@ export const validateRequestBody = (targetZodSchema) => {
       httpRequest.validatedBody = sanitizedParsedBody;
       return nextMiddlewareFunction();
     } catch (schemaValidationError) {
-      const descriptiveErrors = schemaValidationError.errors?.map((errDetail) => ({
-        field: errDetail.path.join('.'),
+      const issueList = schemaValidationError.errors || schemaValidationError.issues || [];
+      const descriptiveErrors = issueList.map((errDetail) => ({
+        field: (errDetail.path || []).join('.'),
         issue: errDetail.message
       }));
 
-      const errorDetailsString = descriptiveErrors?.map(e => `${e.field || 'body'}: ${e.issue}`).join(', ');
+      // Human-readable summary: unique issue messages only (no field paths, no stack traces)
+      const readableMessage = [...new Set(descriptiveErrors.map((e) => e.issue).filter(Boolean))].join(' ');
 
       return httpResponse.status(400).json({
         success: false,
-        message: errorDetailsString
-          ? `Request payload validation failed at API boundary: ${errorDetailsString}`
-          : 'Request payload validation failed at API boundary',
-        validationErrors: descriptiveErrors || schemaValidationError.message
+        message: readableMessage || 'Some of the information you entered is not valid. Please check the form and try again.',
+        validationErrors: descriptiveErrors.length > 0 ? descriptiveErrors : schemaValidationError.message
       });
     }
   };

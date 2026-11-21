@@ -13,6 +13,7 @@ import { JournalEntryModel } from '../accounting/journalEntry.model.js';
 import { getNextSequenceNumber } from '../../core/sequenceRegistry.js';
 import { emitErpEvent } from '../../core/socketEmitter.js';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
+import { buildOrderScopeFilter, buildCustomerPhoneRegex } from '../../core/customerScope.js';
 
 export const submitTechnicianRoofSignoff = async (signoffPayload, leadTechnicianId) => {
   const { orderId, installationStartTime, installationFinishTime, confirmedCapacityKw, powerGenerationTestedWatts, finishedRoofPhotos, homeownerSignatureDataUrl, technicianNotes } = signoffPayload;
@@ -50,16 +51,36 @@ export const submitTechnicianRoofSignoff = async (signoffPayload, leadTechnician
   return createdSiteLog;
 };
 
-export const lookupAssetWarrantyStatus = async (searchCriteriaQuery) => {
-  const sanitizedQuery = searchCriteriaQuery.trim();
-  const foundAssets = await SerialAssetModel.find({
+const buildCustomerAssetFilter = async (customerUser) => {
+  const ownedOrders = await OrderModel.find(buildOrderScopeFilter(customerUser)).select('orderReference');
+  const orderReferences = ownedOrders.map((o) => o.orderReference).filter(Boolean);
+  const clauses = [{ assignedCustomerId: customerUser._id }];
+  if (orderReferences.length > 0) clauses.push({ orderReference: { $in: orderReferences } });
+  const phoneRegex = buildCustomerPhoneRegex(customerUser);
+  if (phoneRegex) clauses.push({ customerPhoneNumber: phoneRegex });
+  return { $or: clauses };
+};
+
+export const lookupAssetWarrantyStatus = async (searchCriteriaQuery = '', customerUser = null) => {
+  const sanitizedQuery = (searchCriteriaQuery || '').trim();
+  const escapedQuery = sanitizedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const textFilter = {
     $or: [
-      { serialNumber: { $regex: sanitizedQuery, $options: 'i' } },
-      { customerFullName: { $regex: sanitizedQuery, $options: 'i' } },
-      { customerPhoneNumber: { $regex: sanitizedQuery, $options: 'i' } },
-      { orderReference: { $regex: sanitizedQuery, $options: 'i' } }
+      { serialNumber: { $regex: escapedQuery, $options: 'i' } },
+      { customerFullName: { $regex: escapedQuery, $options: 'i' } },
+      { customerPhoneNumber: { $regex: escapedQuery, $options: 'i' } },
+      { orderReference: { $regex: escapedQuery, $options: 'i' } }
     ]
-  });
+  };
+
+  let assetFilter = textFilter;
+  if (customerUser) {
+    // Customers only ever see their own hardware; an email / blank search simply lists everything they own
+    const ownedFilter = await buildCustomerAssetFilter(customerUser);
+    assetFilter = sanitizedQuery && !sanitizedQuery.includes('@') ? { $and: [textFilter, ownedFilter] } : ownedFilter;
+  }
+
+  const foundAssets = await SerialAssetModel.find(assetFilter);
 
   const now = new Date();
   return foundAssets.map((asset) => {
@@ -97,10 +118,21 @@ export const lookupAssetWarrantyStatus = async (searchCriteriaQuery) => {
   });
 };
 
-export const createBreakdownServiceTicket = async (ticketDetails, creatorUserId) => {
+export const createBreakdownServiceTicket = async (ticketDetails, creatorUserId, customerUser = null) => {
   const { targetSerialNumber, reportedFaultCode, issueDescription } = ticketDetails;
   const assetRecord = await SerialAssetModel.findOne({ serialNumber: targetSerialNumber.trim().toUpperCase() });
   if (!assetRecord) throw new Error(`Serial number ${targetSerialNumber} not found`);
+
+  if (customerUser) {
+    const ownedMatch = await SerialAssetModel.exists({
+      $and: [{ _id: assetRecord._id }, await buildCustomerAssetFilter(customerUser)]
+    });
+    if (!ownedMatch) {
+      const ownershipError = new Error('You can only report issues for hardware installed at your own home.');
+      ownershipError.statusCode = 403;
+      throw ownershipError;
+    }
+  }
 
   const now = new Date();
   const isUnderWarranty = assetRecord.warrantyExpiresTimestamp && new Date(assetRecord.warrantyExpiresTimestamp) > now;
@@ -209,6 +241,14 @@ export const resolveServiceTicketWithConfirmation = async (ticketId, resolutionN
   return ticketRecord;
 };
 
-export const fetchAllServiceTickets = async (filterQuery = {}) => {
-  return TicketModel.find(filterQuery).sort({ createdAt: -1 });
+export const fetchAllServiceTickets = async (filterQuery = {}, customerUser = null) => {
+  let resolvedFilter = filterQuery;
+  if (customerUser) {
+    const ownedAssets = await SerialAssetModel.find(await buildCustomerAssetFilter(customerUser)).select('serialNumber');
+    const clauses = [{ targetSerialNumber: { $in: ownedAssets.map((a) => a.serialNumber) } }];
+    const phoneRegex = buildCustomerPhoneRegex(customerUser);
+    if (phoneRegex) clauses.push({ customerPhoneNumber: phoneRegex });
+    resolvedFilter = { $or: clauses };
+  }
+  return TicketModel.find(resolvedFilter).sort({ createdAt: -1 });
 };

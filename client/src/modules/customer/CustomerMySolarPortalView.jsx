@@ -24,10 +24,14 @@ import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { AlertBanner } from '../../components/AlertBanner';
 import { SimulatedEmailOutboxModal } from '../../components/SimulatedEmailOutboxModal';
+import { validatePaymentAgainstBalance } from '../../utils/validators';
 
 export const CustomerMySolarPortalView = () => {
   const { currentUser, logoutUser, switchPersonaRole, setIsSystemProcessing } = useAuth();
   const [customerTickets, setCustomerTickets] = useState([]);
+  const [customerAssets, setCustomerAssets] = useState([]);
+  const [customerSiteLog, setCustomerSiteLog] = useState(null);
+  const [customerInvoices, setCustomerInvoices] = useState([]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [customerProjectOrder, setCustomerProjectOrder] = useState(null);
@@ -40,12 +44,27 @@ export const CustomerMySolarPortalView = () => {
   const [paymentModeInput, setPaymentModeInput] = useState('UPI');
   const [transactionRefInput, setTransactionRefInput] = useState('');
 
-  // Load customer tickets and warranty info
+  // Load customer tickets, order, assets and warranty info scoped ONLY to current authenticated customer
   const loadCustomerData = async () => {
     try {
+      // First attempt dedicated customer portal bundle
+      const portalBundleRes = await executeHttpRequest('/api/orders/my-portal').catch(() => null);
+      if (portalBundleRes?.success) {
+        if (portalBundleRes.order) setCustomerProjectOrder(portalBundleRes.order);
+        if (portalBundleRes.tickets) setCustomerTickets(portalBundleRes.tickets);
+        if (portalBundleRes.assets) {
+          setCustomerAssets(portalBundleRes.assets);
+          if (portalBundleRes.assets.length > 0) setWarrantyData(portalBundleRes.assets[0]);
+        }
+        if (portalBundleRes.siteLog) setCustomerSiteLog(portalBundleRes.siteLog);
+        if (portalBundleRes.invoices) setCustomerInvoices(portalBundleRes.invoices);
+        return;
+      }
+
+      // Fallback to individual endpoints if bundle route is not reached
       const [ticketsRes, warrantyRes, myProjectRes] = await Promise.all([
-        executeHttpRequest('/api/service/tickets'),
-        executeHttpRequest(`/api/service/warranty-lookup?query=${encodeURIComponent(currentUser?.email || 'customer@solims.com')}`),
+        executeHttpRequest('/api/service/tickets').catch(() => ({ success: false })),
+        executeHttpRequest(`/api/service/warranty-lookup?query=${encodeURIComponent(currentUser?.email || currentUser?.phoneNumber || '')}`).catch(() => ({ success: false })),
         executeHttpRequest('/api/orders/my-project').catch(() => ({ success: false }))
       ]);
 
@@ -53,18 +72,13 @@ export const CustomerMySolarPortalView = () => {
         setCustomerProjectOrder(myProjectRes.order);
       }
 
-      if (ticketsRes.success) {
-        const matched = (ticketsRes.tickets || []).filter(
-          (t) =>
-            t.customerFullName?.toLowerCase().includes('sunil') ||
-            t.customerPhoneNumber === currentUser?.phoneNumber ||
-            t.customerPhoneNumber === '+91 98333 44556'
-        );
-        setCustomerTickets(matched.length > 0 ? matched : ticketsRes.tickets.slice(0, 2));
+      if (ticketsRes?.success && Array.isArray(ticketsRes.tickets)) {
+        setCustomerTickets(ticketsRes.tickets);
       }
 
-      if (warrantyRes.success && warrantyRes.results?.length > 0) {
+      if (warrantyRes?.success && warrantyRes.results?.length > 0) {
         setWarrantyData(warrantyRes.results[0]);
+        setCustomerAssets(warrantyRes.results);
       }
     } catch (err) {
       console.error('Failed to load customer data:', err);
@@ -73,7 +87,7 @@ export const CustomerMySolarPortalView = () => {
 
   useEffect(() => {
     loadCustomerData();
-  }, []);
+  }, [currentUser]);
 
   // Handle Rainy Season Issue Filing
   const handleReportIssueSubmit = async (e) => {
@@ -110,6 +124,11 @@ export const CustomerMySolarPortalView = () => {
   const handleOnlinePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!customerProjectOrder) return;
+    const paymentCheck = validatePaymentAgainstBalance(paymentAmountInput, balanceDue);
+    if (!paymentCheck.ok) {
+      setFeedbackMessage({ type: 'error', text: paymentCheck.error });
+      return;
+    }
     setIsSystemProcessing(true);
     setFeedbackMessage({ type: '', text: '' });
 
@@ -117,7 +136,7 @@ export const CustomerMySolarPortalView = () => {
       const response = await executeHttpRequest(`/api/orders/${customerProjectOrder._id}/payment`, {
         method: 'POST',
         body: JSON.stringify({
-          paymentAmountInr: Number(paymentAmountInput),
+          paymentAmountInr: paymentCheck.value,
           paymentMode: paymentModeInput,
           transactionReference: transactionRefInput || `UPI/2026/TXN${Date.now().toString().slice(-6)}`
         })
@@ -128,7 +147,7 @@ export const CustomerMySolarPortalView = () => {
         setCustomerProjectOrder(response.order);
         setFeedbackMessage({
           type: 'success',
-          text: `✅ Payment of ₹${Number(paymentAmountInput).toLocaleString('en-IN')} received successfully! Double-entry JournalEntry posted (Debit 1010 Bank / Credit 1200 Accounts Receivable). Remaining balance updated.`
+          text: `Payment of ₹${paymentCheck.value.toLocaleString('en-IN')} received successfully! Double-entry JournalEntry posted (Debit 1010 Bank / Credit 1200 Accounts Receivable). Remaining balance updated.`
         });
         await loadCustomerData();
       }
@@ -142,9 +161,9 @@ export const CustomerMySolarPortalView = () => {
   const resolvedReference = customerProjectOrder?.orderReference || customerProjectOrder?.quotationReference || 'ORD/2026/0088';
   const resolvedSystemTitle = customerProjectOrder
     ? `${customerProjectOrder.systemCapacityKw} kW ${customerProjectOrder.systemVariant} Rooftop Solar System`
-    : '3 kW On-Grid Rooftop Solar System';
+    : 'Residential Rooftop Solar System';
   const resolvedAddress = customerProjectOrder?.installationSiteAddress || 'B-42, Sector 14, Noida';
-  const resolvedClientName = currentUser?.fullName || customerProjectOrder?.customerFullName || 'Sunil Agrawal';
+  const resolvedClientName = currentUser?.fullName || currentUser?.name || customerProjectOrder?.customerFullName || 'Valued Homeowner';
 
   // QA FIX 2: Financial Summary Calculations
   const totalProjectAmount = customerProjectOrder?.netPayableAmountInr || customerProjectOrder?.totalOrderAmountInr || 245000;
@@ -153,11 +172,16 @@ export const CustomerMySolarPortalView = () => {
     ? customerProjectOrder.balancePaymentDueInr
     : Math.max(0, totalProjectAmount - paidAmount);
 
-  // QA FIX 2: 6-Stage Live Purchase & Installation Progress Tracker
-  // (Inquiry ➔ Survey Approved ➔ Quote Confirmed ➔ Advance Paid ➔ Dispatched ➔ Installed & Signed Off)
-  const isAdvancePaid = (customerProjectOrder?.advancePaymentAmountInr > 0) || ['Advance_Paid', 'Packed', 'Dispatched', 'Installed', 'Done'].includes(customerProjectOrder?.orderWorkflowStatus);
+  // 7-Stage Live Purchase & Installation Progress Tracker with explicit Leftover Pay (BALANCE_DUE)
+  // (Inquiry ➔ Survey Approved ➔ Quote Confirmed ➔ Advance Paid ➔ Leftover Pay ➔ Dispatched ➔ Installed & Signed Off)
+  const isAdvancePaid = (customerProjectOrder?.advancePaymentAmountInr > 0) || ['Advance_Paid', 'BALANCE_DUE', 'Packed', 'Dispatched', 'Installed', 'Done'].includes(customerProjectOrder?.orderWorkflowStatus);
   const isDispatched = ['Dispatched', 'Installed', 'Done'].includes(customerProjectOrder?.orderWorkflowStatus);
   const isInstalled = ['Installed', 'Done'].includes(customerProjectOrder?.orderWorkflowStatus);
+  const hasCompletedSignature = Boolean(
+    customerSiteLog?.homeownerSignatureDataUrl ||
+    customerSiteLog?.completionStatus === 'CONFIRMED_AND_ACCEPTED' ||
+    (isInstalled && customerSiteLog)
+  );
 
   const projectStages = [
     {
@@ -190,6 +214,16 @@ export const CustomerMySolarPortalView = () => {
     },
     {
       num: '5',
+      title: 'Leftover Pay',
+      status: (isAdvancePaid && balanceDue === 0)
+        ? 'Completed'
+        : (isAdvancePaid && balanceDue > 0 ? 'Active' : 'Waiting'),
+      detail: balanceDue === 0
+        ? 'Fully Settled ✓'
+        : (isAdvancePaid ? `₹${balanceDue.toLocaleString('en-IN')} Balance Due` : 'Pending Advance')
+    },
+    {
+      num: '6',
       title: 'Dispatched',
       status: isDispatched
         ? 'Completed'
@@ -197,7 +231,7 @@ export const CustomerMySolarPortalView = () => {
       detail: isDispatched ? 'Serials Barcode Verified' : 'Warehouse Queue'
     },
     {
-      num: '6',
+      num: '7',
       title: 'Installed & Signed Off',
       status: isInstalled
         ? 'Completed'
@@ -325,12 +359,12 @@ export const CustomerMySolarPortalView = () => {
             </div>
           </div>
 
-          {/* QA FIX 2: 6-Stage Ribbon Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+          {/* QA FIX 2: 7-Stage Ribbon Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 pt-2">
             {projectStages.map((st, idx) => (
               <div
                 key={idx}
-                className={`p-3.5 rounded-2xl border transition-all ${
+                className={`p-3 rounded-2xl border transition-all ${
                   st.status === 'Active'
                     ? 'bg-[#135D3B] text-white border-[#135D3B] shadow-sm ring-2 ring-[#135D3B]/20'
                     : st.status === 'Completed'
@@ -490,19 +524,34 @@ export const CustomerMySolarPortalView = () => {
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Tested Generation</span>
                 <span className="text-base font-black text-slate-900 font-mono mt-0.5 block tabular-nums">
-                  3,450 Watts
+                  {customerSiteLog?.powerGenerationTestedWatts
+                    ? `${customerSiteLog.powerGenerationTestedWatts.toLocaleString('en-IN')} Watts`
+                    : (isInstalled ? '3,450 Watts' : 'Pending Power Test')}
                 </span>
-                <span className="text-[10px] text-emerald-700 font-semibold">Exceeds 3kW benchmark</span>
+                <span className="text-[10px] text-emerald-700 font-semibold">
+                  {isInstalled ? 'Exceeds benchmark' : 'Verified during commissioning'}
+                </span>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Lead Technician</span>
-                <span className="font-bold text-slate-900 block mt-0.5">Ramesh Sharma</span>
-                <span className="text-[10px] text-slate-500 font-medium">Certified Rooftop Lead</span>
+                <span className="font-bold text-slate-900 block mt-0.5">
+                  {customerSiteLog?.leadTechnicianUser?.fullName ||
+                    customerProjectOrder?.rooftopTechnician?.fullName ||
+                    customerProjectOrder?.assignedTechnicians?.[0]?.fullName ||
+                    'Certified SolIMS Crew'}
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">Certified Rooftop Specialist</span>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Acceptance Date</span>
-                <span className="font-mono font-bold text-slate-900 block mt-0.5">June 2024</span>
-                <span className="text-[10px] text-emerald-700 font-semibold">Active in Field (18 mos)</span>
+                <span className="font-mono font-bold text-slate-900 block mt-0.5">
+                  {customerSiteLog?.installationFinishTime
+                    ? new Date(customerSiteLog.installationFinishTime).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+                    : (isInstalled ? 'Completed' : 'Pending Handover')}
+                </span>
+                <span className="text-[10px] text-emerald-700 font-semibold">
+                  {hasCompletedSignature ? 'Legally Signed Handover' : 'Awaiting Final Handover'}
+                </span>
               </div>
             </div>
 
@@ -512,36 +561,66 @@ export const CustomerMySolarPortalView = () => {
               <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-900 text-white relative">
                 <div className="p-3 bg-slate-800/80 backdrop-blur-xs flex justify-between items-center text-[10px] font-mono">
                   <span>ROOF_SURVEY_PHOTO_01</span>
-                  <span className="text-emerald-400 font-bold">RCC Flat Roof</span>
+                  <span className="text-emerald-400 font-bold">{isInstalled ? 'Verified Array' : 'Survey Site'}</span>
                 </div>
-                <div className="p-6 text-center space-y-2">
-                  <div className="inline-flex p-3 bg-white/10 rounded-full border border-white/20">
-                    <Sun className="w-8 h-8 text-amber-300" />
+                {customerSiteLog?.finishedRoofPhotos?.length > 0 ? (
+                  <img
+                    src={customerSiteLog.finishedRoofPhotos[0]}
+                    alt="Finished Roof"
+                    className="w-full h-40 object-cover"
+                  />
+                ) : (
+                  <div className="p-6 text-center space-y-2">
+                    <div className="inline-flex p-3 bg-white/10 rounded-full border border-white/20">
+                      <Sun className="w-8 h-8 text-amber-300" />
+                    </div>
+                    <div className="text-xs font-bold text-slate-200">{resolvedSystemTitle}</div>
+                    <div className="text-[10px] text-slate-400">Fixed Tilt Array • High Efficiency Modules</div>
                   </div>
-                  <div className="text-xs font-bold text-slate-200">6 × Mono PERC Panels Array</div>
-                  <div className="text-[10px] text-slate-400">South-Facing • 22° Fixed Tilt Angle</div>
-                </div>
+                )}
               </div>
 
               {/* Digital Homeowner Screen Signature */}
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50 space-y-2 flex flex-col justify-between">
                 <div>
                   <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Homeowner Digital Touch Signature
+                    Homeowner Handover Signature
                   </div>
                   <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                    Digitally captured on technician tablet upon power test verification.
+                    Digitally captured upon site installation and power generation verification.
                   </p>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 text-center font-serif italic text-lg text-slate-800 shadow-2xs">
-                  Sunil Agrawal
-                </div>
+                {hasCompletedSignature ? (
+                  <>
+                    <div className="p-3 bg-white rounded-2xl border border-slate-200 text-center shadow-2xs">
+                      {customerSiteLog?.homeownerSignatureDataUrl ? (
+                        <img
+                          src={customerSiteLog.homeownerSignatureDataUrl}
+                          alt="Handover Signature"
+                          className="max-h-12 mx-auto object-contain mb-1"
+                        />
+                      ) : null}
+                      <div className="font-serif italic text-lg text-slate-900 font-bold">
+                        {resolvedClientName}
+                      </div>
+                    </div>
 
-                <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Legally Signed & Commissioned</span>
-                </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Legally Signed & Commissioned</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4 bg-amber-50/80 border border-amber-300 rounded-2xl text-center space-y-1">
+                    <span className="text-xs font-bold text-amber-900 block">
+                      ⏳ Awaiting Homeowner Handover Signature
+                    </span>
+                    <span className="text-[10px] text-amber-700 font-medium block">
+                      Signature will be recorded by the technician upon rooftop power test verification.
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -595,130 +674,81 @@ export const CustomerMySolarPortalView = () => {
               </p>
             </div>
             <span className="text-xs font-mono font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              3 Certified Assets
+              {customerAssets.length} Certified Asset{customerAssets.length === 1 ? '' : 's'}
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Asset 1: Solar Panels (20 Years) */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
-                  PV Panels (6 Units)
-                </span>
-                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  Active (20-Yr)
-                </span>
-              </div>
+            {customerAssets && customerAssets.length > 0 ? (
+              customerAssets.map((asset, idx) => {
+                const totalDays = asset.warrantyDurationDays || (asset.assetCategory === 'SOLAR_PANELS' ? 7300 : 730);
+                const years = Math.round(totalDays / 365);
+                const isUnderWarranty = asset.isUnderActiveWarranty ?? (asset.remainingWarrantyDays > 0);
+                return (
+                  <div
+                    key={asset._id || asset.serialNumber || idx}
+                    className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4 hover:border-slate-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
+                        {asset.assetCategory || 'SOLAR ASSET'}
+                      </span>
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                          isUnderWarranty
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {isUnderWarranty ? `Active (${years}-Yr)` : 'Expired'}
+                      </span>
+                    </div>
 
-              <div>
-                <h4 className="font-heading font-bold text-sm text-slate-900">
-                  Mono PERC 550W Half-Cut Solar Panels
-                </h4>
-                <div className="font-mono text-xs font-bold text-slate-800 mt-1 tabular-nums">
-                  Serial: PANEL-BATCH-2024-0088
-                </div>
-              </div>
+                    <div>
+                      <h4 className="font-heading font-bold text-sm text-slate-900">
+                        {asset.modelDesignation || `${asset.assetCategory || 'Solar'} Equipment`}
+                      </h4>
+                      <div className="font-mono text-xs font-bold text-slate-800 mt-1 tabular-nums">
+                        Serial: {asset.serialNumber}
+                      </div>
+                    </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Total Duration:</span>
-                  <span className="font-bold text-slate-900 tabular-nums">20 Years (7,300 Days)</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Elapsed Time:</span>
-                  <span className="font-bold text-slate-700 tabular-nums">~548 Days</span>
-                </div>
-                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-bold text-emerald-800">
-                  <span>Remaining Warranty:</span>
-                  <span className="font-mono text-sm tabular-nums">6,752 Days Left</span>
-                </div>
-              </div>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Total Duration:</span>
+                        <span className="font-bold text-slate-900 tabular-nums">
+                          {years} Years ({totalDays.toLocaleString('en-IN')} Days)
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Elapsed Time:</span>
+                        <span className="font-bold text-slate-700 tabular-nums">
+                          ~{asset.elapsedDays ?? 0} Days
+                        </span>
+                      </div>
+                      <div className="border-t border-slate-100 pt-1.5 flex justify-between font-bold text-emerald-800">
+                        <span>Remaining Warranty:</span>
+                        <span className="font-mono text-sm tabular-nums">
+                          {asset.remainingWarrantyDays != null ? `${asset.remainingWarrantyDays} Days Left` : 'Active'}
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="text-[10px] text-slate-500 font-medium">
-                ✓ 84.8% performance output guaranteed at Year 25.
+                    <div className="text-[10px] text-slate-500 font-medium">
+                      ✓ Certified SolIMS hardware warranty coverage.
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-1 md:col-span-3 p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center space-y-2">
+                <Award className="w-8 h-8 text-slate-400 mx-auto" />
+                <div className="text-sm font-bold text-slate-700">Hardware Serial Numbers & Warranties Initializing</div>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Your 20-Year solar panel and 2-Year smart inverter warranty certificates will automatically activate once warehouse dispatch is confirmed.
+                </p>
               </div>
-            </div>
-
-            {/* Asset 2: Smart Inverter (2 Years) */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
-                  Grid Inverter
-                </span>
-                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  Active (2-Yr)
-                </span>
-              </div>
-
-              <div>
-                <h4 className="font-heading font-bold text-sm text-slate-900">
-                  SolIMS 3 kW Smart Grid-Tied Inverter
-                </h4>
-                <div className="font-mono text-xs font-bold text-slate-800 mt-1 tabular-nums">
-                  Serial: INV-2024-RAINY-ACTIVE
-                </div>
-              </div>
-
-              <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Total Duration:</span>
-                  <span className="font-bold text-slate-900 tabular-nums">2 Years (730 Days)</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Elapsed Time:</span>
-                  <span className="font-bold text-slate-700 tabular-nums">~548 Days (18 Mos)</span>
-                </div>
-                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-bold text-emerald-800">
-                  <span>Remaining Warranty:</span>
-                  <span className="font-mono text-sm text-emerald-700 font-black tabular-nums">182 Days Left</span>
-                </div>
-              </div>
-
-              <div className="text-[10px] text-emerald-800 font-bold">
-                ✓ In-warranty service cost: ₹0 Parts + ₹0 Labor.
-              </div>
-            </div>
-
-            {/* Asset 3: Safety Earthing & Surge Box (2 Years) */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
-                  Safety System
-                </span>
-                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  Active (2-Yr)
-                </span>
-              </div>
-
-              <div>
-                <h4 className="font-heading font-bold text-sm text-slate-900">
-                  Dual DC/AC Lightning Surge Arrestor
-                </h4>
-                <div className="font-mono text-xs font-bold text-slate-800 mt-1 tabular-nums">
-                  Serial: SPD-EARTH-2024-0088
-                </div>
-              </div>
-
-              <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Total Duration:</span>
-                  <span className="font-bold text-slate-900">2 Years (730 Days)</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Elapsed Time:</span>
-                  <span className="font-bold text-slate-700">~548 Days</span>
-                </div>
-                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#135D3B]">
-                  <span>Remaining Warranty:</span>
-                  <span className="font-mono text-sm">182 Days Left</span>
-                </div>
-              </div>
-
-              <div className="text-[10px] text-slate-500 font-medium">
-                ✓ High-voltage lightning surge protection verified.
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -811,7 +841,13 @@ export const CustomerMySolarPortalView = () => {
                 <input
                   type="text"
                   disabled
-                  value="INV-2024-RAINY-ACTIVE (SolIMS 3kW Inverter - Active 2-Yr Warranty)"
+                  value={
+                    warrantyData
+                      ? `${warrantyData.serialNumber} (${warrantyData.modelDesignation || warrantyData.assetCategory || 'Inverter'} - Active Warranty)`
+                      : customerAssets[0]
+                      ? `${customerAssets[0].serialNumber} (${customerAssets[0].modelDesignation || customerAssets[0].assetCategory} - Active Warranty)`
+                      : `${resolvedReference}-INVERTER (SolIMS Smart Inverter - Active 2-Yr Warranty)`
+                  }
                   className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-slate-700 font-mono font-bold"
                 />
               </div>

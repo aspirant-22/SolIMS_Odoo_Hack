@@ -582,7 +582,9 @@ export const TechnicianRoofSignoffView = () => {
             <div className="flex justify-between items-center">
               <label className="text-xs font-extrabold text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
                 <PenTool className="w-4 h-4 text-[#135D3B]" />
-                <span>Homeowner Digital Acceptance Signature (Sign on Screen)</span>
+                <span>
+                  Homeowner Digital Acceptance Signature — {activeOrders.find((o) => o._id === selectedOrderId)?.customerFullName || 'Homeowner'} (Sign on Screen)
+                </span>
               </label>
               <button
                 type="button"

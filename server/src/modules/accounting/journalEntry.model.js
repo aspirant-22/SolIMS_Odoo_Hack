@@ -25,7 +25,7 @@ const journalEntryRecordSchema = new mongoose.Schema(
     orderReference: { type: String, default: null },
     entryCategory: {
       type: String,
-      enum: ['ADVANCE_PAYMENT', 'EQUIPMENT_COGS', 'SERVICE_REVENUE', 'TECHNICIAN_PAYROLL', 'WARRANTY_EXPENSE', 'SUBSIDY_RECEIVABLE'],
+      enum: ['ADVANCE_PAYMENT', 'CUSTOMER_PAYMENT', 'EQUIPMENT_COGS', 'SERVICE_REVENUE', 'TECHNICIAN_PAYROLL', 'WARRANTY_EXPENSE', 'SUBSIDY_RECEIVABLE'],
       required: true
     },
     narrativeDescription: { type: String, required: true },

@@ -20,6 +20,7 @@ import { authApiRouter } from './modules/auth/auth.routes.js';
 import { leadApiRouter } from './modules/leads/lead.routes.js';
 import { orderApiRouter } from './modules/orders/order.routes.js';
 import { inventoryApiRouter } from './modules/inventory/inventory.routes.js';
+import { ensureStockCatalogSeeded } from './modules/inventory/inventory.service.js';
 import { serviceApiRouter } from './modules/service/service.routes.js';
 import { accountingApiRouter } from './modules/accounting/accounting.routes.js';
 import { diagnosticsApiRouter } from './modules/diagnostics/diagnostics.routes.js';
@@ -75,6 +76,7 @@ expressApplication.use(handleGlobalApplicationErrors);
 const startEnterpriseServer = async () => {
   try {
     await connectDatabase();
+    await ensureStockCatalogSeeded();
     await generateSampleDemoSimulatedEmails();
     httpServerInstance.listen(ERP_SYSTEM_CONFIG.PORT, () => {
       console.log(`[ERP] ${ERP_SYSTEM_CONFIG.COMPANY_NAME} Server live on port ${ERP_SYSTEM_CONFIG.PORT}`);
