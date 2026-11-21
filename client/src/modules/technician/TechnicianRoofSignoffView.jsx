@@ -46,16 +46,42 @@ export const TechnicianRoofSignoffView = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   // Live Camera state & refs
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [activeCameraStream, setActiveCameraStream] = useState(null);
   const [cameraError, setCameraError] = useState('');
-  const [cameraStream, setCameraStream] = useState(null);
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Backward-compatible aliases
+  const isCameraActive = isCameraOpen;
+  const setIsCameraActive = setIsCameraOpen;
+  const cameraStream = activeCameraStream;
+  const setCameraStream = setActiveCameraStream;
 
   // Canvas signature state
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignatureDrawn, setHasSignatureDrawn] = useState(false);
+
+  // Fix videoRef Timing Race Condition
+  useEffect(() => {
+    if (isCameraOpen && videoRef.current && activeCameraStream) {
+      videoRef.current.srcObject = activeCameraStream;
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current?.play().catch(() => {});
+      };
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isCameraOpen, activeCameraStream]);
+
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (activeCameraStream) {
+        activeCameraStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [activeCameraStream]);
 
   // Camera start / stop / capture handlers
   const startCamera = async () => {
@@ -65,26 +91,27 @@ export const TechnicianRoofSignoffView = () => {
         throw new Error('Camera device access is not supported by this browser.');
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        video: true,
+        audio: false
       });
-      setCameraStream(stream);
-      setIsCameraActive(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      setActiveCameraStream(stream);
+      setIsCameraOpen(true);
     } catch (err) {
       console.warn('Camera access unavailable:', err);
       setCameraError('Camera access denied or unavailable on this device. Use the fallback file uploader below.');
-      setIsCameraActive(false);
+      setIsCameraOpen(false);
     }
   };
 
   const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-      setCameraStream(null);
+    if (activeCameraStream) {
+      activeCameraStream.getTracks().forEach((track) => track.stop());
+      setActiveCameraStream(null);
     }
-    setIsCameraActive(false);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
   };
 
   const applyWatermarkAndSave = (sourceCanvas, label = 'Live Roof Proof') => {
@@ -110,6 +137,7 @@ export const TechnicianRoofSignoffView = () => {
 
     const base64Jpeg = sourceCanvas.toDataURL('image/jpeg', 0.7);
     setRoofPhotosList((prev) => [...prev, base64Jpeg]);
+    setCameraError('');
   };
 
   const snapPhotoFromCamera = () => {
@@ -120,6 +148,26 @@ export const TechnicianRoofSignoffView = () => {
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Black-Frame / Privacy-Shutter Detector
+    try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      let isPureBlack = true;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] !== 0 || data[i + 1] !== 0 || data[i + 2] !== 0) {
+          isPureBlack = false;
+          break;
+        }
+      }
+
+      if (isPureBlack) {
+        setCameraError('Camera lens appears covered or shutter is closed — check your laptop camera switch or use Upload Image');
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not inspect canvas pixels:', err);
+    }
 
     applyWatermarkAndSave(canvas, 'Live Camera Capture');
     stopCamera();
@@ -426,7 +474,7 @@ export const TechnicianRoofSignoffView = () => {
                   <span>Upload Image</span>
                 </button>
 
-                {!isCameraActive ? (
+                {!isCameraOpen ? (
                   <button
                     type="button"
                     onClick={startCamera}
@@ -457,13 +505,14 @@ export const TechnicianRoofSignoffView = () => {
             )}
 
             {/* Live Camera Viewfinder */}
-            {isCameraActive && (
+            {isCameraOpen && (
               <div className="relative rounded-2xl overflow-hidden border-2 border-[#135D3B] bg-slate-950 shadow-lg p-2 flex flex-col items-center">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
+                  onLoadedMetadata={() => videoRef.current?.play().catch(() => {})}
                   className="w-full max-h-72 rounded-xl object-contain bg-black"
                 />
                 <div className="w-full flex items-center justify-between pt-3 px-2">
