@@ -6,6 +6,7 @@
  */
 
 import mongoose from 'mongoose';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const journalLineItemSchema = new mongoose.Schema(
   {
@@ -50,5 +51,7 @@ journalEntryRecordSchema.pre('validate', function (nextValidationCallback) {
   this.isBalanced = true;
   return nextValidationCallback();
 });
+
+journalEntryRecordSchema.plugin(auditPlugin);
 
 export const JournalEntryModel = mongoose.model('JournalEntry', journalEntryRecordSchema);

@@ -6,6 +6,7 @@
  */
 
 import mongoose from 'mongoose';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const siteExecutionLogSchema = new mongoose.Schema(
   {
@@ -68,5 +69,7 @@ const siteExecutionLogSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+siteExecutionLogSchema.plugin(auditPlugin);
 
 export const SiteLogModel = mongoose.model('SiteLog', siteExecutionLogSchema);

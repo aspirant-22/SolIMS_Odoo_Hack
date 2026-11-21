@@ -7,6 +7,7 @@
 
 import mongoose from 'mongoose';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const serialHardwareAssetSchema = new mongoose.Schema(
   {
@@ -77,5 +78,7 @@ const serialHardwareAssetSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+serialHardwareAssetSchema.plugin(auditPlugin);
 
 export const SerialAssetModel = mongoose.model('SerialAsset', serialHardwareAssetSchema);

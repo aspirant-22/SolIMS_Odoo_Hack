@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { DataTable, StatusPill } from '../../components/DataTable';
 
 export const WarrantyLookupTicketView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -295,87 +296,97 @@ export const WarrantyLookupTicketView = () => {
       )}
 
       {/* Active Service Tickets Table */}
-      <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm space-y-2">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Ticket className="w-4 h-4 text-[#714B67]" />
-            <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wide">
-              Active Breakdown Tickets ({ticketsList.length})
-            </h3>
-          </div>
-          <span className="text-xs text-slate-500 font-medium">Tracked until customer confirmation</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="p-3">Ticket Ref</th>
-                <th className="p-3">Customer</th>
-                <th className="p-3">Target Serial</th>
-                <th className="p-3">Fault Code</th>
-                <th className="p-3">Warranty State</th>
-                <th className="p-3 text-right">Customer Bill</th>
-                <th className="p-3">Workflow</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {ticketsList.map((t) => (
-                <tr key={t._id} className="hover:bg-slate-50/80">
-                  <td className="p-3 font-mono font-extrabold text-[#714B67]">{t.ticketReference}</td>
-                  <td className="p-3 font-bold text-slate-900">{t.customerFullName}</td>
-                  <td className="p-3 font-mono text-slate-700 font-semibold">{t.targetSerialNumber}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-rose-50 text-rose-700 font-mono font-bold border border-rose-200">
-                      {t.reportedFaultCode}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                        t.isUnderActiveWarranty ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }`}
-                    >
-                      {t.isUnderActiveWarranty ? 'Under Warranty (₹0)' : 'Out of Warranty (Billed)'}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right font-mono font-extrabold text-slate-900">
-                    ₹{t.totalPayableAmountInr.toLocaleString('en-IN')}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                        t.ticketWorkflowStatus === 'Done' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}
-                    >
-                      {t.ticketWorkflowStatus}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right">
-                    {t.ticketWorkflowStatus !== 'Done' ? (
-                      <button
-                        onClick={() => {
-                          setSelectedTicketForResolve(t);
-                          setIsResolveModalOpen(true);
-                        }}
-                        className="odoo-btn-secondary text-[11px] py-1.5 px-3"
-                      >
-                        Resolve Ticket
-                      </button>
-                    ) : (
-                      <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 justify-end">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Confirmed Working</span>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={[
+          {
+            key: 'ticketReference',
+            header: 'Ticket Ref',
+            render: (t) => (
+              <span className="font-mono font-extrabold text-[#714B67]">{t.ticketReference}</span>
+            )
+          },
+          {
+            key: 'customerFullName',
+            header: 'Customer',
+            render: (t) => <span className="font-bold text-slate-900">{t.customerFullName}</span>
+          },
+          {
+            key: 'targetSerialNumber',
+            header: 'Target Serial',
+            render: (t) => (
+              <span className="font-mono text-slate-700 font-semibold">{t.targetSerialNumber}</span>
+            )
+          },
+          {
+            key: 'reportedFaultCode',
+            header: 'Fault Code',
+            render: (t) => (
+              <span className="px-2 py-0.5 rounded text-[10px] bg-rose-50 text-rose-700 font-mono font-bold border border-rose-200">
+                {t.reportedFaultCode}
+              </span>
+            )
+          },
+          {
+            key: 'isUnderActiveWarranty',
+            header: 'Warranty State',
+            render: (t) => (
+              <span
+                className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                  t.isUnderActiveWarranty
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-rose-50 text-rose-700 border border-rose-200'
+                }`}
+              >
+                {t.isUnderActiveWarranty ? 'Under Warranty (₹0)' : 'Out of Warranty (Billed)'}
+              </span>
+            )
+          },
+          {
+            key: 'totalPayableAmountInr',
+            header: 'Customer Bill',
+            align: 'right',
+            render: (t) => (
+              <span className="font-mono font-extrabold text-slate-900">
+                ₹{t.totalPayableAmountInr.toLocaleString('en-IN')}
+              </span>
+            )
+          },
+          {
+            key: 'ticketWorkflowStatus',
+            header: 'Workflow',
+            render: (t) => <StatusPill status={t.ticketWorkflowStatus} />
+          },
+          {
+            key: 'actions',
+            header: 'Actions',
+            align: 'right',
+            sortable: false,
+            render: (t) =>
+              t.ticketWorkflowStatus !== 'Done' ? (
+                <button
+                  onClick={() => {
+                    setSelectedTicketForResolve(t);
+                    setIsResolveModalOpen(true);
+                  }}
+                  className="odoo-btn-secondary text-[11px] py-1.5 px-3"
+                >
+                  Resolve Ticket
+                </button>
+              ) : (
+                <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 justify-end">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Confirmed Working</span>
+                </span>
+              )
+          }
+        ]}
+        data={ticketsList}
+        keyField="_id"
+        title="Active Breakdown Tickets"
+        subtitle="Tracked until customer confirmation"
+        icon={Ticket}
+        searchPlaceholder="Search ticket, customer, serial..."
+      />
 
       {/* Create Ticket Modal */}
       {isTicketModalOpen && selectedAssetForTicket && (

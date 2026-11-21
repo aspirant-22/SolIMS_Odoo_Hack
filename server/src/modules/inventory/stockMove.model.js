@@ -6,6 +6,7 @@
  */
 
 import mongoose from 'mongoose';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const stockMovementSchema = new mongoose.Schema(
   {
@@ -53,5 +54,7 @@ const stockMovementSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+stockMovementSchema.plugin(auditPlugin);
 
 export const StockMoveModel = mongoose.model('StockMove', stockMovementSchema);

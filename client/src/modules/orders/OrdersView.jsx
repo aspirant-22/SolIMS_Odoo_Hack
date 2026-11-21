@@ -1,0 +1,402 @@
+/**
+ * @AUTHOR: Garima Mittal
+ * @FILE: OrdersView.jsx
+ * @RESPONSIBILITY: Manages confirmed project orders, BOM inspections, advance payment records, and technician scheduling.
+ * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx, DataTable.jsx, erpClientConfig.js
+ */
+
+import React, { useState, useEffect } from 'react';
+import {
+  FileText,
+  CreditCard,
+  UserCheck,
+  Package,
+  Layers,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Zap,
+  Truck
+} from 'lucide-react';
+import { executeHttpRequest } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { DataTable, StatusPill } from '../../components/DataTable';
+import { formatCurrencyInr } from '../../erpClientConfig';
+
+export const OrdersView = () => {
+  const { currentUser, setIsSystemProcessing } = useAuth();
+  const [ordersList, setOrdersList] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [advanceAmountInput, setAdvanceAmountInput] = useState(50000);
+  const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
+  const [isAssignCrewModalOpen, setIsAssignCrewModalOpen] = useState(false);
+  const [scheduledDateInput, setScheduledDateInput] = useState('2026-11-28');
+  const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
+
+  const loadAllOrders = async () => {
+    try {
+      const response = await executeHttpRequest('/api/orders');
+      if (response.success) {
+        setOrdersList(response.orders || []);
+        if (response.orders?.length > 0 && !selectedOrder) {
+          setSelectedOrder(response.orders[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadAllOrders();
+  }, []);
+
+  const handleCaptureAdvanceSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
+    try {
+      const response = await executeHttpRequest(`/api/orders/${selectedOrder._id}/advance-payment`, {
+        method: 'POST',
+        body: JSON.stringify({ advanceAmountInr: Number(advanceAmountInput) })
+      });
+      if (response.success) {
+        setIsAdvanceModalOpen(false);
+        setSelectedOrder(response.order);
+        setFeedbackMessage({
+          type: 'success',
+          text: `Advance payment captured. Generated order reference ${response.order.orderReference || response.order.quotationReference}.`
+        });
+        await loadAllOrders();
+      }
+    } catch (err) {
+      setFeedbackMessage({ type: 'error', text: err.message || 'Payment capture failed' });
+    } finally {
+      setIsSystemProcessing(false);
+    }
+  };
+
+  const handleAssignCrewSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    setIsSystemProcessing(true);
+    setFeedbackMessage({ type: '', text: '' });
+    try {
+      const response = await executeHttpRequest(`/api/orders/${selectedOrder._id}/assign-crew`, {
+        method: 'POST',
+        body: JSON.stringify({
+          technicianUserIds: [currentUser?._id],
+          scheduledInstallationDate: scheduledDateInput
+        })
+      });
+      if (response.success) {
+        setIsAssignCrewModalOpen(false);
+        setSelectedOrder(response.order);
+        setFeedbackMessage({
+          type: 'success',
+          text: `Crew assigned for installation on ${scheduledDateInput}.`
+        });
+        await loadAllOrders();
+      }
+    } catch (err) {
+      setFeedbackMessage({ type: 'error', text: err.message || 'Crew assignment failed' });
+    } finally {
+      setIsSystemProcessing(false);
+    }
+  };
+
+  const columns = [
+    {
+      key: 'orderReference',
+      header: 'Reference',
+      render: (row) => (
+        <span className="font-mono font-extrabold text-[#714B67]">
+          {row.orderReference || row.quotationReference}
+        </span>
+      )
+    },
+    {
+      key: 'customerFullName',
+      header: 'Customer',
+      render: (row) => (
+        <div>
+          <div className="font-bold text-slate-900">{row.customerFullName}</div>
+          <div className="text-[11px] text-slate-500 font-medium">{row.customerPhoneNumber}</div>
+        </div>
+      )
+    },
+    {
+      key: 'systemCapacityKw',
+      header: 'Capacity & Grid',
+      render: (row) => (
+        <span className="font-semibold text-slate-800">
+          {row.systemCapacityKw} kW {row.systemVariant}
+        </span>
+      )
+    },
+    {
+      key: 'netPayableAmountInr',
+      header: 'Net Total',
+      align: 'right',
+      render: (row) => (
+        <span className="font-mono font-extrabold text-slate-900">
+          {formatCurrencyInr(row.netPayableAmountInr)}
+        </span>
+      )
+    },
+    {
+      key: 'balancePaymentDueInr',
+      header: 'Balance Due',
+      align: 'right',
+      render: (row) => (
+        <span
+          className={`font-mono font-bold ${
+            row.balancePaymentDueInr > 0 ? 'text-amber-700' : 'text-emerald-700'
+          }`}
+        >
+          {formatCurrencyInr(row.balancePaymentDueInr)}
+        </span>
+      )
+    },
+    {
+      key: 'orderWorkflowStatus',
+      header: 'Status',
+      render: (row) => <StatusPill status={row.orderWorkflowStatus} />
+    }
+  ];
+
+  return (
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-sm">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-amber-400 text-slate-900">
+              Module: Orders & BOM
+            </span>
+            <span className="text-xs text-slate-300">ir.sequence seq_order</span>
+          </div>
+          <h2 className="text-xl font-extrabold tracking-tight mt-1 text-white">
+            Confirmed Solar Orders & BOM Breakdown
+          </h2>
+          <p className="text-xs text-slate-300 mt-0.5">
+            Auto-generated proposals, advance payment locks, warehouse dispatch authorizations, and crew dispatch.
+          </p>
+        </div>
+      </div>
+
+      {feedbackMessage.text && (
+        <div
+          className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+            feedbackMessage.type === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-800'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          }`}
+        >
+          {feedbackMessage.type === 'error' ? '⚠️' : '✓'} {feedbackMessage.text}
+        </div>
+      )}
+
+      {/* Main Grid: Orders Table & Detail View */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <DataTable
+            columns={columns}
+            data={ordersList}
+            keyField="_id"
+            title="Confirmed Project Orders"
+            icon={Layers}
+            onRowClick={(row) => setSelectedOrder(row)}
+            selectedRowId={selectedOrder?._id}
+            searchPlaceholder="Search customer, ref, or status..."
+          />
+        </div>
+
+        {/* Selected Order Detail Panel */}
+        <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm space-y-5">
+          {selectedOrder ? (
+            <>
+              <div className="border-b border-slate-200 pb-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono text-xs font-extrabold text-[#714B67]">
+                    {selectedOrder.orderReference || selectedOrder.quotationReference}
+                  </span>
+                  <StatusPill status={selectedOrder.orderWorkflowStatus} />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 mt-1">
+                  {selectedOrder.customerFullName}
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  {selectedOrder.installationSiteAddress}
+                </p>
+              </div>
+
+              {/* Financial Snapshot */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Gross System Price:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {formatCurrencyInr(selectedOrder.grossTotalAmountInr)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-emerald-700">
+                  <span>PM Surya Ghar Subsidy:</span>
+                  <span className="font-mono font-bold">
+                    - {formatCurrencyInr(selectedOrder.estimatedSubsidyAmountInr)}
+                  </span>
+                </div>
+                <div className="border-t border-slate-200 pt-2 flex justify-between font-extrabold text-slate-900">
+                  <span>Net Payable Amount:</span>
+                  <span className="font-mono text-sm text-[#714B67]">
+                    {formatCurrencyInr(selectedOrder.netPayableAmountInr)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Advance Received:</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    {formatCurrencyInr(selectedOrder.advancePaymentAmountInr)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Balance Due:</span>
+                  <span className="font-mono font-bold text-amber-700">
+                    {formatCurrencyInr(selectedOrder.balancePaymentDueInr)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-2">
+                {selectedOrder.orderWorkflowStatus === 'Draft' && (
+                  <button
+                    onClick={() => setIsAdvanceModalOpen(true)}
+                    className="w-full odoo-btn-primary gap-1.5 text-xs py-2.5 justify-center shadow-sm"
+                  >
+                    <CreditCard className="w-4 h-4 text-amber-300" />
+                    <span>Capture Advance Payment (>=20%)</span>
+                  </button>
+                )}
+
+                {(selectedOrder.orderWorkflowStatus === 'Advance_Paid' ||
+                  selectedOrder.orderWorkflowStatus === 'Packed') && (
+                  <button
+                    onClick={() => setIsAssignCrewModalOpen(true)}
+                    className="w-full odoo-btn-secondary gap-1.5 text-xs py-2.5 justify-center"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    <span>Assign Installation Crew & Date</span>
+                  </button>
+                )}
+              </div>
+
+              {/* BOM Components List */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-extrabold uppercase text-slate-600 tracking-wider">
+                  Bill of Materials ({selectedOrder.billOfMaterials?.length || 0} items)
+                </div>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                  {selectedOrder.billOfMaterials?.map((bomItem, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs flex justify-between items-center"
+                    >
+                      <div>
+                        <div className="font-bold text-slate-900">{bomItem.componentName}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                          {bomItem.quantityRequired} {bomItem.unitOfMeasure} • {bomItem.itemCategory}
+                        </div>
+                      </div>
+                      <span className="font-mono font-bold text-slate-800">
+                        {formatCurrencyInr(bomItem.totalPriceInr)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12 text-slate-400 text-xs">
+              Select an order to inspect details.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Advance Payment Modal */}
+      {isAdvanceModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <h3 className="font-extrabold text-base text-slate-900">
+              Capture Advance Payment ({selectedOrder.quotationReference})
+            </h3>
+            <p className="text-xs text-slate-600">
+              Capturing >= 20% advance triggers double-entry journal entry and transitions order from Draft to Advance_Paid.
+            </p>
+            <form onSubmit={handleCaptureAdvanceSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Advance Amount (₹) — Min 20%: {formatCurrencyInr(selectedOrder.netPayableAmountInr * 0.2)}
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={advanceAmountInput}
+                  onChange={(e) => setAdvanceAmountInput(e.target.value)}
+                  className="odoo-input font-mono font-bold text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsAdvanceModalOpen(false)}
+                  className="odoo-btn-outline text-xs"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="odoo-btn-primary text-xs">
+                  Confirm Advance
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Crew Modal */}
+      {isAssignCrewModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <h3 className="font-extrabold text-base text-slate-900">Assign Installation Crew</h3>
+            <form onSubmit={handleAssignCrewSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Scheduled Installation Date</label>
+                <input
+                  type="date"
+                  required
+                  value={scheduledDateInput}
+                  onChange={(e) => setScheduledDateInput(e.target.value)}
+                  className="odoo-input font-bold"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsAssignCrewModalOpen(false)}
+                  className="odoo-btn-outline text-xs"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="odoo-btn-primary text-xs">
+                  Confirm Crew Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default OrdersView;

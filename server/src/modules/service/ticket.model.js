@@ -6,6 +6,7 @@
  */
 
 import mongoose from 'mongoose';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const serviceTicketEntitySchema = new mongoose.Schema(
   {
@@ -97,5 +98,7 @@ const serviceTicketEntitySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+serviceTicketEntitySchema.plugin(auditPlugin);
 
 export const TicketModel = mongoose.model('ServiceTicket', serviceTicketEntitySchema);

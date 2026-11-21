@@ -7,6 +7,7 @@
 
 import mongoose from 'mongoose';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const userEntitySchema = new mongoose.Schema(
   {
@@ -53,5 +54,7 @@ const userEntitySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userEntitySchema.plugin(auditPlugin);
 
 export const UserModel = mongoose.model('User', userEntitySchema);

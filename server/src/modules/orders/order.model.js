@@ -6,6 +6,7 @@
  */
 
 import mongoose from 'mongoose';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const billOfMaterialItemSchema = new mongoose.Schema(
   {
@@ -60,5 +61,7 @@ const projectOrderEntitySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+projectOrderEntitySchema.plugin(auditPlugin);
 
 export const OrderModel = mongoose.model('ProjectOrder', projectOrderEntitySchema);

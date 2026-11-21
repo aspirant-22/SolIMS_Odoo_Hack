@@ -5,7 +5,9 @@
  * @DEPENDENCIES: None
  */
 
-const API_REQUEST_TIMEOUT_MS = 15000;
+import { ERP_CLIENT_CONFIG } from '../erpClientConfig.js';
+
+const API_REQUEST_TIMEOUT_MS = ERP_CLIENT_CONFIG.NETWORK_TIMEOUT_THRESHOLD_MS || 15000;
 
 export const executeHttpRequest = async (endpointUrl, requestOptions = {}, triggerTimeoutCallback = null) => {
   const abortControllerInstance = new AbortController();

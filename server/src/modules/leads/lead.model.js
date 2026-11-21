@@ -6,6 +6,7 @@
  */
 
 import mongoose from 'mongoose';
+import { auditPlugin } from '../../core/auditPlugin.js';
 
 const roofSurveySpecsSchema = new mongoose.Schema(
   {
@@ -127,5 +128,7 @@ const leadInquiryEntitySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+leadInquiryEntitySchema.plugin(auditPlugin);
 
 export const LeadModel = mongoose.model('Lead', leadInquiryEntitySchema);

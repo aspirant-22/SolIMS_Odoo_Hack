@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { DataTable, StatusPill } from '../../components/DataTable';
 
 export const DirectorDashboardView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -220,85 +221,112 @@ export const DirectorDashboardView = () => {
       </div>
 
       {activeTab === 'PNL' ? (
-        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="p-3.5">Project Ref</th>
-                  <th className="p-3.5">Customer</th>
-                  <th className="p-3.5">Size / Type</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5 text-right">Revenue</th>
-                  <th className="p-3.5 text-right">Hardware COGS</th>
-                  <th className="p-3.5 text-right">Labor Pay</th>
-                  <th className="p-3.5 text-right">Net Profit</th>
-                  <th className="p-3.5 text-right">Margin</th>
-                  <th className="p-3.5">Govt Subsidy Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {projectMargins.map((job) => {
-                  const isProfitable = job.netJobProfitInr >= 0;
-                  return (
-                    <tr key={job.orderId} className="hover:bg-slate-50/80">
-                      <td className="p-3.5 font-mono font-extrabold text-[#714B67]">{job.orderReference}</td>
-                      <td className="p-3.5 font-bold text-slate-900">{job.customerFullName}</td>
-                      <td className="p-3.5 font-medium text-slate-800">
-                        {job.systemCapacityKw} kW {job.systemVariant}
-                      </td>
-                      <td className="p-3.5">
-                        <span
-                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                            job.status === 'Installed'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : job.status === 'Dispatched'
-                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right font-mono font-extrabold text-slate-900">
-                        ₹{job.grossRevenueInr.toLocaleString('en-IN')}
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-slate-700 font-medium">
-                        ₹{job.hardwareCostInr.toLocaleString('en-IN')}
-                      </td>
-                      <td className="p-3.5 text-right font-mono text-slate-700 font-medium">
-                        ₹{job.technicianLaborCostInr.toLocaleString('en-IN')}
-                      </td>
-                      <td
-                        className={`p-3.5 text-right font-mono font-extrabold text-sm ${
-                          isProfitable ? 'text-emerald-700' : 'text-rose-700'
-                        }`}
-                      >
-                        ₹{job.netJobProfitInr.toLocaleString('en-IN')}
-                      </td>
-                      <td className="p-3.5 text-right">
-                        <span
-                          className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
-                            job.profitMarginPercentage >= 25
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200'
-                          }`}
-                        >
-                          {job.profitMarginPercentage}%
-                        </span>
-                      </td>
-                      <td className="p-3.5">
-                        <span className="text-[10px] font-extrabold text-purple-950 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                          {job.subsidyStatus}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          columns={[
+            {
+              key: 'orderReference',
+              header: 'Project Ref',
+              render: (job) => (
+                <span className="font-mono font-extrabold text-[#714B67]">{job.orderReference}</span>
+              )
+            },
+            {
+              key: 'customerFullName',
+              header: 'Customer',
+              render: (job) => <span className="font-bold text-slate-900">{job.customerFullName}</span>
+            },
+            {
+              key: 'systemCapacityKw',
+              header: 'Size / Type',
+              render: (job) => (
+                <span className="font-medium text-slate-800">
+                  {job.systemCapacityKw} kW {job.systemVariant}
+                </span>
+              )
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              render: (job) => <StatusPill status={job.status} />
+            },
+            {
+              key: 'grossRevenueInr',
+              header: 'Revenue',
+              align: 'right',
+              render: (job) => (
+                <span className="font-mono font-extrabold text-slate-900">
+                  ₹{job.grossRevenueInr.toLocaleString('en-IN')}
+                </span>
+              )
+            },
+            {
+              key: 'hardwareCostInr',
+              header: 'Hardware COGS',
+              align: 'right',
+              render: (job) => (
+                <span className="font-mono text-slate-700 font-medium">
+                  ₹{job.hardwareCostInr.toLocaleString('en-IN')}
+                </span>
+              )
+            },
+            {
+              key: 'technicianLaborCostInr',
+              header: 'Labor Pay',
+              align: 'right',
+              render: (job) => (
+                <span className="font-mono text-slate-700 font-medium">
+                  ₹{job.technicianLaborCostInr.toLocaleString('en-IN')}
+                </span>
+              )
+            },
+            {
+              key: 'netJobProfitInr',
+              header: 'Net Profit',
+              align: 'right',
+              render: (job) => {
+                const isProfitable = job.netJobProfitInr >= 0;
+                return (
+                  <span
+                    className={`font-mono font-extrabold text-sm ${
+                      isProfitable ? 'text-emerald-700' : 'text-rose-700'
+                    }`}
+                  >
+                    ₹{job.netJobProfitInr.toLocaleString('en-IN')}
+                  </span>
+                );
+              }
+            },
+            {
+              key: 'profitMarginPercentage',
+              header: 'Margin',
+              align: 'right',
+              render: (job) => (
+                <span
+                  className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
+                    job.profitMarginPercentage >= 25
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}
+                >
+                  {job.profitMarginPercentage}%
+                </span>
+              )
+            },
+            {
+              key: 'subsidyStatus',
+              header: 'Govt Subsidy Status',
+              render: (job) => (
+                <span className="text-[10px] font-extrabold text-purple-950 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                  {job.subsidyStatus}
+                </span>
+              )
+            }
+          ]}
+          data={projectMargins}
+          keyField="orderId"
+          title="Per-Installation Profit & Subsidy Matrix"
+          searchPlaceholder="Search project ref, customer..."
+        />
       ) : (
         /* Double-Entry General Ledger */
         <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm space-y-4 p-5">
