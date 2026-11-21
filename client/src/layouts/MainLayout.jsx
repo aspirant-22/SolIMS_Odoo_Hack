@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: MainLayout.jsx
- * @RESPONSIBILITY: Master enterprise layout wrapping the Control Panel, top navigation ribbon, and global modals.
+ * @RESPONSIBILITY: Master enterprise layout wrapping the White Glass Navbar, Control Panel, top navigation ribbon, and global modals.
  * @DEPENDENCIES: react, lucide-react, ControlPanelHeader.jsx, ProcessingOverlay.jsx, NetworkTimeoutBanner.jsx, CommandPaletteModal.jsx
  */
 
@@ -13,8 +13,7 @@ import {
   ShieldCheck,
   BarChart3,
   Terminal,
-  Layers,
-  Sparkles
+  Layers
 } from 'lucide-react';
 import { ControlPanelHeader } from './ControlPanelHeader';
 import { ProcessingOverlay } from '../components/ProcessingOverlay';
@@ -51,23 +50,23 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#F4F9F6] flex flex-col text-slate-900 font-sans">
       <NetworkTimeoutBanner />
 
-      {/* Primary Subdomain Navigation Bar */}
-      <nav className="bg-[#714B67] text-white px-6 py-2.5 flex items-center justify-between shadow-sm border-b border-[#5D3C54]">
+      {/* Primary Subdomain Navigation Bar: White Glass Navbar */}
+      <nav className="bg-white/95 backdrop-blur-md border-b border-emerald-900/10 px-6 py-2.5 flex items-center justify-between shadow-xs sticky top-0 z-40">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => onSelectModule('inquiries')}>
-            <div className="p-1.5 bg-white/10 rounded-lg border border-white/20">
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => onSelectModule('inquiries')}>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#135D3B] to-emerald-600 flex items-center justify-center shadow-xs text-white">
               <Sun className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <span className="font-extrabold text-sm tracking-tight text-white block leading-tight">SolIMS ERP</span>
-              <span className="text-[10px] text-amber-300 block font-mono font-bold leading-none">by Garima Mittal</span>
+              <span className="font-extrabold text-sm tracking-tight text-[#0F291E] block leading-tight">SolIMS ERP</span>
+              <span className="text-[10px] text-[#135D3B] block font-mono font-bold leading-none">by Garima Mittal</span>
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 border-l border-white/20 pl-4">
+          <div className="hidden lg:flex items-center gap-1.5 border-l border-emerald-900/10 pl-4">
             {navigationItems.map((item) => {
               const IconComp = item.icon;
               const isActive = currentModule === item.id;
@@ -75,10 +74,10 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
                 <button
                   key={item.id}
                   onClick={() => onSelectModule(item.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-white text-[#714B67] shadow-sm'
-                      : 'text-purple-100 hover:bg-white/10 hover:text-white'
+                      ? 'border-b-2 border-[#135D3B] text-[#135D3B] font-semibold bg-[#E6F4EC]'
+                      : 'text-slate-600 hover:text-[#135D3B] hover:bg-emerald-50/60'
                   }`}
                 >
                   <IconComp className="w-3.5 h-3.5" />
@@ -91,35 +90,35 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
 
         {/* Right side persona switcher for judges */}
         <div className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg text-xs border border-white/15">
-            <span className="text-[10px] text-amber-200 font-bold uppercase mr-1">Switch:</span>
+          <div className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-full text-xs border border-slate-200/80">
+            <span className="text-[10px] text-slate-500 font-bold uppercase px-2">Switch:</span>
             <button
               onClick={() => switchPersonaRole('ADMIN')}
-              className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                userRole === 'ADMIN' ? 'bg-white text-[#714B67] font-extrabold' : 'text-purple-100 hover:text-white'
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                userRole === 'ADMIN' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
               }`}
             >
               Director
             </button>
             <button
               onClick={() => switchPersonaRole('OPERATIONS')}
-              className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                userRole === 'OPERATIONS' ? 'bg-white text-[#714B67] font-extrabold' : 'text-purple-100 hover:text-white'
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                userRole === 'OPERATIONS' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
               }`}
             >
               Ops
             </button>
             <button
               onClick={() => switchPersonaRole('STAFF')}
-              className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                userRole === 'STAFF' ? 'bg-white text-[#714B67] font-extrabold' : 'text-purple-100 hover:text-white'
+              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                userRole === 'STAFF' ? 'bg-[#135D3B] text-white shadow-xs' : 'text-slate-600 hover:text-[#135D3B]'
               }`}
             >
               Tech
             </button>
             <button
               onClick={() => switchPersonaRole('CUSTOMER')}
-              className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400 text-slate-900 hover:bg-amber-300 transition-all cursor-pointer ml-1"
+              className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 hover:bg-emerald-100 transition-all cursor-pointer ml-1"
             >
               Customer Portal ➔
             </button>
@@ -149,3 +148,5 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
     </div>
   );
 };
+
+export default MainLayout;

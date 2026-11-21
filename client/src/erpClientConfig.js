@@ -51,33 +51,33 @@ export const ERP_CLIENT_CONFIG = Object.freeze({
     CALCULATOR: '/#calculator'
   }),
 
-  // High-Contrast Status Badge Color Mappings (Odoo enterprise style)
+  // High-Contrast Status Badge Color Mappings (SolIMS Forest-Emerald & Soft-Mint Grid System)
   STATUS_BADGES: Object.freeze({
     // Inquiries
     Draft: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-    Survey_Scheduled: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
-    Survey_Completed: { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-200' },
-    Approved: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
-    Quoted: { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200' },
-    Rejected: { bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-200' },
+    Survey_Scheduled: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
+    Survey_Completed: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Approved: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Quoted: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Rejected: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
 
     // Project Orders
-    Advance_Paid: { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-200' },
-    Packed: { bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-200' },
-    Dispatched: { bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-200' },
-    Installed: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
-    Done: { bg: 'bg-emerald-100', text: 'text-emerald-900', border: 'border-emerald-300' },
-    Cancelled: { bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-200' },
+    Advance_Paid: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Packed: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Dispatched: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Installed: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Done: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    Cancelled: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
 
     // Tickets
     Diagnosed: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-    Parts_Replaced: { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-200' },
+    Parts_Replaced: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
 
     // Asset Hardware Statuses
     WAREHOUSE_STOCK: { bg: 'bg-slate-100', text: 'text-slate-800', border: 'border-slate-300' },
     ALLOCATED_FOR_DISPATCH: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-    ACTIVE_IN_FIELD: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
-    REPLACED: { bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-200' }
+    ACTIVE_IN_FIELD: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+    REPLACED: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' }
   }),
 
   // Demo Persona Profiles
@@ -86,65 +86,56 @@ export const ERP_CLIENT_CONFIG = Object.freeze({
       role: 'ADMIN',
       title: 'Director (Executive)',
       email: 'admin@solims.com',
-      badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
+      badgeColor: 'bg-[#E6F4EC] text-[#135D3B] border-[#135D3B]/20',
       description: 'P&L, Margins, PM Surya Ghar Subsidies, Telemetry'
     },
     {
       role: 'OPERATIONS',
       title: 'Operations Manager',
       email: 'ops@solims.com',
-      badgeColor: 'bg-blue-100 text-blue-900 border-blue-300',
+      badgeColor: 'bg-emerald-50 text-[#135D3B] border-emerald-200',
       description: 'Survey Approvals, BOM Generation, Stock Dispatch'
     },
     {
       role: 'STAFF',
-      title: 'Field Technician',
+      title: 'Field Lead Technician',
       email: 'tech@solims.com',
-      badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
-      description: 'Rooftop Surveys, Mobile Sign-off, Live Wattage Test'
+      badgeColor: 'bg-teal-50 text-teal-800 border-teal-200',
+      description: 'Roof Installation, Testing & Digital Signoff'
     },
     {
       role: 'CUSTOMER',
-      title: 'Homeowner (Customer)',
+      title: 'Homeowner Client',
       email: 'customer@solims.com',
-      badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-      description: 'Project Tracker, 20-Yr Warranty Certs, Rainy Help'
+      badgeColor: 'bg-[#E6F4EC] text-[#135D3B] border-[#135D3B]/20',
+      description: 'Solar Generation, 20-Yr Warranty Certificates, Portal'
     }
   ])
 });
 
-/**
- * Currency formatter utility enforcing Indian numbering system (e.g. ₹1,50,000)
- */
-export const formatCurrencyInr = (amountInr) => {
-  const numericValue = Number(amountInr) || 0;
-  return new Intl.NumberFormat('en-IN', {
+export const formatCurrencyInr = (amount) => {
+  const numeric = typeof amount === 'number' ? amount : Number(amount) || 0;
+  return new Intl.NumberFormat(ERP_CLIENT_CONFIG.LOCALE, {
     style: 'currency',
-    currency: 'INR',
+    currency: ERP_CLIENT_CONFIG.CURRENCY,
     maximumFractionDigits: 0
-  }).format(numericValue);
+  }).format(numeric);
 };
 
-/**
- * Calculates estimated PM Surya Ghar Central Government Subsidy based on capacity
- */
 export const calculateEstimatedSubsidyInr = (capacityKw, variant = 'ON_GRID') => {
-  if (variant === 'OFF_GRID') return 0; // Off-grid systems typically non-subsidized
+  if (variant === 'OFF_GRID') return 0;
   const kw = Number(capacityKw) || 0;
   if (kw <= 0) return 0;
   if (kw === 1) return ERP_CLIENT_CONFIG.SUBSIDY_BENCHMARKS.UP_TO_1KW_INR;
   if (kw === 2) return ERP_CLIENT_CONFIG.SUBSIDY_BENCHMARKS.UP_TO_2KW_INR;
-  return ERP_CLIENT_CONFIG.SUBSIDY_BENCHMARKS.THREE_KW_AND_ABOVE_INR; // 3 kW - 5 kW capped at 78,000
+  return ERP_CLIENT_CONFIG.SUBSIDY_BENCHMARKS.THREE_KW_AND_ABOVE_INR;
 };
 
-/**
- * Returns badge styling for an ERP entity status
- */
 export const getStatusBadgeStyle = (statusKey) => {
   return (
     ERP_CLIENT_CONFIG.STATUS_BADGES[statusKey] || {
       bg: 'bg-slate-100',
-      text: 'text-slate-700',
+      text: 'text-slate-800',
       border: 'border-slate-200'
     }
   );

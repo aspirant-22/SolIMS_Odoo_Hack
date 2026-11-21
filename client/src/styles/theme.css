@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: theme.css
- * @RESPONSIBILITY: Global stylesheet providing Tailwind directives and reusable Odoo UI component utility classes.
+ * @RESPONSIBILITY: Global stylesheet providing Tailwind directives and SolIMS Grid Forest-Emerald & Soft-Mint UI utility classes.
  * @DEPENDENCIES: tailwindcss
  */
 
@@ -9,50 +9,56 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-[#F4F9F6] text-slate-900 antialiased;
+  }
+}
+
 @layer components {
-  /* Odoo Standard Primary Button */
+  /* SolIMS Standard Primary CTA Button */
   .odoo-btn-primary {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-[#714B67] hover:bg-[#5D3C54] text-white text-sm font-semibold rounded-lg shadow-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#714B67];
+    @apply inline-flex items-center justify-center rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2.5 shadow-sm transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#135D3B] cursor-pointer;
   }
 
-  /* Odoo Secondary / Action Button */
+  /* SolIMS Secondary / Outline Button */
   .odoo-btn-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2 bg-[#008784] hover:bg-[#006d6a] text-white text-sm font-semibold rounded-lg shadow-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#008784];
+    @apply inline-flex items-center justify-center rounded-full border border-[#135D3B] text-[#135D3B] hover:bg-emerald-50 font-semibold px-5 py-2.5 shadow-sm transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#135D3B] cursor-pointer;
   }
 
-  /* Odoo Outline / Discard Button */
+  /* SolIMS Standard Discard / Outline Button */
   .odoo-btn-outline {
-    @apply inline-flex items-center justify-center px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-sm font-medium border border-slate-300 rounded-lg shadow-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-slate-300;
+    @apply inline-flex items-center justify-center rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-4 py-2 shadow-sm transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-slate-300 cursor-pointer;
   }
 
-  /* Odoo Workflow Status Badges */
+  /* SolIMS Workflow Status Badges */
   .odoo-badge-draft {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300;
+    @apply inline-flex items-center rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 text-xs font-semibold;
   }
 
   .odoo-badge-waiting {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200;
+    @apply inline-flex items-center rounded-full bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 text-xs font-semibold;
   }
 
   .odoo-badge-ready {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200;
+    @apply inline-flex items-center rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3 py-1 text-xs font-semibold;
   }
 
   .odoo-badge-done {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200;
+    @apply inline-flex items-center rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3 py-1 text-xs font-semibold;
   }
 
   .odoo-badge-cancelled {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200;
+    @apply inline-flex items-center rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 text-xs font-semibold;
   }
 
-  /* Odoo Enterprise Card */
+  /* SolIMS Crisp White Card */
   .odoo-card {
-    @apply bg-white border border-slate-200/90 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden;
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow overflow-hidden;
   }
 
-  /* Odoo Form Input */
+  /* SolIMS Form Input */
   .odoo-input {
-    @apply block w-full rounded-lg border-slate-300 shadow-sm focus:border-[#714B67] focus:ring-[#714B67] text-sm py-2 px-3 border text-slate-900 placeholder:text-slate-400 transition-colors bg-white;
+    @apply block w-full rounded-xl border-slate-300 shadow-sm focus:border-[#135D3B] focus:ring-[#135D3B] text-sm py-2 px-3.5 border text-slate-900 placeholder:text-slate-400 transition-colors bg-white;
   }
 }

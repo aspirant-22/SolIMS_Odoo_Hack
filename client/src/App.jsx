@@ -37,10 +37,10 @@ export const App = () => {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-sm font-semibold text-[#714B67]">
-          <span className="w-3 h-3 rounded-full bg-[#714B67] animate-ping" />
-          <span>Bootstrapping SolIMS Odoo ERP Client...</span>
+      <div className="min-h-screen bg-[#F4F9F6] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-sm font-semibold text-[#135D3B]">
+          <span className="w-3 h-3 rounded-full bg-[#135D3B] animate-ping" />
+          <span>Bootstrapping SolIMS Solar ERP Platform...</span>
         </div>
       </div>
     );

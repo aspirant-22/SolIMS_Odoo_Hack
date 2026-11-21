@@ -20,9 +20,9 @@ export const ProcessingOverlay = () => {
       data-purpose="prevent-mutation-race-conditions"
       className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center transition-opacity"
     >
-      <div className="bg-white rounded-lg p-5 shadow-xl flex items-center gap-3 border border-gray-200">
-        <Loader2 className="w-6 h-6 text-[#714B67] animate-spin" />
-        <span className="text-sm font-semibold text-gray-800">
+      <div className="bg-white rounded-2xl p-5 shadow-xl flex items-center gap-3 border border-slate-200/80">
+        <Loader2 className="w-6 h-6 text-[#135D3B] animate-spin" />
+        <span className="text-sm font-semibold text-slate-800">
           SolIMS Engine: Validating Transaction...
         </span>
       </div>

@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: ControlPanelHeader.jsx
- * @RESPONSIBILITY: Pinned top Odoo Control Panel Header providing breadcrumbs, context action buttons, and workflow ribbon.
+ * @RESPONSIBILITY: Pinned top SolIMS Control Panel Header providing breadcrumbs, context action buttons, and workflow ribbon.
  * @DEPENDENCIES: react, lucide-react, ProgressWorkflowRibbon.jsx, AuthContext.jsx
  */
 
@@ -12,8 +12,7 @@ import {
   CheckCircle2,
   Download,
   Command,
-  LogOut,
-  User
+  LogOut
 } from 'lucide-react';
 import { ProgressWorkflowRibbon } from './ProgressWorkflowRibbon';
 import { useAuth } from '../context/AuthContext';
@@ -29,22 +28,15 @@ export const ControlPanelHeader = ({
   onExportCsv = null,
   onOpenCommandPalette = () => {}
 }) => {
-  const { currentUser, logoutUser, switchPersonaRole } = useAuth();
-
-  const roleColorMap = {
-    ADMIN: 'bg-purple-100 text-purple-950 border-purple-300 font-extrabold',
-    OPERATIONS: 'bg-teal-100 text-teal-950 border-teal-300 font-extrabold',
-    STAFF: 'bg-blue-100 text-blue-950 border-blue-300 font-extrabold',
-    CUSTOMER: 'bg-amber-100 text-amber-950 border-amber-300 font-extrabold'
-  };
+  const { currentUser, logoutUser } = useAuth();
 
   return (
     <header
       data-component="control-panel-header"
       data-purpose="action-navigation"
-      className="sticky top-0 z-30 bg-white border-b border-slate-200/90 shadow-sm px-6 py-2.5 flex flex-wrap items-center justify-between gap-4"
+      className="sticky top-[53px] z-30 bg-white/95 backdrop-blur-md border-b border-emerald-900/10 shadow-xs px-6 py-2.5 flex flex-wrap items-center justify-between gap-4"
     >
-      {/* Left: Odoo Breadcrumb Trail */}
+      {/* Left: SolIMS Breadcrumb Trail */}
       <div className="flex items-center gap-2 text-sm">
         {breadcrumbHierarchy.map((crumb, idx) => (
           <React.Fragment key={crumb}>
@@ -52,8 +44,8 @@ export const ControlPanelHeader = ({
             <span
               className={
                 idx === breadcrumbHierarchy.length - 1
-                  ? 'font-extrabold text-[#714B67]'
-                  : 'text-slate-600 font-semibold hover:text-slate-900 cursor-pointer'
+                  ? 'font-extrabold text-[#135D3B]'
+                  : 'text-slate-600 font-semibold hover:text-[#135D3B] cursor-pointer'
               }
             >
               {crumb}
@@ -66,12 +58,12 @@ export const ControlPanelHeader = ({
       <div className="flex items-center gap-3">
         <ProgressWorkflowRibbon stages={workflowStages} currentStage={currentStage} />
 
-        <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+        <div className="flex items-center gap-2 border-l border-emerald-900/10 pl-3">
           {onPrimaryAction && (
             <button
               onClick={onPrimaryAction}
               data-purpose="primary-action-button"
-              className="odoo-btn-primary gap-1.5 text-xs py-1.5 px-3"
+              className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-4 py-1.5 shadow-sm transition-all text-xs inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{primaryActionLabel}</span>
@@ -82,7 +74,7 @@ export const ControlPanelHeader = ({
             <button
               onClick={onSecondaryAction}
               data-purpose="secondary-action-button"
-              className="odoo-btn-secondary gap-1.5 text-xs py-1.5 px-3"
+              className="rounded-full border border-[#135D3B] text-[#135D3B] hover:bg-emerald-50 font-semibold px-4 py-1.5 shadow-sm transition-all text-xs inline-flex items-center gap-1.5 cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{secondaryActionLabel}</span>
@@ -93,7 +85,7 @@ export const ControlPanelHeader = ({
             <button
               onClick={onExportCsv}
               data-purpose="export-action-button"
-              className="odoo-btn-outline gap-1.5 text-xs py-1.5 px-3"
+              className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-4 py-1.5 text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
               <span>Export CSV</span>
@@ -103,7 +95,7 @@ export const ControlPanelHeader = ({
           {/* Ctrl + K Shortcut Button */}
           <button
             onClick={onOpenCommandPalette}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors font-bold cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#135D3B] bg-[#E6F4EC] hover:bg-emerald-100 rounded-full border border-[#135D3B]/20 transition-colors font-bold cursor-pointer"
             title="Open Command Palette (Ctrl + K)"
           >
             <Command className="w-3.5 h-3.5" />
@@ -113,12 +105,8 @@ export const ControlPanelHeader = ({
 
         {/* User Persona & Switcher */}
         {currentUser && (
-          <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-            <span
-              className={`text-[11px] px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
-                roleColorMap[currentUser.role] || 'bg-slate-100 text-slate-700 font-bold'
-              }`}
-            >
+          <div className="flex items-center gap-2.5 pl-3 border-l border-emerald-900/10">
+            <span className="rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
               {currentUser.role}
             </span>
             <span className="text-xs text-slate-800 font-bold hidden md:inline truncate max-w-[130px]">
@@ -126,7 +114,7 @@ export const ControlPanelHeader = ({
             </span>
             <button
               onClick={logoutUser}
-              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
               title="Logout session"
             >
               <LogOut className="w-4 h-4" />
@@ -137,3 +125,5 @@ export const ControlPanelHeader = ({
     </header>
   );
 };
+
+export default ControlPanelHeader;

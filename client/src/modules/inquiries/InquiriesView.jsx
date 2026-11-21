@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: InquiriesView.jsx
- * @RESPONSIBILITY: Manages Scene 1 & 2: Rooftop inquiries, technician survey scheduling, approval gates, and auto-BOM quotes.
+ * @RESPONSIBILITY: Manages Scene 1 & 2: Rooftop inquiries, technician survey scheduling, approval gates, and auto-BOM quotes matching the SolIMS Forest-Emerald & Soft-Mint design.
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
@@ -10,7 +10,6 @@ import {
   Sun,
   Plus,
   Compass,
-  FileText,
   CheckCircle,
   XCircle,
   AlertCircle,
@@ -21,7 +20,7 @@ import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export const InquiriesView = () => {
-  const { currentUser, setIsSystemProcessing } = useAuth();
+  const { setIsSystemProcessing } = useAuth();
   const [inquiriesList, setInquiriesList] = useState([]);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -180,18 +179,18 @@ export const InquiriesView = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Top Banner / Problem Statement Scene Anchor */}
-      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
+      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
+      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
-            <Sun className="w-4 h-4 text-amber-300" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+            <Sun className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 1 & 2 — The Rooftop Inquiry & Auto-BOM Kit</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
             Inquiry Intake, Survey Feasibility & Proposal Engine
           </h2>
-          <p className="text-xs text-purple-100 max-w-2xl mt-1.5 leading-relaxed font-medium">
-            Enforces Odoo governance guardrails: Quotation generation is strictly blocked until a qualified technician visits the site, records tilt/azimuth measurements, and operations validates technical feasibility.
+          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-medium">
+            Enforces strict governance guardrails: Quotation generation is strictly blocked until a qualified technician visits the site, records tilt/azimuth measurements, and operations validates technical feasibility.
           </p>
         </div>
 
@@ -200,7 +199,7 @@ export const InquiriesView = () => {
             setErrorMessage('');
             setIsCreateModalOpen(true);
           }}
-          className="bg-white hover:bg-slate-100 text-[#714B67] font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer border border-slate-200"
+          className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs px-5 py-2.5 shadow-sm flex items-center gap-2 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>New Rooftop Inquiry</span>
@@ -208,7 +207,7 @@ export const InquiriesView = () => {
       </div>
 
       {errorMessage && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center gap-2 font-semibold shadow-xs">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl flex items-center gap-2 font-semibold shadow-2xs">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
           <span>{errorMessage}</span>
         </div>
@@ -217,10 +216,10 @@ export const InquiriesView = () => {
       {/* Main Grid: Inquiries List & Detail Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left List Pane */}
-        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm">
-          <div className="p-3.5 bg-slate-50 border-b border-slate-200 font-extrabold text-xs text-slate-800 uppercase tracking-wide flex justify-between items-center">
+        <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
+          <div className="p-4 bg-[#F4F9F6]/80 border-b border-emerald-900/10 font-extrabold text-xs text-[#0F291E] uppercase tracking-wide flex justify-between items-center">
             <span>Inquiry Records ({inquiriesList.length})</span>
-            <span className="text-[11px] text-slate-500 font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-200">ir.sequence</span>
+            <span className="text-[11px] text-[#135D3B] font-mono font-bold bg-[#E6F4EC] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20">ir.sequence</span>
           </div>
 
           <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
@@ -231,28 +230,26 @@ export const InquiriesView = () => {
                   key={lead._id}
                   onClick={() => setSelectedInquiry(lead)}
                   className={`p-4 cursor-pointer transition-colors text-left ${
-                    isSelected ? 'bg-[#714B67]/8 border-l-4 border-[#714B67]' : 'hover:bg-slate-50/80'
+                    isSelected ? 'bg-[#E6F4EC]/60 border-l-4 border-[#135D3B]' : 'hover:bg-[#F4F9F6]/80'
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className="font-mono text-xs font-bold text-[#714B67]">
+                    <span className="font-mono text-xs font-bold text-[#135D3B]">
                       {lead.inquiryReference}
                     </span>
                     <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                        lead.inquiryWorkflowStatus === 'Approved'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : lead.inquiryWorkflowStatus === 'Quoted'
-                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                          : lead.inquiryWorkflowStatus === 'Survey_Completed'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      className={`text-[10px] font-semibold px-3 py-0.5 rounded-full ${
+                        lead.inquiryWorkflowStatus === 'Approved' || lead.inquiryWorkflowStatus === 'Quoted' || lead.inquiryWorkflowStatus === 'Survey_Completed'
+                          ? 'bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20'
+                          : lead.inquiryWorkflowStatus === 'Rejected'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-amber-50 text-amber-800 border border-amber-200'
                       }`}
                     >
                       {lead.inquiryWorkflowStatus}
                     </span>
                   </div>
-                  <div className="font-bold text-sm text-slate-900">{lead.customerFullName}</div>
+                  <div className="font-bold text-sm text-[#0F291E]">{lead.customerFullName}</div>
                   <div className="text-xs text-slate-600 font-medium mt-0.5">
                     {lead.requestedCapacityKw} kW {lead.requestedVariant} • ₹{lead.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}/mo
                   </div>
@@ -263,15 +260,15 @@ export const InquiriesView = () => {
         </div>
 
         {/* Right Detail Pane */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
           {selectedInquiry ? (
             <>
               <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-3">
                 <div>
-                  <span className="font-mono text-xs text-[#714B67] font-extrabold">
+                  <span className="font-mono text-xs text-[#135D3B] font-extrabold">
                     {selectedInquiry.inquiryReference}
                   </span>
-                  <h3 className="text-xl font-extrabold text-slate-900 tracking-tight mt-0.5">{selectedInquiry.customerFullName}</h3>
+                  <h3 className="text-xl font-extrabold text-[#0F291E] tracking-tight mt-0.5">{selectedInquiry.customerFullName}</h3>
                   <p className="text-xs text-slate-600 font-medium mt-0.5">{selectedInquiry.installationSiteAddress}</p>
                 </div>
 
@@ -279,7 +276,7 @@ export const InquiriesView = () => {
                   {selectedInquiry.inquiryWorkflowStatus === 'Approved' && (
                     <button
                       onClick={handleGenerateQuoteClick}
-                      className="odoo-btn-primary gap-1.5 text-xs py-2 px-3.5 shadow-sm"
+                      className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Zap className="w-4 h-4 text-amber-300" />
                       <span>Auto-Generate BOM Quote</span>
@@ -290,14 +287,14 @@ export const InquiriesView = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleApproveSurvey(true)}
-                        className="odoo-btn-secondary gap-1.5 text-xs py-2 px-3.5"
+                        className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                       >
                         <CheckCircle className="w-4 h-4" />
                         <span>Approve Survey</span>
                       </button>
                       <button
                         onClick={() => handleApproveSurvey(false)}
-                        className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold rounded-lg border border-rose-200 transition-colors"
+                        className="p-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-full border border-rose-200 transition-colors cursor-pointer"
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
@@ -308,7 +305,7 @@ export const InquiriesView = () => {
                     selectedInquiry.inquiryWorkflowStatus === 'Survey_Scheduled') && (
                     <button
                       onClick={() => setIsSurveyModalOpen(true)}
-                      className="odoo-btn-secondary gap-1.5 text-xs py-2 px-3.5"
+                      className="rounded-full border border-[#135D3B] text-[#135D3B] hover:bg-emerald-50 font-semibold px-5 py-2 text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Compass className="w-4 h-4" />
                       <span>Record Survey Measurements</span>
@@ -318,28 +315,28 @@ export const InquiriesView = () => {
               </div>
 
               {/* Inquiry Specifications Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/90 p-4 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#F4F9F6] p-4 rounded-2xl border border-slate-200/80">
                 <div>
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Requested Capacity</div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">
+                  <div className="text-lg font-extrabold text-[#0F291E] mt-1">
                     {selectedInquiry.requestedCapacityKw} kW
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">System Variant</div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">
+                  <div className="text-lg font-extrabold text-[#0F291E] mt-1">
                     {selectedInquiry.requestedVariant}
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Roof Area</div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">
+                  <div className="text-lg font-extrabold text-[#0F291E] mt-1">
                     {selectedInquiry.approximateRoofAreaSqFt} sq.ft
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg Monthly Bill</div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">
+                  <div className="text-lg font-extrabold text-[#0F291E] mt-1">
                     ₹{selectedInquiry.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}
                   </div>
                 </div>
@@ -347,55 +344,55 @@ export const InquiriesView = () => {
 
               {/* Survey Technical Measurements Section */}
               <div className="space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Compass className="w-4 h-4 text-[#714B67]" />
+                <h4 className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wider flex items-center gap-1.5">
+                  <Compass className="w-4 h-4 text-[#135D3B]" />
                   <span>Technical Roof Feasibility Survey</span>
                 </h4>
 
                 {selectedInquiry.surveyDetails?.surveyCompletedAt ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 bg-emerald-50/60 p-4 rounded-xl border border-emerald-200 text-xs">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 bg-[#E6F4EC]/60 p-4 rounded-2xl border border-[#135D3B]/20 text-xs">
                     <div>
                       <span className="text-slate-600 font-medium block">Azimuth Direction:</span>
-                      <span className="font-extrabold text-emerald-950 text-sm">
+                      <span className="font-extrabold text-[#0F291E] text-sm">
                         {selectedInquiry.surveyDetails.azimuthDirection}
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-600 font-medium block">Tilt Angle:</span>
-                      <span className="font-extrabold text-emerald-950 text-sm">
+                      <span className="font-extrabold text-[#0F291E] text-sm">
                         {selectedInquiry.surveyDetails.tiltAngleDegrees}°
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-600 font-medium block">Cable Distance:</span>
-                      <span className="font-extrabold text-emerald-950 text-sm">
+                      <span className="font-extrabold text-[#0F291E] text-sm">
                         {selectedInquiry.surveyDetails.cableDistanceMeters} meters
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-600 font-medium block">Shadow-Free Area:</span>
-                      <span className="font-extrabold text-emerald-950 text-sm">
+                      <span className="font-extrabold text-[#0F291E] text-sm">
                         {selectedInquiry.surveyDetails.shadowFreeAreaSqFt} sq.ft
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-600 font-medium block">Roof Structure:</span>
-                      <span className="font-extrabold text-emerald-950 text-sm">
+                      <span className="font-extrabold text-[#0F291E] text-sm">
                         {selectedInquiry.surveyDetails.roofStructureType}
                       </span>
                     </div>
                     <div>
                       <span className="text-slate-600 font-medium block">Grid Voltage:</span>
-                      <span className="font-extrabold text-emerald-950 text-sm">
+                      <span className="font-extrabold text-[#0F291E] text-sm">
                         {selectedInquiry.surveyDetails.gridConnectionVoltage}
                       </span>
                     </div>
-                    <div className="col-span-2 md:col-span-3 text-slate-700 italic border-t border-emerald-200 pt-2.5 mt-1 font-medium">
+                    <div className="col-span-2 md:col-span-3 text-slate-700 italic border-t border-[#135D3B]/20 pt-2.5 mt-1 font-medium">
                       "{selectedInquiry.surveyDetails.surveyRemarks || 'Site measurements verified.'}"
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-start gap-2.5">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-950 flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <div className="font-bold text-amber-950">Survey Pending Technician Site Visit</div>
@@ -418,12 +415,12 @@ export const InquiriesView = () => {
       {/* New Inquiry Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-lg p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-              <h3 className="font-bold text-base text-slate-900">New Homeowner Rooftop Inquiry</h3>
+              <h3 className="font-bold text-base text-[#0F291E]">New Homeowner Rooftop Inquiry</h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -530,13 +527,13 @@ export const InquiriesView = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="odoo-btn-outline text-xs"
+                  className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-4 py-2 text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="odoo-btn-primary text-xs"
+                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm cursor-pointer"
                 >
                   Save Inquiry
                 </button>
@@ -549,12 +546,12 @@ export const InquiriesView = () => {
       {/* Survey Measurements Modal */}
       {isSurveyModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-lg p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-              <h3 className="font-bold text-base text-slate-900">Record Field Survey Measurements</h3>
+              <h3 className="font-bold text-base text-[#0F291E]">Record Field Survey Measurements</h3>
               <button
                 onClick={() => setIsSurveyModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -639,13 +636,13 @@ export const InquiriesView = () => {
                 <button
                   type="button"
                   onClick={() => setIsSurveyModalOpen(false)}
-                  className="odoo-btn-outline text-xs"
+                  className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-4 py-2 text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="odoo-btn-secondary text-xs"
+                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold px-5 py-2 text-xs shadow-sm cursor-pointer"
                 >
                   Submit Survey Measurements
                 </button>
@@ -658,19 +655,19 @@ export const InquiriesView = () => {
       {/* Auto-BOM Quote Proposal Modal */}
       {isQuoteModalOpen && generatedQuoteResult && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200">
               <div>
-                <span className="font-mono text-xs font-bold text-[#714B67]">
+                <span className="font-mono text-xs font-bold text-[#135D3B]">
                   {generatedQuoteResult.quotationReference}
                 </span>
-                <h3 className="font-extrabold text-lg text-slate-900">
+                <h3 className="font-extrabold text-lg text-[#0F291E]">
                   Commercial Proposal & Auto-Populated BOM
                 </h3>
               </div>
               <button
                 onClick={() => setIsQuoteModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm font-bold"
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -678,12 +675,12 @@ export const InquiriesView = () => {
 
             {/* BOM Table */}
             <div>
-              <div className="text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
+              <div className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wider mb-2">
                 System Bill of Materials ({generatedQuoteResult.systemCapacityKw} kW {generatedQuoteResult.systemVariant})
               </div>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
+                  <thead className="bg-[#F4F9F6] border-b border-slate-200 text-slate-700 font-bold">
                     <tr>
                       <th className="p-2.5">Component / Hardware</th>
                       <th className="p-2.5">Category</th>
@@ -695,15 +692,15 @@ export const InquiriesView = () => {
                   <tbody className="divide-y divide-slate-100">
                     {generatedQuoteResult.billOfMaterials.map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/80">
-                        <td className="p-2.5 font-bold text-slate-900">{item.componentName}</td>
+                        <td className="p-2.5 font-bold text-[#0F291E]">{item.componentName}</td>
                         <td className="p-2.5">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 font-mono text-slate-700 font-semibold border border-slate-200">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 font-mono text-slate-700 font-semibold border border-slate-200">
                             {item.itemCategory}
                           </span>
                         </td>
                         <td className="p-2.5 text-right font-medium text-slate-800">{item.quantityRequired} {item.unitOfMeasure}</td>
                         <td className="p-2.5 text-right font-mono text-slate-800">₹{item.unitPriceInr.toLocaleString('en-IN')}</td>
-                        <td className="p-2.5 text-right font-mono font-bold text-slate-900">₹{item.totalPriceInr.toLocaleString('en-IN')}</td>
+                        <td className="p-2.5 text-right font-mono font-bold text-[#0F291E]">₹{item.totalPriceInr.toLocaleString('en-IN')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -712,28 +709,28 @@ export const InquiriesView = () => {
             </div>
 
             {/* Financial Summary */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <div className="bg-[#F4F9F6] p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
               <div className="flex justify-between text-slate-700 font-medium">
                 <span>Gross Equipment & EPC Total:</span>
-                <span className="font-mono font-bold text-slate-900">₹{generatedQuoteResult.grossTotalAmountInr.toLocaleString('en-IN')}</span>
+                <span className="font-mono font-bold text-[#0F291E]">₹{generatedQuoteResult.grossTotalAmountInr.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-emerald-800 font-semibold">
+              <div className="flex justify-between text-[#135D3B] font-semibold">
                 <span>National Rooftop Solar Subsidy (Est.):</span>
                 <span className="font-mono font-bold">- ₹{generatedQuoteResult.estimatedSubsidyAmountInr.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
+              <div className="flex justify-between text-sm font-extrabold text-[#0F291E] pt-2 border-t border-slate-200">
                 <span>Net Payable by Homeowner:</span>
-                <span className="font-mono text-[#714B67] text-base">₹{generatedQuoteResult.netPayableAmountInr.toLocaleString('en-IN')}</span>
+                <span className="font-mono text-[#135D3B] text-base">₹{generatedQuoteResult.netPayableAmountInr.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
             {/* Advance Payment Collector (Scene 2 Unlock) */}
-            <div className="p-4 bg-purple-50/80 border border-purple-200 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-purple-950">
-                <CreditCard className="w-4 h-4 text-[#714B67]" />
+            <div className="p-4 bg-[#E6F4EC]/60 border border-[#135D3B]/20 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-[#135D3B]">
+                <CreditCard className="w-4 h-4 text-[#135D3B]" />
                 <span>Scene 2 Unlock: Collect Advance Payment (Min 20% required)</span>
               </div>
-              <p className="text-[11px] text-purple-800 font-medium">
+              <p className="text-[11px] text-slate-600 font-medium">
                 Once customer pays advance, warehouse sees what to pack and installation crew sees the job on their schedule automatically without phone calls.
               </p>
               <div className="flex items-center gap-3">
@@ -746,7 +743,7 @@ export const InquiriesView = () => {
                 />
                 <button
                   onClick={handleConfirmAdvancePayment}
-                  className="odoo-btn-primary text-xs py-2"
+                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs py-2 px-5 shadow-sm transition-all cursor-pointer"
                 >
                   Confirm Advance & Dispatch to Warehouse
                 </button>
@@ -758,3 +755,5 @@ export const InquiriesView = () => {
     </div>
   );
 };
+
+export default InquiriesView;

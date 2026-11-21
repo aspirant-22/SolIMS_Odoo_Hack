@@ -1,35 +1,23 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: CustomerMySolarPortalView.jsx
- * @RESPONSIBILITY: Dedicated homeowner solar portal with project milestone ribbon, live 20-yr warranty certificates, installation proof, and rainy-season repair dispatch. Strictly decoupled from internal staff ERP.
+ * @RESPONSIBILITY: Dedicated homeowner solar portal with project milestone ribbon, live 20-yr warranty certificates, installation proof, and rainy-season repair dispatch matching SolIMS Grid Forest-Emerald & Soft-Mint design.
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx, erpClientConfig.js
  */
 
 import React, { useState, useEffect } from 'react';
 import {
   Sun,
-  ShieldCheck,
   CloudRain,
   CheckCircle2,
   FileCheck2,
   Award,
-  Clock,
-  Zap,
-  Calendar,
   AlertTriangle,
   LogOut,
-  Sparkles,
-  Wrench,
-  Download,
-  CheckCircle,
-  ExternalLink,
-  ChevronRight,
-  ShieldAlert,
-  ArrowRight
+  Wrench
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { formatCurrencyInr } from '../../erpClientConfig';
 
 export const CustomerMySolarPortalView = () => {
   const { currentUser, logoutUser, switchPersonaRole, setIsSystemProcessing } = useAuth();
@@ -49,7 +37,6 @@ export const CustomerMySolarPortalView = () => {
       ]);
 
       if (ticketsRes.success) {
-        // Filter tickets matching customer name or phone
         const matched = (ticketsRes.tickets || []).filter(
           (t) =>
             t.customerFullName?.toLowerCase().includes('sunil') ||
@@ -111,17 +98,17 @@ export const CustomerMySolarPortalView = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#F4F9F6] text-slate-900 font-sans">
       {/* 1. CUSTOMER TOP NAV */}
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-emerald-900/10 shadow-xs px-6 py-3 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#14532D] to-[#166534] flex items-center justify-center text-white shadow-sm">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#135D3B] to-[#0E462C] flex items-center justify-center text-white shadow-xs">
             <Sun className="w-6 h-6 text-amber-300" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-lg tracking-tight text-slate-900">SolIMS</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#14532D] border border-emerald-200">
+              <span className="font-black text-lg tracking-tight text-[#0F291E]">SolIMS</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-3 py-0.5 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20">
                 Homeowner Portal
               </span>
             </div>
@@ -133,25 +120,25 @@ export const CustomerMySolarPortalView = () => {
 
         <div className="flex items-center gap-3">
           {/* Quick Persona Switcher for Hackathon Judges */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-            <span className="text-[10px] font-bold text-slate-500 px-2 uppercase">Switch Persona:</span>
+          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-full border border-slate-200/80 text-xs">
+            <span className="text-[10px] font-bold text-slate-500 px-2 uppercase">Switch:</span>
             <button
               onClick={() => switchPersonaRole('ADMIN')}
-              className="px-2.5 py-1 rounded-lg bg-white hover:bg-purple-50 text-purple-950 font-bold border border-slate-200 shadow-2xs cursor-pointer text-[11px]"
+              className="px-3 py-1 rounded-full bg-white hover:bg-[#E6F4EC] text-[#135D3B] font-bold border border-slate-200 shadow-2xs cursor-pointer text-[11px]"
             >
-              Director (P&L)
+              Director
             </button>
             <button
               onClick={() => switchPersonaRole('STAFF')}
-              className="px-2.5 py-1 rounded-lg bg-white hover:bg-blue-50 text-blue-950 font-bold border border-slate-200 shadow-2xs cursor-pointer text-[11px]"
+              className="px-3 py-1 rounded-full bg-white hover:bg-[#E6F4EC] text-[#135D3B] font-bold border border-slate-200 shadow-2xs cursor-pointer text-[11px]"
             >
-              Technician (Roof)
+              Technician
             </button>
           </div>
 
           <button
             onClick={logoutUser}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-rose-700 bg-white hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-700 bg-white hover:bg-rose-50 rounded-full border border-slate-200 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
@@ -163,35 +150,35 @@ export const CustomerMySolarPortalView = () => {
       <main className="max-w-7xl mx-auto p-6 space-y-6">
         {feedbackMessage.text && (
           <div
-            className={`p-4 rounded-xl border text-xs font-bold flex items-center gap-2.5 shadow-2xs ${
+            className={`p-4 rounded-2xl border text-xs font-bold flex items-center gap-2.5 shadow-2xs ${
               feedbackMessage.type === 'error'
                 ? 'bg-rose-50 border-rose-200 text-rose-800'
-                : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                : 'bg-[#E6F4EC] border-[#135D3B]/20 text-[#135D3B]'
             }`}
           >
             {feedbackMessage.type === 'error' ? (
               <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
             ) : (
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#135D3B]" />
             )}
             <span>{feedbackMessage.text}</span>
           </div>
         )}
 
-        {/* 2. PROJECT TRACKER RIBBON */}
-        <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        {/* 2. PROJECT TRACKER RIBBON / HERO STRIP */}
+        <section className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-900/10 pb-3">
             <div>
-              <span className="text-[11px] font-mono font-extrabold text-[#14532D] uppercase tracking-wider">
+              <span className="text-[11px] font-mono font-extrabold text-[#135D3B] uppercase tracking-wider">
                 Project Reference: ORD/2024/0088
               </span>
-              <h2 className="text-xl font-black text-slate-900 mt-0.5">
+              <h2 className="text-2xl font-black text-[#0F291E] mt-0.5">
                 3 kW On-Grid Rooftop Solar System
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-[#14532D] font-extrabold text-xs border border-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#E6F4EC] text-[#135D3B] font-semibold text-xs border border-[#135D3B]/20">
+                <span className="w-2 h-2 rounded-full bg-[#135D3B] animate-ping" />
                 <span>Installed & Powering Home</span>
               </span>
             </div>
@@ -202,23 +189,23 @@ export const CustomerMySolarPortalView = () => {
             {projectStages.map((st, idx) => (
               <div
                 key={idx}
-                className={`p-3.5 rounded-xl border transition-all ${
+                className={`p-3.5 rounded-2xl border transition-all ${
                   st.status === 'Active'
-                    ? 'bg-gradient-to-b from-[#14532D] to-[#166534] text-white border-emerald-900 shadow-md'
-                    : 'bg-emerald-50/70 border-emerald-200 text-slate-800'
+                    ? 'bg-[#135D3B] text-white border-[#135D3B] shadow-sm'
+                    : 'bg-[#E6F4EC] border-[#135D3B]/20 text-[#0F291E]'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span
                     className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                      st.status === 'Active' ? 'bg-amber-400 text-slate-900' : 'bg-emerald-200 text-emerald-900'
+                      st.status === 'Active' ? 'bg-amber-400 text-slate-900' : 'bg-white text-[#135D3B]'
                     }`}
                   >
                     ✓
                   </span>
                   <span
                     className={`text-[10px] font-mono font-bold ${
-                      st.status === 'Active' ? 'text-emerald-200' : 'text-emerald-700'
+                      st.status === 'Active' ? 'text-emerald-200' : 'text-[#135D3B]'
                     }`}
                   >
                     Step {st.num}
@@ -227,7 +214,7 @@ export const CustomerMySolarPortalView = () => {
                 <div className="font-black text-xs mt-2">{st.title}</div>
                 <div
                   className={`text-[11px] font-medium mt-0.5 ${
-                    st.status === 'Active' ? 'text-slate-200' : 'text-slate-600'
+                    st.status === 'Active' ? 'text-emerald-100' : 'text-slate-600'
                   }`}
                 >
                   {st.detail}
@@ -240,45 +227,45 @@ export const CustomerMySolarPortalView = () => {
         {/* 3. ROOF COMPLETION SIGN-OFF PROOF & ACTION BANNER */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: Roof Installation Sign-off Proof Card (7 cols) */}
-          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-emerald-100 rounded-lg text-[#14532D]">
+                <div className="p-2 bg-[#E6F4EC] rounded-xl text-[#135D3B]">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
-                <h3 className="font-extrabold text-sm text-slate-900">
+                <h3 className="font-extrabold text-sm text-[#0F291E]">
                   Rooftop Installation Completion & Digital Sign-off Proof
                 </h3>
               </div>
-              <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="text-[10px] font-mono font-semibold text-[#135D3B] bg-[#E6F4EC] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20">
                 Verified On-Site
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-[#F4F9F6] p-4 rounded-2xl border border-slate-200/80">
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Tested Generation</span>
-                <span className="text-base font-black text-[#14532D] font-mono mt-0.5 block">
+                <span className="text-base font-black text-[#135D3B] font-mono mt-0.5 block">
                   3,450 Watts
                 </span>
-                <span className="text-[10px] text-emerald-700 font-semibold">Exceeds 3kW benchmark</span>
+                <span className="text-[10px] text-[#135D3B] font-semibold">Exceeds 3kW benchmark</span>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Lead Technician</span>
-                <span className="font-extrabold text-slate-900 block mt-0.5">Ramesh Sharma</span>
+                <span className="font-extrabold text-[#0F291E] block mt-0.5">Ramesh Sharma</span>
                 <span className="text-[10px] text-slate-500 font-medium">Certified Rooftop Lead</span>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Acceptance Date</span>
                 <span className="font-mono font-bold text-slate-900 block mt-0.5">June 2024</span>
-                <span className="text-[10px] text-emerald-700 font-semibold">Active in Field (18 mos)</span>
+                <span className="text-[10px] text-[#135D3B] font-semibold">Active in Field (18 mos)</span>
               </div>
             </div>
 
             {/* Roof Photo & Digital Signature Showcase */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Roof Picture Mock/Frame */}
-              <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-900 text-white relative">
+              {/* Roof Picture Frame */}
+              <div className="rounded-2xl border border-slate-200/80 overflow-hidden bg-slate-900 text-white relative">
                 <div className="p-3 bg-slate-800/80 backdrop-blur-xs flex justify-between items-center text-[10px] font-mono">
                   <span>ROOF_SURVEY_PHOTO_01</span>
                   <span className="text-emerald-400 font-bold">RCC Flat Roof</span>
@@ -293,7 +280,7 @@ export const CustomerMySolarPortalView = () => {
               </div>
 
               {/* Digital Homeowner Screen Signature */}
-              <div className="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-2 flex flex-col justify-between">
+              <div className="rounded-2xl border border-slate-200/80 p-4 bg-[#F4F9F6] space-y-2 flex flex-col justify-between">
                 <div>
                   <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                     Homeowner Digital Touch Signature
@@ -303,12 +290,12 @@ export const CustomerMySolarPortalView = () => {
                   </p>
                 </div>
 
-                <div className="p-3 bg-white rounded-lg border border-slate-200 text-center font-serif italic text-lg text-slate-800 shadow-2xs">
+                <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 text-center font-serif italic text-lg text-slate-800 shadow-2xs">
                   Sunil Agrawal
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="flex items-center gap-1.5 text-[10px] text-[#135D3B] font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#135D3B]" />
                   <span>Legally Signed & Commissioned</span>
                 </div>
               </div>
@@ -316,7 +303,7 @@ export const CustomerMySolarPortalView = () => {
           </div>
 
           {/* Right: Quick Action & Rainy Season Support (5 cols) */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-[#14532D] to-[#166534] text-white rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-6">
+          <div className="lg:col-span-5 bg-gradient-to-b from-[#135D3B] to-[#0E462C] text-white rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-6">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-extrabold text-amber-300">
                 <CloudRain className="w-4 h-4" />
@@ -333,7 +320,7 @@ export const CustomerMySolarPortalView = () => {
             <div className="space-y-3">
               <button
                 onClick={() => setIsReportModalOpen(true)}
-                className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl shadow-lg transition-transform transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md transition-transform transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Wrench className="w-4 h-4 text-slate-900" />
                 <span>Report Rainy-Season Issue (₹0 Warranty) ➔</span>
@@ -348,14 +335,14 @@ export const CustomerMySolarPortalView = () => {
         </section>
 
         {/* 4. INSTALLED SERIAL HARDWARE & LIVE 2-YR / 20-YR WARRANTY CERTIFICATES */}
-        <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+        <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-amber-100 rounded-lg text-amber-800">
+                <div className="p-2 bg-amber-100 rounded-xl text-amber-800">
                   <Award className="w-5 h-5 text-amber-700" />
                 </div>
-                <h3 className="font-black text-base text-slate-900">
+                <h3 className="font-black text-base text-[#0F291E]">
                   Hardware Serial Numbers & Live Warranty Countdown Certificates
                 </h3>
               </div>
@@ -363,28 +350,28 @@ export const CustomerMySolarPortalView = () => {
                 Warranty clocks auto-initialized upon warehouse dispatch. Zero paperwork required for warranty service.
               </p>
             </div>
-            <span className="text-xs font-mono font-bold text-[#14532D] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            <span className="text-xs font-mono font-semibold text-[#135D3B] bg-[#E6F4EC] px-3 py-1 rounded-full border border-[#135D3B]/20">
               3 Certified Assets
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Asset 1: Solar Panels (20 Years) */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 hover:border-emerald-300 transition-colors">
+            <div className="p-5 rounded-2xl bg-[#F4F9F6] border border-slate-200/80 space-y-4 hover:border-emerald-300 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
                   PV Panels (6 Units)
                 </span>
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#14532D] border border-emerald-300">
+                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20">
                   Active (20-Yr)
                 </span>
               </div>
 
               <div>
-                <h4 className="font-extrabold text-sm text-slate-900">
+                <h4 className="font-extrabold text-sm text-[#0F291E]">
                   Mono PERC 550W Half-Cut Solar Panels
                 </h4>
-                <div className="font-mono text-xs font-bold text-[#14532D] mt-1">
+                <div className="font-mono text-xs font-bold text-[#135D3B] mt-1">
                   Serial: PANEL-BATCH-2024-0088
                 </div>
               </div>
@@ -398,7 +385,7 @@ export const CustomerMySolarPortalView = () => {
                   <span>Elapsed Time:</span>
                   <span className="font-bold text-slate-700">~548 Days</span>
                 </div>
-                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#14532D]">
+                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#135D3B]">
                   <span>Remaining Warranty:</span>
                   <span className="font-mono text-sm">6,752 Days Left</span>
                 </div>
@@ -410,21 +397,21 @@ export const CustomerMySolarPortalView = () => {
             </div>
 
             {/* Asset 2: Smart Inverter (2 Years) */}
-            <div className="p-5 rounded-2xl bg-emerald-50/50 border border-emerald-300 space-y-4 shadow-xs">
+            <div className="p-5 rounded-2xl bg-[#E6F4EC]/60 border border-[#135D3B]/30 space-y-4 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-black text-[#14532D] uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-[10px] font-mono font-black text-[#135D3B] uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-[#135D3B]/20">
                   Grid Inverter
                 </span>
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#14532D] border border-emerald-300">
+                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20">
                   Active (2-Yr)
                 </span>
               </div>
 
               <div>
-                <h4 className="font-extrabold text-sm text-slate-900">
+                <h4 className="font-extrabold text-sm text-[#0F291E]">
                   SolIMS 3 kW Smart Grid-Tied Inverter
                 </h4>
-                <div className="font-mono text-xs font-bold text-[#14532D] mt-1">
+                <div className="font-mono text-xs font-bold text-[#135D3B] mt-1">
                   Serial: INV-2024-RAINY-ACTIVE
                 </div>
               </div>
@@ -438,33 +425,33 @@ export const CustomerMySolarPortalView = () => {
                   <span>Elapsed Time:</span>
                   <span className="font-bold text-slate-700">~548 Days (18 Mos)</span>
                 </div>
-                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#14532D]">
+                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#135D3B]">
                   <span>Remaining Warranty:</span>
-                  <span className="font-mono text-sm text-[#14532D]">182 Days Left</span>
+                  <span className="font-mono text-sm text-[#135D3B]">182 Days Left</span>
                 </div>
               </div>
 
-              <div className="text-[10px] text-emerald-800 font-bold">
+              <div className="text-[10px] text-[#135D3B] font-bold">
                 ✓ In-warranty service cost: ₹0 Parts + ₹0 Labor.
               </div>
             </div>
 
             {/* Asset 3: Safety Earthing & Surge Box (2 Years) */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 hover:border-emerald-300 transition-colors">
+            <div className="p-5 rounded-2xl bg-[#F4F9F6] border border-slate-200/80 space-y-4 hover:border-emerald-300 transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
                   Safety System
                 </span>
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#14532D] border border-emerald-300">
+                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20">
                   Active (2-Yr)
                 </span>
               </div>
 
               <div>
-                <h4 className="font-extrabold text-sm text-slate-900">
+                <h4 className="font-extrabold text-sm text-[#0F291E]">
                   Dual DC/AC Lightning Surge Arrestor
                 </h4>
-                <div className="font-mono text-xs font-bold text-[#14532D] mt-1">
+                <div className="font-mono text-xs font-bold text-[#135D3B] mt-1">
                   Serial: SPD-EARTH-2024-0088
                 </div>
               </div>
@@ -478,7 +465,7 @@ export const CustomerMySolarPortalView = () => {
                   <span>Elapsed Time:</span>
                   <span className="font-bold text-slate-700">~548 Days</span>
                 </div>
-                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#14532D]">
+                <div className="border-t border-slate-100 pt-1.5 flex justify-between font-black text-[#135D3B]">
                   <span>Remaining Warranty:</span>
                   <span className="font-mono text-sm">182 Days Left</span>
                 </div>
@@ -492,17 +479,17 @@ export const CustomerMySolarPortalView = () => {
         </section>
 
         {/* 5. ACTIVE SERVICE TICKETS */}
-        <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <section className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-[#14532D]" />
-              <h3 className="font-extrabold text-sm text-slate-900">
+              <Wrench className="w-4 h-4 text-[#135D3B]" />
+              <h3 className="font-extrabold text-sm text-[#0F291E]">
                 My Service & Maintenance Tickets ({customerTickets.length})
               </h3>
             </div>
             <button
               onClick={() => setIsReportModalOpen(true)}
-              className="text-xs font-bold text-[#14532D] hover:underline cursor-pointer"
+              className="text-xs font-bold text-[#135D3B] hover:underline cursor-pointer"
             >
               + File New Ticket
             </button>
@@ -512,17 +499,17 @@ export const CustomerMySolarPortalView = () => {
             {customerTickets.map((ticket) => (
               <div
                 key={ticket._id}
-                className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                className="p-4 bg-[#F4F9F6] rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-extrabold text-[#14532D]">
+                    <span className="font-mono font-extrabold text-[#135D3B]">
                       {ticket.ticketReference}
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-rose-50 text-rose-800 font-mono font-bold border border-rose-200">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-rose-50 text-rose-800 font-mono font-bold border border-rose-200">
                       {ticket.reportedFaultCode}
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    <span className="text-[10px] font-semibold text-[#135D3B] bg-[#E6F4EC] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20">
                       Warranty Covered (₹0)
                     </span>
                   </div>
@@ -533,10 +520,10 @@ export const CustomerMySolarPortalView = () => {
                   <div className="text-right">
                     <span className="text-[10px] text-slate-500 block uppercase font-bold">Status</span>
                     <span
-                      className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                      className={`text-[11px] font-semibold px-3 py-0.5 rounded-full ${
                         ticket.ticketWorkflowStatus === 'Done'
-                          ? 'bg-emerald-100 text-[#14532D]'
-                          : 'bg-amber-100 text-amber-900'
+                          ? 'bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20'
+                          : 'bg-amber-100 text-amber-900 border border-amber-200'
                       }`}
                     >
                       {ticket.ticketWorkflowStatus === 'Done' ? 'Resolved' : ticket.ticketWorkflowStatus}
@@ -544,7 +531,7 @@ export const CustomerMySolarPortalView = () => {
                   </div>
                   <div className="text-right border-l border-slate-200 pl-3">
                     <span className="text-[10px] text-slate-500 block uppercase font-bold">Billed</span>
-                    <span className="font-mono font-black text-emerald-700">₹0</span>
+                    <span className="font-mono font-black text-[#135D3B]">₹0</span>
                   </div>
                 </div>
               </div>
@@ -556,17 +543,17 @@ export const CustomerMySolarPortalView = () => {
       {/* REPORT ISSUE MODAL */}
       {isReportModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-lg p-6 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <CloudRain className="w-5 h-5 text-[#14532D]" />
-                <h3 className="font-extrabold text-base text-slate-900">
+                <CloudRain className="w-5 h-5 text-[#135D3B]" />
+                <h3 className="font-extrabold text-base text-[#0F291E]">
                   Report Monsoon / Inverter Issue
                 </h3>
               </div>
               <button
                 onClick={() => setIsReportModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -592,7 +579,7 @@ export const CustomerMySolarPortalView = () => {
                 <select
                   value={reportedFaultCode}
                   onChange={(e) => setReportedFaultCode(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-800 font-mono font-bold"
+                  className="odoo-input font-mono font-bold"
                 >
                   <option value="ERR_INVERTER_GRID_FAIL">ERR_INVERTER_GRID_FAIL (Rain Surge)</option>
                   <option value="ERR_MOSFET_BURNOUT">ERR_MOSFET_BURNOUT (Thunderbolt)</option>
@@ -610,15 +597,15 @@ export const CustomerMySolarPortalView = () => {
                   required
                   value={issueDescription}
                   onChange={(e) => setIssueDescription(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-800 font-medium"
+                  className="odoo-input font-medium"
                 />
               </div>
 
               {/* Warranty Coverage Banner */}
-              <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-300 text-xs flex justify-between items-center text-[#14532D]">
+              <div className="p-3.5 bg-[#E6F4EC] rounded-2xl border border-[#135D3B]/20 text-xs flex justify-between items-center text-[#135D3B]">
                 <div>
                   <div className="font-extrabold">Active Warranty Evaluated: ₹0 Charge</div>
-                  <div className="text-[10px] text-emerald-800">182 days remaining on 2-year warranty clock</div>
+                  <div className="text-[10px] text-[#135D3B]">182 days remaining on 2-year warranty clock</div>
                 </div>
                 <span className="text-base font-black font-mono">₹0</span>
               </div>
@@ -627,13 +614,13 @@ export const CustomerMySolarPortalView = () => {
                 <button
                   type="button"
                   onClick={() => setIsReportModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200"
+                  className="rounded-full border border-slate-300 px-4 py-2 text-slate-700 font-semibold hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#14532D] text-white font-extrabold rounded-xl hover:bg-[#0F3E22] shadow-sm"
+                  className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs px-5 py-2 shadow-sm cursor-pointer"
                 >
                   Dispatch Priority Technician ➔
                 </button>

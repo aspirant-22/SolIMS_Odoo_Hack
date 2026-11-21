@@ -1,7 +1,7 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: TechnicianRoofSignoffView.jsx
- * @RESPONSIBILITY: Manages Scene 4: Mobile-optimized field installation signoff, roof photos, and digital canvas signature capture.
+ * @RESPONSIBILITY: Manages Scene 4: Mobile-optimized field installation signoff, roof photos, and digital canvas signature capture matching SolIMS Grid Forest-Emerald & Soft-Mint design.
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
@@ -20,14 +20,14 @@ import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export const TechnicianRoofSignoffView = () => {
-  const { currentUser, setIsSystemProcessing } = useAuth();
+  const { setIsSystemProcessing } = useAuth();
   const [activeOrders, setActiveOrders] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [startTime, setStartTime] = useState('09:30');
   const [finishTime, setFinishTime] = useState('16:45');
   const [confirmedCapacityKw, setConfirmedCapacityKw] = useState(3);
   const [powerGenerationWatts, setPowerGenerationWatts] = useState(2850);
-  const [roofPhotosList, setRoofPhotosList] = useState([
+  const [roofPhotosList] = useState([
     'https://images.unsplash.com/photo-1508873696983-2df5293cb395?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=600&q=80'
   ]);
@@ -85,7 +85,7 @@ export const TechnicianRoofSignoffView = () => {
     const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
     ctx.lineTo(x, y);
-    ctx.strokeStyle = '#4A2545';
+    ctx.strokeStyle = '#135D3B'; // SolIMS Forest-Emerald ink
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -145,49 +145,47 @@ export const TechnicianRoofSignoffView = () => {
     }
   };
 
-  const selectedOrderObj = activeOrders.find((o) => o._id === selectedOrderId);
-
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
+      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
+      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
-            <FileCheck2 className="w-4 h-4 text-amber-300" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+            <FileCheck2 className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 4 — On The Roof Mobile Sign-off</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
             Field Installation Certification & Homeowner Acceptance
           </h2>
-          <p className="text-xs text-purple-100 max-w-xl mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs text-slate-600 max-w-xl mt-1.5 leading-relaxed font-medium">
             Mount stands, lay panels, test generation wattage, snap proof photos, and capture homeowner signature on screen. Clear proof for SolIMS, zero doubts for the customer.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white/10 px-3.5 py-2 rounded-lg border border-white/20 text-xs font-mono font-semibold">
-          <Zap className="w-4 h-4 text-amber-300" />
+        <div className="flex items-center gap-2 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3.5 py-1.5 text-xs font-mono font-semibold">
+          <Zap className="w-4 h-4 text-amber-500" />
           <span>Mobile & Tablet Optimized</span>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-center gap-2 font-semibold shadow-xs">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl flex items-center gap-2 font-semibold shadow-2xs">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {submissionSuccess ? (
-        <div className="bg-white rounded-2xl border border-emerald-300 p-8 text-center space-y-4 shadow-md">
-          <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-xs">
+        <div className="bg-white rounded-2xl border border-[#135D3B]/30 p-8 text-center space-y-4 shadow-sm">
+          <div className="w-16 h-16 bg-[#E6F4EC] text-[#135D3B] rounded-full flex items-center justify-center mx-auto shadow-2xs">
             <CheckCircle className="w-10 h-10" />
           </div>
-          <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Roof Installation Formally Certified!</h3>
+          <h3 className="text-2xl font-extrabold text-[#0F291E] tracking-tight">Roof Installation Formally Certified!</h3>
           <p className="text-xs text-slate-600 max-w-md mx-auto font-medium">
             Site execution log for order <strong className="font-mono font-bold text-slate-900">{submissionSuccess.orderReference}</strong> has been logged with homeowner digital acceptance signature.
           </p>
 
-          <div className="max-w-xs mx-auto border border-slate-200 rounded-xl p-4 bg-slate-50 text-left text-xs shadow-xs">
+          <div className="max-w-xs mx-auto border border-slate-200/80 rounded-2xl p-4 bg-[#F4F9F6] text-left text-xs shadow-2xs">
             <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Homeowner Acceptance Signature:</div>
             <img
               src={submissionSuccess.homeownerSignatureDataUrl}
@@ -201,16 +199,16 @@ export const TechnicianRoofSignoffView = () => {
               setSubmissionSuccess(null);
               clearSignatureCanvas();
             }}
-            className="odoo-btn-primary text-xs py-2 px-5 shadow-sm"
+            className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs py-2.5 px-6 shadow-sm transition-all cursor-pointer"
           >
             Start Another Field Sign-off
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmitFinalSignoff} className="bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm space-y-6">
+        <form onSubmit={handleSubmitFinalSignoff} className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
           {/* Order Selection */}
           <div className="space-y-2">
-            <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wide">
+            <label className="block text-xs font-extrabold text-[#0F291E] uppercase tracking-wide">
               Select Installation Project Order
             </label>
             <select
@@ -231,7 +229,7 @@ export const TechnicianRoofSignoffView = () => {
           </div>
 
           {/* Time & Generation Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/90 p-4 rounded-xl border border-slate-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-[#F4F9F6] p-4 rounded-2xl border border-slate-200/80">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 mb-1">Start Time</label>
               <div className="flex items-center gap-1.5">
@@ -263,7 +261,7 @@ export const TechnicianRoofSignoffView = () => {
               <select
                 value={confirmedCapacityKw}
                 onChange={(e) => setConfirmedCapacityKw(Number(e.target.value))}
-                className="odoo-input py-1 text-xs font-extrabold text-[#714B67]"
+                className="odoo-input py-1 text-xs font-extrabold text-[#135D3B]"
               >
                 {[1, 2, 3, 4, 5].map((kw) => (
                   <option key={kw} value={kw}>{kw} kW System</option>
@@ -279,7 +277,7 @@ export const TechnicianRoofSignoffView = () => {
                   type="number"
                   value={powerGenerationWatts}
                   onChange={(e) => setPowerGenerationWatts(Number(e.target.value))}
-                  className="odoo-input py-1 text-xs font-mono font-extrabold text-emerald-800"
+                  className="odoo-input py-1 text-xs font-mono font-extrabold text-[#135D3B]"
                 />
               </div>
             </div>
@@ -288,8 +286,8 @@ export const TechnicianRoofSignoffView = () => {
           {/* Finished Roof Photos */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-[#714B67]" />
+              <label className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wide flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-[#135D3B]" />
                 <span>Finished Roof Inspection Photos ({roofPhotosList.length})</span>
               </label>
               <span className="text-xs text-slate-500 font-medium">Live Camera Proof</span>
@@ -297,7 +295,7 @@ export const TechnicianRoofSignoffView = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {roofPhotosList.map((photoUrl, idx) => (
-                <div key={idx} className="relative rounded-xl overflow-hidden border border-slate-200 group aspect-video bg-slate-100 shadow-xs">
+                <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 group aspect-video bg-slate-100 shadow-2xs">
                   <img src={photoUrl} alt="Roof verification" className="w-full h-full object-cover" />
                   <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 text-white p-1.5 text-[11px] text-center font-mono font-bold">
                     Roof Angle #{idx + 1} • Verified
@@ -309,7 +307,7 @@ export const TechnicianRoofSignoffView = () => {
 
           {/* Technician Operational Notes */}
           <div className="space-y-1">
-            <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wide">
+            <label className="block text-xs font-extrabold text-[#0F291E] uppercase tracking-wide">
               Technician Notes & Cable Conduit Verification
             </label>
             <textarea
@@ -321,23 +319,23 @@ export const TechnicianRoofSignoffView = () => {
           </div>
 
           {/* Interactive HTML5 Canvas Signature Pad */}
-          <div className="space-y-2.5 bg-amber-50/70 p-5 rounded-xl border border-amber-300 shadow-xs">
+          <div className="space-y-2.5 bg-amber-50/70 p-5 rounded-2xl border border-amber-200 shadow-2xs">
             <div className="flex justify-between items-center">
               <label className="text-xs font-extrabold text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
-                <PenTool className="w-4 h-4 text-[#714B67]" />
+                <PenTool className="w-4 h-4 text-[#135D3B]" />
                 <span>Homeowner Digital Acceptance Signature (Sign on Screen)</span>
               </label>
               <button
                 type="button"
                 onClick={clearSignatureCanvas}
-                className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-rose-600 transition-colors cursor-pointer bg-white px-2 py-1 rounded-md border border-slate-200 shadow-2xs"
+                className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-rose-600 transition-colors cursor-pointer bg-white px-3 py-1 rounded-full border border-slate-200 shadow-2xs"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Clear Canvas</span>
               </button>
             </div>
 
-            <div className="border-2 border-dashed border-slate-300 bg-white rounded-xl overflow-hidden cursor-crosshair shadow-inner">
+            <div className="border-2 border-dashed border-[#135D3B]/40 bg-white rounded-2xl overflow-hidden cursor-crosshair shadow-inner">
               <canvas
                 ref={canvasRef}
                 width={700}
@@ -361,7 +359,7 @@ export const TechnicianRoofSignoffView = () => {
           <div className="pt-4 border-t border-slate-200 flex justify-end">
             <button
               type="submit"
-              className="odoo-btn-primary gap-2 text-xs py-2.5 px-6 shadow-md"
+              className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs py-2.5 px-6 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
             >
               <CheckCircle className="w-4 h-4 text-emerald-300" />
               <span>Accept Work & Submit Final Sign-off</span>
@@ -372,3 +370,5 @@ export const TechnicianRoofSignoffView = () => {
     </div>
   );
 };
+
+export default TechnicianRoofSignoffView;

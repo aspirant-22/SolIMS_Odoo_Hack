@@ -1,23 +1,15 @@
 /**
  * @AUTHOR: Garima Mittal
  * @FILE: DirectorDashboardView.jsx
- * @RESPONSIBILITY: Manages Scene 6: Director month-end P&L, project margins, subsidy tracker, and 1-click CSV export.
+ * @RESPONSIBILITY: Manages Scene 6: Director month-end P&L, project margins, subsidy tracker, and 1-click CSV export matching SolIMS Grid Forest-Emerald & Soft-Mint design.
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
 import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
-  TrendingUp,
-  DollarSign,
-  AlertOctagon,
-  Clock,
   Download,
-  Calendar,
-  Layers,
-  FileSpreadsheet,
-  CheckCircle2,
-  FileCheck
+  FileSpreadsheet
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -106,30 +98,32 @@ export const DirectorDashboardView = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-[#4A2545] to-[#714B67] rounded-xl p-6 text-white flex flex-wrap items-center justify-between gap-4 shadow-md border border-[#4A2545]">
+      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
+      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-300">
-            <BarChart3 className="w-4 h-4 text-amber-300" />
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+            <BarChart3 className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 6 — The Director's Month-End</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white mt-1">
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
             Executive P&L, Job Profitability & Subsidy Tracking
           </h2>
-          <p className="text-xs text-purple-100 max-w-2xl mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-medium">
             Answers the Director's core questions in one click: which installations made or lost money, hardware vs payroll costs, government subsidy paperwork, and open repair tickets.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           {/* Time Filter Pills */}
-          <div className="bg-white/10 p-1 rounded-xl border border-white/20 flex items-center text-xs">
+          <div className="bg-white/80 p-1 rounded-full border border-emerald-900/10 flex items-center text-xs shadow-2xs">
             {['DAY', 'WEEK', 'MONTH'].map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedTimePeriod(period)}
-                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  selectedTimePeriod === period ? 'bg-white text-[#714B67] shadow-xs' : 'text-white/80 hover:text-white'
+                className={`px-3.5 py-1 rounded-full font-semibold transition-all cursor-pointer ${
+                  selectedTimePeriod === period
+                    ? 'bg-[#135D3B] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-[#135D3B]'
                 }`}
               >
                 {period === 'DAY' ? 'Today' : period === 'WEEK' ? 'This Week' : 'This Month'}
@@ -139,7 +133,7 @@ export const DirectorDashboardView = () => {
 
           <button
             onClick={exportDirectorPnlCsv}
-            className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer border border-amber-300"
+            className="rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-semibold text-xs px-5 py-2 shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>1-Click CSV Export</span>
@@ -149,31 +143,31 @@ export const DirectorDashboardView = () => {
 
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Gross Revenue</div>
-          <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight">
+          <div className="text-2xl font-extrabold text-[#0F291E] mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeRevenueInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-emerald-700 font-bold mt-1">40 projects/mo avg</div>
+          <div className="text-[11px] text-[#135D3B] font-bold mt-1">40 projects/mo avg</div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hardware COGS</div>
-          <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight">
+          <div className="text-2xl font-extrabold text-[#0F291E] mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeHardwareCogsInr || 0).toLocaleString('en-IN')}
           </div>
           <div className="text-[11px] text-slate-500 font-semibold mt-1">Panels, Inverters, Batteries</div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Technician Payroll</div>
-          <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono tracking-tight">
+          <div className="text-2xl font-extrabold text-[#0F291E] mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeLaborPayrollInr || 0).toLocaleString('en-IN')}
           </div>
           <div className="text-[11px] text-slate-500 font-semibold mt-1">15-crew field payroll</div>
         </div>
 
-        <div className="bg-white p-4.5 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Warranty Claims</div>
           <div className="text-2xl font-extrabold text-rose-700 mt-1 font-mono tracking-tight">
             ₹{(kpis.cumulativeWarrantyExpenseInr || 0).toLocaleString('en-IN')}
@@ -181,31 +175,33 @@ export const DirectorDashboardView = () => {
           <div className="text-[11px] text-rose-600 font-bold mt-1">Monsoon repair costs</div>
         </div>
 
-        <div className="bg-emerald-50/50 p-4.5 rounded-xl border border-emerald-300 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider">Net Profit</div>
-          <div className="text-2xl font-extrabold text-emerald-700 mt-1 font-mono tracking-tight">
+        <div className="bg-[#E6F4EC]/60 p-5 rounded-2xl border border-[#135D3B]/20 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-extrabold text-[#135D3B] uppercase tracking-wider">Net Profit</div>
+          <div className="text-2xl font-extrabold text-[#135D3B] mt-1 font-mono tracking-tight">
             ₹{(kpis.overallNetProfitInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] font-extrabold text-emerald-700 mt-1">
+          <div className="text-[11px] font-extrabold text-[#135D3B] mt-1">
             {kpis.netProfitMarginPercent || 0}% Profit Margin
           </div>
         </div>
 
-        <div className="bg-purple-50/50 p-4.5 rounded-xl border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-[11px] font-extrabold text-purple-950 uppercase tracking-wider">Pending Subsidies</div>
-          <div className="text-2xl font-extrabold text-[#714B67] mt-1 font-mono tracking-tight">
+        <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-[11px] font-extrabold text-[#135D3B] uppercase tracking-wider">Pending Subsidies</div>
+          <div className="text-2xl font-extrabold text-[#135D3B] mt-1 font-mono tracking-tight">
             ₹{(kpis.totalSubsidiesExpectedInr || 0).toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-purple-800 font-bold mt-1">PM Surya Ghar claims</div>
+          <div className="text-[11px] text-[#135D3B] font-bold mt-1">PM Surya Ghar claims</div>
         </div>
       </div>
 
       {/* Sub-Tabs: P&L per Job vs Double-Entry General Ledger */}
-      <div className="flex border-b border-slate-200 gap-6 text-sm font-extrabold">
+      <div className="flex border-b border-emerald-900/10 gap-6 text-sm font-semibold">
         <button
           onClick={() => setActiveTab('PNL')}
           className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'PNL' ? 'text-[#714B67] border-b-2 border-[#714B67]' : 'text-slate-500 hover:text-slate-900'
+            activeTab === 'PNL'
+              ? 'text-[#135D3B] border-b-2 border-[#135D3B] font-bold'
+              : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           Per-Installation Profit & Subsidy Matrix ({projectMargins.length})
@@ -213,7 +209,9 @@ export const DirectorDashboardView = () => {
         <button
           onClick={() => setActiveTab('LEDGER')}
           className={`pb-2.5 transition-colors cursor-pointer ${
-            activeTab === 'LEDGER' ? 'text-[#714B67] border-b-2 border-[#714B67]' : 'text-slate-500 hover:text-slate-900'
+            activeTab === 'LEDGER'
+              ? 'text-[#135D3B] border-b-2 border-[#135D3B] font-bold'
+              : 'text-slate-500 hover:text-slate-900'
           }`}
         >
           Double-Entry General Ledger ({generalLedgerEntries.length} Balanced Entries)
@@ -227,13 +225,13 @@ export const DirectorDashboardView = () => {
               key: 'orderReference',
               header: 'Project Ref',
               render: (job) => (
-                <span className="font-mono font-extrabold text-[#714B67]">{job.orderReference}</span>
+                <span className="font-mono font-extrabold text-[#135D3B]">{job.orderReference}</span>
               )
             },
             {
               key: 'customerFullName',
               header: 'Customer',
-              render: (job) => <span className="font-bold text-slate-900">{job.customerFullName}</span>
+              render: (job) => <span className="font-bold text-[#0F291E]">{job.customerFullName}</span>
             },
             {
               key: 'systemCapacityKw',
@@ -254,7 +252,7 @@ export const DirectorDashboardView = () => {
               header: 'Revenue',
               align: 'right',
               render: (job) => (
-                <span className="font-mono font-extrabold text-slate-900">
+                <span className="font-mono font-extrabold text-[#0F291E]">
                   ₹{job.grossRevenueInr.toLocaleString('en-IN')}
                 </span>
               )
@@ -288,7 +286,7 @@ export const DirectorDashboardView = () => {
                 return (
                   <span
                     className={`font-mono font-extrabold text-sm ${
-                      isProfitable ? 'text-emerald-700' : 'text-rose-700'
+                      isProfitable ? 'text-[#135D3B]' : 'text-rose-700'
                     }`}
                   >
                     ₹{job.netJobProfitInr.toLocaleString('en-IN')}
@@ -302,10 +300,10 @@ export const DirectorDashboardView = () => {
               align: 'right',
               render: (job) => (
                 <span
-                  className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
+                  className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
                     job.profitMarginPercentage >= 25
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      ? 'bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20'
+                      : 'bg-amber-50 text-amber-800 border border-amber-200'
                   }`}
                 >
                   {job.profitMarginPercentage}%
@@ -316,7 +314,7 @@ export const DirectorDashboardView = () => {
               key: 'subsidyStatus',
               header: 'Govt Subsidy Status',
               render: (job) => (
-                <span className="text-[10px] font-extrabold text-purple-950 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                <span className="text-[10px] font-semibold text-[#135D3B] bg-[#E6F4EC] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20">
                   {job.subsidyStatus}
                 </span>
               )
@@ -329,31 +327,33 @@ export const DirectorDashboardView = () => {
         />
       ) : (
         /* Double-Entry General Ledger */
-        <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm space-y-4 p-5">
+        <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm space-y-4 p-5">
           <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-            <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <FileSpreadsheet className="w-4 h-4 text-[#714B67]" />
-              <span>Immutable Odoo Double-Entry General Ledger (Debits === Credits)</span>
+            <h4 className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wider flex items-center gap-1.5">
+              <FileSpreadsheet className="w-4 h-4 text-[#135D3B]" />
+              <span>Immutable SolIMS Double-Entry General Ledger (Debits === Credits)</span>
             </h4>
-            <span className="text-xs text-slate-500 font-mono font-bold">Strict Parity Enforced</span>
+            <span className="text-xs text-[#135D3B] font-mono font-bold bg-[#E6F4EC] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20">
+              Strict Parity Enforced
+            </span>
           </div>
 
           <div className="space-y-3.5">
             {generalLedgerEntries.map((entry) => (
-              <div key={entry._id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/60 space-y-2.5 shadow-2xs">
+              <div key={entry._id} className="border border-slate-200/80 rounded-2xl p-4 bg-[#F4F9F6]/60 space-y-2.5 shadow-2xs">
                 <div className="flex justify-between items-center text-xs">
                   <div>
-                    <span className="font-mono font-extrabold text-[#714B67]">{entry.entryReference}</span>
+                    <span className="font-mono font-extrabold text-[#135D3B]">{entry.entryReference}</span>
                     <span className="text-slate-500 font-bold ml-2">[{entry.entryCategory}]</span>
-                    <span className="text-slate-900 font-semibold ml-2">{entry.narrativeDescription}</span>
+                    <span className="text-[#0F291E] font-semibold ml-2">{entry.narrativeDescription}</span>
                   </div>
                   <span className="text-xs text-slate-500 font-mono font-medium">
                     {new Date(entry.entryDate).toLocaleDateString()}
                   </span>
                 </div>
 
-                <table className="w-full text-left text-xs bg-white rounded-lg border border-slate-200 overflow-hidden">
-                  <thead className="bg-slate-100 text-slate-700 text-[10px] uppercase font-bold">
+                <table className="w-full text-left text-xs bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+                  <thead className="bg-[#F4F9F6] text-slate-700 text-[10px] uppercase font-bold">
                     <tr>
                       <th className="p-2.5">Account Code</th>
                       <th className="p-2.5">Account Name</th>
@@ -365,11 +365,11 @@ export const DirectorDashboardView = () => {
                     {entry.journalLines.map((line, lIdx) => (
                       <tr key={lIdx}>
                         <td className="p-2.5 font-mono text-slate-600 font-semibold">{line.accountCode}</td>
-                        <td className="p-2.5 font-bold text-slate-900">{line.accountName}</td>
-                        <td className="p-2.5 text-right font-mono font-extrabold text-slate-900">
+                        <td className="p-2.5 font-bold text-[#0F291E]">{line.accountName}</td>
+                        <td className="p-2.5 text-right font-mono font-extrabold text-[#0F291E]">
                           {line.debitAmountInr > 0 ? `₹${line.debitAmountInr.toLocaleString('en-IN')}` : '-'}
                         </td>
-                        <td className="p-2.5 text-right font-mono font-extrabold text-slate-900">
+                        <td className="p-2.5 text-right font-mono font-extrabold text-[#0F291E]">
                           {line.creditAmountInr > 0 ? `₹${line.creditAmountInr.toLocaleString('en-IN')}` : '-'}
                         </td>
                       </tr>
@@ -384,3 +384,5 @@ export const DirectorDashboardView = () => {
     </div>
   );
 };
+
+export default DirectorDashboardView;
