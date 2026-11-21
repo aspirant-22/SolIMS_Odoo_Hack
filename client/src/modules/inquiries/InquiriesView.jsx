@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { getStatusBadgeStyle } from '../../erpClientConfig';
 
 export const InquiriesView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -178,18 +179,18 @@ export const InquiriesView = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
-      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
+      {/* Page Hero Strip: Clean White Surface */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <Sun className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 1 & 2 — The Rooftop Inquiry & Auto-BOM Kit</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
+          <h2 className="font-heading text-2xl font-black tracking-tight text-slate-900 mt-1">
             Inquiry Intake, Survey Feasibility & Proposal Engine
           </h2>
-          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-normal">
             Enforces strict governance guardrails: Quotation generation is strictly blocked until a qualified technician visits the site, records tilt/azimuth measurements, and operations validates technical feasibility.
           </p>
         </div>
@@ -216,41 +217,36 @@ export const InquiriesView = () => {
       {/* Main Grid: Inquiries List & Detail Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left List Pane */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
-          <div className="p-4 bg-[#F4F9F6]/80 border-b border-emerald-900/10 font-extrabold text-xs text-[#0F291E] uppercase tracking-wide flex justify-between items-center">
+        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
+          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide flex justify-between items-center">
             <span>Inquiry Records ({inquiriesList.length})</span>
-            <span className="text-[11px] text-[#135D3B] font-mono font-bold bg-[#E6F4EC] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20">ir.sequence</span>
+            <span className="text-[11px] text-slate-600 font-mono font-medium bg-white px-2.5 py-0.5 rounded-full border border-slate-200">ir.sequence</span>
           </div>
 
           <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
             {inquiriesList.map((lead) => {
               const isSelected = selectedInquiry?._id === lead._id;
+              const badgeStyle = getStatusBadgeStyle(lead.inquiryWorkflowStatus);
               return (
                 <div
                   key={lead._id}
                   onClick={() => setSelectedInquiry(lead)}
                   className={`p-4 cursor-pointer transition-colors text-left ${
-                    isSelected ? 'bg-[#E6F4EC]/60 border-l-4 border-[#135D3B]' : 'hover:bg-[#F4F9F6]/80'
+                    isSelected ? 'bg-slate-100/90 border-l-4 border-[#135D3B]' : 'hover:bg-slate-50/70'
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className="font-mono text-xs font-bold text-[#135D3B]">
+                    <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
                       {lead.inquiryReference}
                     </span>
                     <span
-                      className={`text-[10px] font-semibold px-3 py-0.5 rounded-full ${
-                        lead.inquiryWorkflowStatus === 'Approved' || lead.inquiryWorkflowStatus === 'Quoted' || lead.inquiryWorkflowStatus === 'Survey_Completed'
-                          ? 'bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20'
-                          : lead.inquiryWorkflowStatus === 'Rejected'
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                          : 'bg-amber-50 text-amber-800 border border-amber-200'
-                      }`}
+                      className={`text-[10px] font-semibold px-3 py-0.5 rounded-full border ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}
                     >
                       {lead.inquiryWorkflowStatus}
                     </span>
                   </div>
-                  <div className="font-bold text-sm text-[#0F291E]">{lead.customerFullName}</div>
-                  <div className="text-xs text-slate-600 font-medium mt-0.5">
+                  <div className="font-bold text-sm text-slate-900">{lead.customerFullName}</div>
+                  <div className="text-xs text-slate-600 font-medium mt-0.5 tabular-nums">
                     {lead.requestedCapacityKw} kW {lead.requestedVariant} • ₹{lead.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}/mo
                   </div>
                 </div>
@@ -260,7 +256,7 @@ export const InquiriesView = () => {
         </div>
 
         {/* Right Detail Pane */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-6">
           {selectedInquiry ? (
             <>
               <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-3">

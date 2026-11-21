@@ -50,23 +50,23 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F9F6] flex flex-col text-slate-900 font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 font-sans">
       <NetworkTimeoutBanner />
 
-      {/* Primary Subdomain Navigation Bar: White Glass Navbar */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-emerald-900/10 px-6 py-2.5 flex items-center justify-between shadow-xs sticky top-0 z-40">
+      {/* Primary Subdomain Navigation Bar: Clean White Navbar */}
+      <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 py-2.5 flex items-center justify-between shadow-xs sticky top-0 z-40">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => onSelectModule('inquiries')}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#135D3B] to-emerald-600 flex items-center justify-center shadow-xs text-white">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#135D3B] to-[#0E462C] flex items-center justify-center shadow-xs text-white">
               <Sun className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <span className="font-extrabold text-sm tracking-tight text-[#0F291E] block leading-tight">SolIMS ERP</span>
+              <span className="font-heading font-black text-sm tracking-tight text-slate-900 block leading-tight">SolIMS ERP</span>
               <span className="text-[10px] text-[#135D3B] block font-mono font-bold leading-none">by Garima Mittal</span>
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 border-l border-emerald-900/10 pl-4">
+          <div className="hidden lg:flex items-center gap-1.5 border-l border-slate-200 pl-4">
             {navigationItems.map((item) => {
               const IconComp = item.icon;
               const isActive = currentModule === item.id;
@@ -77,7 +77,7 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                     isActive
                       ? 'border-b-2 border-[#135D3B] text-[#135D3B] font-semibold bg-[#E6F4EC]'
-                      : 'text-slate-600 hover:text-[#135D3B] hover:bg-emerald-50/60'
+                      : 'text-slate-600 hover:text-[#135D3B] hover:bg-slate-100'
                   }`}
                 >
                   <IconComp className="w-3.5 h-3.5" />
@@ -118,7 +118,7 @@ export const MainLayout = ({ currentModule, onSelectModule, children }) => {
             </button>
             <button
               onClick={() => switchPersonaRole('CUSTOMER')}
-              className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 hover:bg-emerald-100 transition-all cursor-pointer ml-1"
+              className="px-3 py-1 rounded-full text-[10px] font-bold bg-white text-slate-700 border border-slate-200 hover:text-[#135D3B] hover:border-[#135D3B]/30 shadow-2xs transition-all cursor-pointer ml-1"
             >
               Customer Portal ➔
             </button>

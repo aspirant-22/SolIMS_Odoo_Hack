@@ -110,23 +110,23 @@ export const DataTable = ({
   };
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm flex flex-col ${className}`}>
+    <div className={`bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col ${className}`}>
       {/* Table Header Bar */}
       {(title || searchable || headerActions) && (
-        <div className="p-4 bg-[#F4F9F6]/80 border-b border-emerald-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 bg-slate-50/90 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             {Icon && (
-              <div className="p-2 bg-[#E6F4EC] rounded-xl text-[#135D3B] border border-[#135D3B]/20">
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-700 border border-slate-200">
                 <Icon className="w-4 h-4" />
               </div>
             )}
             <div>
               {title && (
                 <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-xs text-[#0F291E] uppercase tracking-wide">
+                  <h3 className="font-heading font-extrabold text-xs text-slate-900 uppercase tracking-wide">
                     {title}
                   </h3>
-                  <span className="text-[10px] font-mono font-bold bg-white text-[#135D3B] px-2.5 py-0.5 rounded-full border border-[#135D3B]/20 shadow-2xs">
+                  <span className="text-[10px] font-mono font-bold bg-white text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 shadow-2xs tabular-nums">
                     {sortedData.length} records
                   </span>
                 </div>
@@ -170,7 +170,7 @@ export const DataTable = ({
       {/* Table Content */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-[#F4F9F6]/50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
             <tr>
               {columns.map((col) => {
                 const isSortable = col.sortable !== false;
@@ -187,7 +187,7 @@ export const DataTable = ({
                     key={col.key || col.header}
                     onClick={() => isSortable && col.key && handleSort(col.key)}
                     className={`p-3.5 select-none font-bold text-slate-700 ${alignClass} ${
-                      isSortable && col.key ? 'cursor-pointer hover:bg-emerald-50/50 transition-colors' : ''
+                      isSortable && col.key ? 'cursor-pointer hover:bg-slate-100 transition-colors' : ''
                     } ${col.headerClassName || ''}`}
                   >
                     <div
@@ -230,8 +230,8 @@ export const DataTable = ({
                       onRowClick ? 'cursor-pointer' : ''
                     } ${
                       isSelected
-                        ? 'bg-[#E6F4EC]/60 border-l-4 border-[#135D3B]'
-                        : 'hover:bg-[#F4F9F6]/80'
+                        ? 'bg-emerald-50/40 border-l-4 border-[#135D3B]'
+                        : 'hover:bg-slate-50/70'
                     }`}
                   >
                     {columns.map((col) => {

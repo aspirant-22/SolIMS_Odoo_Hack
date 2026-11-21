@@ -13,6 +13,11 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        heading: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+      },
       boxShadow: {
         '2xs': '0 1px 1px 0 rgb(0 0 0 / 0.03)',
         'xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',

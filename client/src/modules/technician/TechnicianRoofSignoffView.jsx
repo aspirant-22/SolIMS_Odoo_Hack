@@ -146,23 +146,23 @@ export const TechnicianRoofSignoffView = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
-      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
-      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 font-sans">
+      {/* Page Hero Strip: Clean White Surface */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <FileCheck2 className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 4 — On The Roof Mobile Sign-off</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
+          <h2 className="font-heading text-2xl font-black tracking-tight text-slate-900 mt-1">
             Field Installation Certification & Homeowner Acceptance
           </h2>
-          <p className="text-xs text-slate-600 max-w-xl mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs text-slate-600 max-w-xl mt-1.5 leading-relaxed font-normal">
             Mount stands, lay panels, test generation wattage, snap proof photos, and capture homeowner signature on screen. Clear proof for SolIMS, zero doubts for the customer.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3.5 py-1.5 text-xs font-mono font-semibold">
+        <div className="flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3.5 py-1.5 text-xs font-mono font-medium">
           <Zap className="w-4 h-4 text-amber-500" />
           <span>Mobile & Tablet Optimized</span>
         </div>
@@ -176,16 +176,16 @@ export const TechnicianRoofSignoffView = () => {
       )}
 
       {submissionSuccess ? (
-        <div className="bg-white rounded-2xl border border-[#135D3B]/30 p-8 text-center space-y-4 shadow-sm">
-          <div className="w-16 h-16 bg-[#E6F4EC] text-[#135D3B] rounded-full flex items-center justify-center mx-auto shadow-2xs">
-            <CheckCircle className="w-10 h-10" />
+        <div className="bg-white rounded-2xl border border-emerald-200 p-8 text-center space-y-4 shadow-sm">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-800 rounded-full flex items-center justify-center mx-auto shadow-2xs border border-emerald-200">
+            <CheckCircle className="w-10 h-10 text-emerald-700" />
           </div>
-          <h3 className="text-2xl font-extrabold text-[#0F291E] tracking-tight">Roof Installation Formally Certified!</h3>
+          <h3 className="font-heading text-2xl font-black text-slate-900 tracking-tight">Roof Installation Formally Certified!</h3>
           <p className="text-xs text-slate-600 max-w-md mx-auto font-medium">
-            Site execution log for order <strong className="font-mono font-bold text-slate-900">{submissionSuccess.orderReference}</strong> has been logged with homeowner digital acceptance signature.
+            Site execution log for order <strong className="font-mono font-bold text-slate-900 tabular-nums">{submissionSuccess.orderReference}</strong> has been logged with homeowner digital acceptance signature.
           </p>
 
-          <div className="max-w-xs mx-auto border border-slate-200/80 rounded-2xl p-4 bg-[#F4F9F6] text-left text-xs shadow-2xs">
+          <div className="max-w-xs mx-auto border border-slate-200/90 rounded-2xl p-4 bg-slate-50 text-left text-xs shadow-2xs">
             <div className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Homeowner Acceptance Signature:</div>
             <img
               src={submissionSuccess.homeownerSignatureDataUrl}
@@ -205,7 +205,7 @@ export const TechnicianRoofSignoffView = () => {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmitFinalSignoff} className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+        <form onSubmit={handleSubmitFinalSignoff} className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-6">
           {/* Order Selection */}
           <div className="space-y-2">
             <label className="block text-xs font-extrabold text-[#0F291E] uppercase tracking-wide">

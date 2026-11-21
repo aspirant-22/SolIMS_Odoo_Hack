@@ -119,37 +119,37 @@ export const WarrantyLookupTicketView = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
-      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
+      {/* Page Hero Strip: Clean White Surface */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <CloudRain className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 5 — The Rainy Season Breakdown</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
+          <h2 className="font-heading text-2xl font-black tracking-tight text-slate-900 mt-1">
             Live Warranty Evaluation & Auto-Billing Engine
           </h2>
-          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-normal">
             During heavy rain or lightning, customer calls with zero power. Support searches the inverter serial in seconds: If under warranty, replacement costs ₹0; if expired, parts and labor are billed automatically.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3.5 py-1.5 text-xs font-mono font-semibold">
-          <Receipt className="w-4 h-4 text-[#135D3B]" />
+        <div className="flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3.5 py-1.5 text-xs font-mono font-medium">
+          <Receipt className="w-4 h-4 text-slate-500" />
           <span>Automated ₹0 vs Billable Split</span>
         </div>
       </div>
 
       {feedbackMessage && (
-        <div className="p-3.5 bg-[#E6F4EC] border border-[#135D3B]/20 text-[#135D3B] text-xs font-bold rounded-2xl flex items-center gap-2 shadow-2xs">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-[#135D3B]" />
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-2xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
           <span>{feedbackMessage}</span>
         </div>
       )}
 
       {/* Instant Search Bar & 1-Click Judge Scenarios */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -171,7 +171,7 @@ export const WarrantyLookupTicketView = () => {
 
         {/* 1-Click Demo Scenarios for Hackathon Evaluation */}
         <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span>Judge Test Scenarios:</span>
           </span>
@@ -181,7 +181,7 @@ export const WarrantyLookupTicketView = () => {
               setSearchQuery('INV-2024-RAINY-ACTIVE');
               handleSearch('INV-2024-RAINY-ACTIVE');
             }}
-            className="rounded-full bg-[#E6F4EC] hover:bg-emerald-100 text-[#135D3B] border border-[#135D3B]/20 px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+            className="rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
           >
             ⚡ Scenario A: 18-Mo Inverter (Rainy Active Warranty: ₹0)
           </button>
@@ -201,7 +201,7 @@ export const WarrantyLookupTicketView = () => {
       {/* Live Search Results Card */}
       {searchResults.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs font-extrabold text-[#0F291E] uppercase tracking-wider">
+          <h3 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wider">
             Live Warranty Evaluation Results ({searchResults.length})
           </h3>
 
@@ -210,28 +210,28 @@ export const WarrantyLookupTicketView = () => {
               <div
                 key={asset.assetId}
                 className={`bg-white rounded-2xl border p-5 shadow-sm space-y-4 ${
-                  asset.isUnderActiveWarranty ? 'border-[#135D3B]/30' : 'border-rose-300'
+                  asset.isUnderActiveWarranty ? 'border-emerald-200' : 'border-rose-200'
                 }`}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="font-mono text-xs font-bold text-[#135D3B]">
+                    <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
                       {asset.serialNumber}
                     </span>
-                    <h4 className="font-extrabold text-base text-[#0F291E] mt-0.5">{asset.customerFullName}</h4>
-                    <p className="text-xs text-slate-600 font-medium">{asset.installationSiteAddress}</p>
+                    <h4 className="font-heading font-bold text-base text-slate-900 mt-0.5">{asset.customerFullName}</h4>
+                    <p className="text-xs text-slate-500 font-medium">{asset.installationSiteAddress}</p>
                   </div>
 
                   <span
-                    className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 ${
+                    className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border tabular-nums ${
                       asset.isUnderActiveWarranty
-                        ? 'bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20'
-                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-rose-50 text-rose-700 border-rose-200'
                     }`}
                   >
                     {asset.isUnderActiveWarranty ? (
                       <>
-                        <ShieldCheck className="w-4 h-4 text-[#135D3B]" />
+                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
                         <span>ACTIVE WARRANTY ({asset.remainingWarrantyDays} Days Left)</span>
                       </>
                     ) : (
@@ -244,28 +244,28 @@ export const WarrantyLookupTicketView = () => {
                 </div>
 
                 {/* Financial Auto-Calculation Breakdown */}
-                <div className="bg-[#F4F9F6] rounded-2xl p-4 text-xs space-y-2 border border-slate-200/80">
+                <div className="bg-slate-50 rounded-2xl p-4 text-xs space-y-2 border border-slate-200">
                   <div className="flex justify-between text-slate-700 font-medium">
                     <span>Component Category:</span>
-                    <span className="font-bold text-[#0F291E]">{asset.assetCategory}</span>
+                    <span className="font-bold text-slate-900">{asset.assetCategory}</span>
                   </div>
                   <div className="flex justify-between text-slate-700 font-medium">
                     <span>Replacement Hardware / Parts:</span>
-                    <span className="font-mono font-bold text-[#0F291E]">
+                    <span className="font-mono font-bold text-slate-900 tabular-nums">
                       {asset.isUnderActiveWarranty ? '₹0 (100% Covered)' : `₹${asset.estimatedPartCostInr.toLocaleString('en-IN')}`}
                     </span>
                   </div>
                   <div className="flex justify-between text-slate-700 font-medium">
                     <span>Technician Visit & Labor Fee:</span>
-                    <span className="font-mono font-bold text-[#0F291E]">
+                    <span className="font-mono font-bold text-slate-900 tabular-nums">
                       {asset.isUnderActiveWarranty ? '₹0 (100% Covered)' : `₹${asset.estimatedLaborCostInr.toLocaleString('en-IN')}`}
                     </span>
                   </div>
-                  <div className="flex justify-between text-xs font-extrabold pt-2 border-t border-slate-200">
-                    <span className="text-[#0F291E]">Total Cost to Customer:</span>
+                  <div className="flex justify-between text-xs font-bold pt-2 border-t border-slate-200">
+                    <span className="text-slate-900">Total Cost to Customer:</span>
                     <span
-                      className={`font-mono text-base ${
-                        asset.isUnderActiveWarranty ? 'text-[#135D3B] font-extrabold' : 'text-rose-700 font-extrabold'
+                      className={`font-mono text-base tabular-nums ${
+                        asset.isUnderActiveWarranty ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'
                       }`}
                     >
                       ₹{asset.totalBillableCostInr.toLocaleString('en-IN')}
@@ -274,7 +274,7 @@ export const WarrantyLookupTicketView = () => {
                 </div>
 
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-xs text-slate-500 font-mono font-medium">
+                  <span className="text-xs text-slate-500 font-mono font-medium tabular-nums">
                     Order Ref: {asset.orderReference}
                   </span>
                   <button

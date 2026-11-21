@@ -16,7 +16,7 @@ export const ProgressWorkflowRibbon = ({ stages = ['Draft', 'Waiting', 'Ready', 
     <div
       data-component="workflow-ribbon"
       data-purpose="fsm-status-indicator"
-      className="flex items-center overflow-hidden border border-emerald-900/15 rounded-full bg-white text-xs font-bold shadow-xs"
+      className="flex items-center overflow-hidden border border-slate-200 rounded-full bg-white text-xs font-semibold shadow-xs"
     >
       {stages.map((stageName, stageIdx) => {
         const isCurrentActive = stageIdx === normalizedIndex;
@@ -26,7 +26,7 @@ export const ProgressWorkflowRibbon = ({ stages = ['Draft', 'Waiting', 'Ready', 
         if (isCurrentActive) {
           styleClasses = 'bg-[#135D3B] text-white shadow-sm ring-1 ring-[#135D3B] font-extrabold';
         } else if (isCompleted) {
-          styleClasses = 'bg-[#E6F4EC] text-[#135D3B] border-r border-[#135D3B]/20 font-bold';
+          styleClasses = 'bg-emerald-50 text-emerald-800 border-r border-emerald-200 font-bold';
         }
 
         return (
@@ -36,7 +36,7 @@ export const ProgressWorkflowRibbon = ({ stages = ['Draft', 'Waiting', 'Ready', 
               stageIdx > 0 ? 'border-l border-slate-200' : ''
             }`}
           >
-            {isCompleted ? <Check className="w-3.5 h-3.5 text-[#135D3B] stroke-[2.5]" /> : null}
+            {isCompleted ? <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" /> : null}
             <span>{stageName}</span>
           </div>
         );

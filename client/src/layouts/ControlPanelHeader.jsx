@@ -34,7 +34,7 @@ export const ControlPanelHeader = ({
     <header
       data-component="control-panel-header"
       data-purpose="action-navigation"
-      className="sticky top-[53px] z-30 bg-white/95 backdrop-blur-md border-b border-emerald-900/10 shadow-xs px-6 py-2.5 flex flex-wrap items-center justify-between gap-4"
+      className="sticky top-[53px] z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs px-6 py-2.5 flex flex-wrap items-center justify-between gap-4"
     >
       {/* Left: SolIMS Breadcrumb Trail */}
       <div className="flex items-center gap-2 text-sm">
@@ -44,8 +44,8 @@ export const ControlPanelHeader = ({
             <span
               className={
                 idx === breadcrumbHierarchy.length - 1
-                  ? 'font-extrabold text-[#135D3B]'
-                  : 'text-slate-600 font-semibold hover:text-[#135D3B] cursor-pointer'
+                  ? 'font-extrabold text-slate-900 font-heading'
+                  : 'text-slate-600 font-medium hover:text-[#135D3B] cursor-pointer'
               }
             >
               {crumb}
@@ -58,7 +58,7 @@ export const ControlPanelHeader = ({
       <div className="flex items-center gap-3">
         <ProgressWorkflowRibbon stages={workflowStages} currentStage={currentStage} />
 
-        <div className="flex items-center gap-2 border-l border-emerald-900/10 pl-3">
+        <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
           {onPrimaryAction && (
             <button
               onClick={onPrimaryAction}
@@ -74,7 +74,7 @@ export const ControlPanelHeader = ({
             <button
               onClick={onSecondaryAction}
               data-purpose="secondary-action-button"
-              className="rounded-full border border-[#135D3B] text-[#135D3B] hover:bg-emerald-50 font-semibold px-4 py-1.5 shadow-sm transition-all text-xs inline-flex items-center gap-1.5 cursor-pointer"
+              className="rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-4 py-1.5 shadow-xs transition-all text-xs inline-flex items-center gap-1.5 cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{secondaryActionLabel}</span>
@@ -95,7 +95,7 @@ export const ControlPanelHeader = ({
           {/* Ctrl + K Shortcut Button */}
           <button
             onClick={onOpenCommandPalette}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#135D3B] bg-[#E6F4EC] hover:bg-emerald-100 rounded-full border border-[#135D3B]/20 transition-colors font-bold cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition-colors font-bold cursor-pointer"
             title="Open Command Palette (Ctrl + K)"
           >
             <Command className="w-3.5 h-3.5" />
@@ -105,8 +105,8 @@ export const ControlPanelHeader = ({
 
         {/* User Persona & Switcher */}
         {currentUser && (
-          <div className="flex items-center gap-2.5 pl-3 border-l border-emerald-900/10">
-            <span className="rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
+          <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
+            <span className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-wider">
               {currentUser.role}
             </span>
             <span className="text-xs text-slate-800 font-bold hidden md:inline truncate max-w-[130px]">

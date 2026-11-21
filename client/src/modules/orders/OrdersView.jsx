@@ -144,8 +144,8 @@ export const OrdersView = () => {
       align: 'right',
       render: (row) => (
         <span
-          className={`font-mono font-bold ${
-            row.balancePaymentDueInr > 0 ? 'text-amber-700' : 'text-[#135D3B]'
+          className={`font-mono font-bold tabular-nums ${
+            row.balancePaymentDueInr > 0 ? 'text-amber-800' : 'text-emerald-700'
           }`}
         >
           {formatCurrencyInr(row.balancePaymentDueInr)}
@@ -160,20 +160,20 @@ export const OrdersView = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
-      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
+      {/* Page Hero Strip: Clean White Surface */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20">
+            <span className="text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
               Module: Orders & BOM
             </span>
             <span className="text-xs text-slate-500 font-mono">ir.sequence seq_order</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight mt-1 text-[#0F291E]">
+          <h2 className="font-heading text-2xl font-black tracking-tight mt-1 text-slate-900">
             Confirmed Solar Orders & BOM Breakdown
           </h2>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="text-xs text-slate-600 mt-1 font-normal">
             Auto-generated proposals, advance payment locks, warehouse dispatch authorizations, and crew dispatch.
           </p>
         </div>
@@ -184,7 +184,7 @@ export const OrdersView = () => {
           className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center gap-2 ${
             feedbackMessage.type === 'error'
               ? 'bg-rose-50 border-rose-200 text-rose-800'
-              : 'bg-[#E6F4EC] border-[#135D3B]/20 text-[#135D3B]'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
           }`}
         >
           {feedbackMessage.type === 'error' ? '⚠️' : '✓'} {feedbackMessage.text}
@@ -207,17 +207,17 @@ export const OrdersView = () => {
         </div>
 
         {/* Selected Order Detail Panel */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-5">
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm space-y-5">
           {selectedOrder ? (
             <>
               <div className="border-b border-slate-200 pb-3">
                 <div className="flex justify-between items-center">
-                  <span className="font-mono text-xs font-extrabold text-[#135D3B]">
+                  <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
                     {selectedOrder.orderReference || selectedOrder.quotationReference}
                   </span>
                   <StatusPill status={selectedOrder.orderWorkflowStatus} />
                 </div>
-                <h3 className="text-base font-extrabold text-[#0F291E] mt-1">
+                <h3 className="font-heading text-base font-bold text-slate-900 mt-1">
                   {selectedOrder.customerFullName}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
@@ -226,34 +226,34 @@ export const OrdersView = () => {
               </div>
 
               {/* Financial Snapshot */}
-              <div className="bg-[#F4F9F6] p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-2 text-xs">
                 <div className="flex justify-between text-slate-600">
                   <span>Gross System Price:</span>
-                  <span className="font-mono font-bold text-[#0F291E]">
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
                     {formatCurrencyInr(selectedOrder.grossTotalAmountInr)}
                   </span>
                 </div>
-                <div className="flex justify-between text-[#135D3B] font-semibold">
+                <div className="flex justify-between text-emerald-800 font-semibold">
                   <span>PM Surya Ghar Subsidy:</span>
-                  <span className="font-mono font-bold">
+                  <span className="font-mono font-bold tabular-nums">
                     - {formatCurrencyInr(selectedOrder.estimatedSubsidyAmountInr)}
                   </span>
                 </div>
-                <div className="border-t border-slate-200 pt-2 flex justify-between font-extrabold text-[#0F291E]">
+                <div className="border-t border-slate-200 pt-2 flex justify-between font-bold text-slate-900">
                   <span>Net Payable Amount:</span>
-                  <span className="font-mono text-sm text-[#135D3B]">
+                  <span className="font-mono text-sm text-emerald-700 font-black tabular-nums">
                     {formatCurrencyInr(selectedOrder.netPayableAmountInr)}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Advance Received:</span>
-                  <span className="font-mono font-bold text-[#135D3B]">
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
                     {formatCurrencyInr(selectedOrder.advancePaymentAmountInr)}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Balance Due:</span>
-                  <span className="font-mono font-bold text-amber-700">
+                  <span className="font-mono font-bold text-amber-800 tabular-nums">
                     {formatCurrencyInr(selectedOrder.balancePaymentDueInr)}
                   </span>
                 </div>
@@ -275,7 +275,7 @@ export const OrdersView = () => {
                   selectedOrder.orderWorkflowStatus === 'Packed') && (
                   <button
                     onClick={() => setIsAssignCrewModalOpen(true)}
-                    className="w-full rounded-full border border-[#135D3B] text-[#135D3B] hover:bg-emerald-50 font-semibold px-5 py-2.5 shadow-xs text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="w-full rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-5 py-2.5 shadow-xs text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <UserCheck className="w-4 h-4" />
                     <span>Assign Installation Crew & Date</span>
@@ -285,18 +285,18 @@ export const OrdersView = () => {
 
               {/* BOM Components List */}
               <div className="space-y-2">
-                <div className="text-[11px] font-extrabold uppercase text-[#0F291E] tracking-wider">
+                <div className="text-[11px] font-bold uppercase text-slate-700 tracking-wider">
                   Bill of Materials ({selectedOrder.billOfMaterials?.length || 0} items)
                 </div>
                 <div className="space-y-1.5 max-h-56 overflow-y-auto">
                   {selectedOrder.billOfMaterials?.map((bomItem, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-[#F4F9F6] rounded-xl border border-slate-200/80 text-xs flex justify-between items-center"
+                      className="p-3 bg-slate-50 rounded-xl border border-slate-200/90 text-xs flex justify-between items-center"
                     >
                       <div>
-                        <div className="font-bold text-[#0F291E]">{bomItem.componentName}</div>
-                        <div className="text-[10px] text-slate-500 font-mono">
+                        <div className="font-bold text-slate-900">{bomItem.componentName}</div>
+                        <div className="text-[10px] text-slate-500 font-mono tabular-nums">
                           {bomItem.quantityRequired} {bomItem.unitOfMeasure} • {bomItem.itemCategory}
                         </div>
                       </div>

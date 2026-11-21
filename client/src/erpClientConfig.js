@@ -51,32 +51,53 @@ export const ERP_CLIENT_CONFIG = Object.freeze({
     CALCULATOR: '/#calculator'
   }),
 
-  // High-Contrast Status Badge Color Mappings (SolIMS Forest-Emerald & Soft-Mint Grid System)
+  // High-Contrast Semantic Status Badge Color Mappings
   STATUS_BADGES: Object.freeze({
-    // Inquiries
-    Draft: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
+    // Draft / Neutral: bg-slate-100 text-slate-700 border-slate-200
+    Draft: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+    Neutral: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+    WAREHOUSE_STOCK: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+
+    // Pending / Scheduled / Subsidy Pending: bg-amber-50 text-amber-800 border-amber-200
     Survey_Scheduled: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-    Survey_Completed: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Approved: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Quoted: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Rejected: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
-
-    // Project Orders
-    Advance_Paid: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Packed: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Dispatched: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Installed: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Done: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-    Cancelled: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
-
-    // Tickets
+    Waiting: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
+    Pending: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
+    'Subsidy Pending': { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
+    Subsidy_Pending: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
+    'Eligibility Pre-Verified': { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
     Diagnosed: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-    Parts_Replaced: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
-
-    // Asset Hardware Statuses
-    WAREHOUSE_STOCK: { bg: 'bg-slate-100', text: 'text-slate-800', border: 'border-slate-300' },
     ALLOCATED_FOR_DISPATCH: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-    ACTIVE_IN_FIELD: { bg: 'bg-[#E6F4EC]', text: 'text-[#135D3B]', border: 'border-[#135D3B]/20' },
+
+    // Quoted / Dispatched / In Progress: bg-sky-50 text-sky-800 border-sky-200
+    Quoted: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    Dispatched: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    'In Progress': { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    In_Progress: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    Advance_Paid: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    Packed: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+    Parts_Replaced: { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' },
+
+    // Approved / Completed / Under Warranty / Profitable: bg-emerald-50 text-emerald-800 border-emerald-200
+    Approved: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Survey_Completed: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Installed: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Done: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Completed: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Active: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    ACTIVE_IN_FIELD: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    'Under Warranty': { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Under_Warranty: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Profitable: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Disbursed: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+    Subsidized: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
+
+    // Rejected / Expired Warranty / Loss: bg-rose-50 text-rose-700 border-rose-200
+    Rejected: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+    Cancelled: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+    'Expired Warranty': { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+    Expired_Warranty: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+    Expired: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
+    Loss: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
     REPLACED: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' }
   }),
 
@@ -86,29 +107,29 @@ export const ERP_CLIENT_CONFIG = Object.freeze({
       role: 'ADMIN',
       title: 'Director (Executive)',
       email: 'admin@solims.com',
-      badgeColor: 'bg-[#E6F4EC] text-[#135D3B] border-[#135D3B]/20',
-      description: 'P&L, Margins, PM Surya Ghar Subsidies, Telemetry'
+      badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      description: 'P&L Margins, PM Surya Ghar Subsidies & Telemetry'
     },
     {
       role: 'OPERATIONS',
       title: 'Operations Manager',
       email: 'ops@solims.com',
-      badgeColor: 'bg-emerald-50 text-[#135D3B] border-emerald-200',
-      description: 'Survey Approvals, BOM Generation, Stock Dispatch'
+      badgeColor: 'bg-sky-50 text-sky-700 border-sky-200',
+      description: 'Survey Approvals, Auto-BOM & Warehouse Dispatches'
     },
     {
       role: 'STAFF',
       title: 'Field Lead Technician',
       email: 'tech@solims.com',
-      badgeColor: 'bg-teal-50 text-teal-800 border-teal-200',
-      description: 'Roof Installation, Testing & Digital Signoff'
+      badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
+      description: 'Mobile Roof Sign-off, Wattage Test & Touch Signature'
     },
     {
       role: 'CUSTOMER',
       title: 'Homeowner Client',
       email: 'customer@solims.com',
-      badgeColor: 'bg-[#E6F4EC] text-[#135D3B] border-[#135D3B]/20',
-      description: 'Solar Generation, 20-Yr Warranty Certificates, Portal'
+      badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      description: 'Live Generation, 20-Yr Warranty Certificates & Portal'
     }
   ])
 });
@@ -132,13 +153,69 @@ export const calculateEstimatedSubsidyInr = (capacityKw, variant = 'ON_GRID') =>
 };
 
 export const getStatusBadgeStyle = (statusKey) => {
-  return (
-    ERP_CLIENT_CONFIG.STATUS_BADGES[statusKey] || {
-      bg: 'bg-slate-100',
-      text: 'text-slate-800',
-      border: 'border-slate-200'
-    }
-  );
+  if (!statusKey) {
+    return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' };
+  }
+
+  if (ERP_CLIENT_CONFIG.STATUS_BADGES[statusKey]) {
+    return ERP_CLIENT_CONFIG.STATUS_BADGES[statusKey];
+  }
+
+  const normalized = String(statusKey).toLowerCase().replace(/[_-]/g, ' ');
+
+  // 1. Rejected / Expired Warranty / Loss / Cancelled
+  if (
+    normalized.includes('reject') ||
+    normalized.includes('cancel') ||
+    normalized.includes('expire') ||
+    normalized.includes('loss') ||
+    normalized.includes('fail') ||
+    normalized.includes('replaced')
+  ) {
+    return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' };
+  }
+
+  // 2. Approved / Completed / Under Warranty / Profitable / Installed / Done
+  if (
+    normalized.includes('approv') ||
+    normalized.includes('complete') ||
+    normalized.includes('install') ||
+    normalized.includes('done') ||
+    normalized.includes('profit') ||
+    normalized.includes('disburs') ||
+    normalized.includes('subsidized') ||
+    normalized.includes('resolved') ||
+    normalized.includes('under warranty') ||
+    normalized.includes('active')
+  ) {
+    return { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' };
+  }
+
+  // 3. Quoted / Dispatched / In Progress / Advance Paid / Packed
+  if (
+    normalized.includes('quote') ||
+    normalized.includes('dispatch') ||
+    normalized.includes('progress') ||
+    normalized.includes('advance') ||
+    normalized.includes('packed')
+  ) {
+    return { bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-200' };
+  }
+
+  // 4. Pending / Scheduled / Subsidy Pending / Waiting / Diagnosed
+  if (
+    normalized.includes('pending') ||
+    normalized.includes('schedul') ||
+    normalized.includes('wait') ||
+    normalized.includes('diagnos') ||
+    normalized.includes('submitted') ||
+    normalized.includes('review')
+  ) {
+    return { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' };
+  }
+
+  // 5. Draft / Neutral / Default
+  return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' };
 };
 
 export default ERP_CLIENT_CONFIG;

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { getStatusBadgeStyle } from '../../erpClientConfig';
 
 export const WarehouseDispatchView = () => {
   const { setIsSystemProcessing } = useAuth();
@@ -139,24 +140,24 @@ export const WarehouseDispatchView = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
-      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
+      {/* Page Hero Strip: Clean White Surface */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
             <Truck className="w-4 h-4 text-[#135D3B]" />
             <span>Scene 3 — Dispatch Day & Serial Numbers</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1">
+          <h2 className="font-heading text-2xl font-black tracking-tight text-slate-900 mt-1">
             Warehouse Dispatch & Automated Warranty Clocks
           </h2>
-          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-normal">
             Every inverter, battery, and panel batch is individually scanned prior to truck release. Upon delivery confirmation, the warranty clock starts automatically: 2 years for inverters & batteries, 20 years for solar panels.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20 px-3.5 py-1.5 text-xs font-mono font-semibold">
-          <Clock className="w-4 h-4 text-[#135D3B]" />
+        <div className="flex items-center gap-2 rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-3.5 py-1.5 text-xs font-mono font-medium">
+          <Clock className="w-4 h-4 text-slate-500" />
           <span>Zero manual date entry required</span>
         </div>
       </div>
@@ -165,12 +166,12 @@ export const WarehouseDispatchView = () => {
         <div
           className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2.5 border shadow-2xs ${
             feedbackMessage.type === 'success'
-              ? 'bg-[#E6F4EC] text-[#135D3B] border-[#135D3B]/20'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-rose-50 text-rose-800 border-rose-200'
           }`}
         >
           {feedbackMessage.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-[#135D3B]" />
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
           ) : (
             <ShieldAlert className="w-4 h-4 shrink-0 text-rose-600" />
           )}
@@ -180,32 +181,32 @@ export const WarehouseDispatchView = () => {
 
       {/* Dispatch Success Alert Modal */}
       {dispatchSuccessData && (
-        <div className="bg-[#E6F4EC]/80 border border-[#135D3B]/30 p-5 rounded-2xl shadow-sm space-y-3">
-          <div className="flex items-center gap-2 text-[#0F291E] font-extrabold text-sm">
+        <div className="bg-white border border-slate-200/90 p-5 rounded-2xl shadow-sm space-y-3">
+          <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
             <PackageCheck className="w-5 h-5 text-[#135D3B]" />
             <span>Truck Dispatched & Warranty Clocks Active!</span>
           </div>
           <p className="text-xs text-slate-700 font-medium">
-            Project Order <strong className="font-mono font-bold">{dispatchSuccessData.orderReference}</strong> has been marked as Dispatched under tracking reference <strong className="font-mono font-bold">{dispatchSuccessData.dispatchReference}</strong>.
+            Project Order <strong className="font-mono font-bold tabular-nums">{dispatchSuccessData.orderReference}</strong> has been marked as Dispatched under tracking reference <strong className="font-mono font-bold tabular-nums">{dispatchSuccessData.dispatchReference}</strong>.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs bg-white p-4 rounded-xl border border-[#135D3B]/20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div>
               <span className="text-slate-500 block text-[11px] font-medium">Dispatched At:</span>
-              <span className="font-bold text-slate-900">
+              <span className="font-bold text-slate-900 tabular-nums">
                 {new Date(dispatchSuccessData.timestamp).toLocaleTimeString()}
               </span>
             </div>
             <div>
               <span className="text-slate-500 block text-[11px] font-medium">Inverter Warranty:</span>
-              <span className="font-extrabold text-[#135D3B]">2 Years (730 Days)</span>
+              <span className="font-extrabold text-emerald-800 tabular-nums">2 Years (730 Days)</span>
             </div>
             <div>
               <span className="text-slate-500 block text-[11px] font-medium">Battery Warranty:</span>
-              <span className="font-extrabold text-[#135D3B]">2 Years (730 Days)</span>
+              <span className="font-extrabold text-emerald-800 tabular-nums">2 Years (730 Days)</span>
             </div>
             <div>
               <span className="text-slate-500 block text-[11px] font-medium">Panels Warranty:</span>
-              <span className="font-extrabold text-[#135D3B]">20 Years (7,300 Days)</span>
+              <span className="font-extrabold text-emerald-800 tabular-nums">20 Years (7,300 Days)</span>
             </div>
           </div>
           <button
@@ -220,10 +221,10 @@ export const WarehouseDispatchView = () => {
       {/* Main Scanner Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Orders Ready for Packing */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm">
-          <div className="p-4 bg-[#F4F9F6]/80 border-b border-emerald-900/10 font-extrabold text-xs text-[#0F291E] uppercase tracking-wide flex justify-between items-center">
+        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
+          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide flex justify-between items-center">
             <span>Orders Ready to Pack ({ordersAwaitingDispatch.length})</span>
-            <span className="text-[10px] text-[#135D3B] font-semibold bg-[#E6F4EC] border border-[#135D3B]/20 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] text-sky-800 font-semibold bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full">
               Advance Paid
             </span>
           </div>
@@ -236,6 +237,7 @@ export const WarehouseDispatchView = () => {
             ) : (
               ordersAwaitingDispatch.map((order) => {
                 const isSelected = selectedOrder?._id === order._id;
+                const badgeStyle = getStatusBadgeStyle(order.orderWorkflowStatus);
                 return (
                   <div
                     key={order._id}
@@ -245,19 +247,19 @@ export const WarehouseDispatchView = () => {
                       setFeedbackMessage({ type: '', text: '' });
                     }}
                     className={`p-4 cursor-pointer transition-colors text-left ${
-                      isSelected ? 'bg-[#E6F4EC]/60 border-l-4 border-[#135D3B]' : 'hover:bg-[#F4F9F6]/80'
+                      isSelected ? 'bg-slate-100/90 border-l-4 border-[#135D3B]' : 'hover:bg-slate-50/70'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-mono text-xs font-bold text-[#135D3B]">
+                      <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
                         {order.orderReference || order.quotationReference}
                       </span>
-                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#E6F4EC] text-[#135D3B] border border-[#135D3B]/20">
+                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}>
                         {order.orderWorkflowStatus}
                       </span>
                     </div>
-                    <div className="font-bold text-sm text-[#0F291E]">{order.customerFullName}</div>
-                    <div className="text-xs text-slate-600 font-medium mt-0.5">
+                    <div className="font-bold text-sm text-slate-900">{order.customerFullName}</div>
+                    <div className="text-xs text-slate-600 font-medium mt-0.5 tabular-nums">
                       {order.systemCapacityKw} kW {order.systemVariant} • Advance: ₹{order.advancePaymentAmountInr.toLocaleString('en-IN')}
                     </div>
                   </div>
@@ -268,7 +270,7 @@ export const WarehouseDispatchView = () => {
         </div>
 
         {/* Right: Barcode Scanner & BOM Matching Slip */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-sm space-y-6">
           {selectedOrder ? (
             <>
               <div className="flex flex-wrap items-center justify-between pb-4 border-b border-slate-200 gap-3">

@@ -53,14 +53,14 @@ export const SystemDiagnosticsView = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Page Hero Strip: Soft-Mint Gradient Banner */}
-      <div className="bg-gradient-to-r from-[#EBF5EE] via-[#F4F9F6] to-white border border-emerald-900/10 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+      {/* Page Header: Clean White Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
           <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#135D3B]">
             <Terminal className="w-4 h-4 text-[#135D3B]" />
             <span>Admin Live System Diagnostics & Server Telemetry</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#0F291E] mt-1 font-mono">
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 mt-1 font-heading">
             /admin/system-logs • Monospace Portal
           </h2>
           <p className="text-xs text-slate-600 max-w-2xl mt-1.5 leading-relaxed font-medium">
@@ -82,44 +82,44 @@ export const SystemDiagnosticsView = () => {
         <>
           {/* Telemetry Hardware Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <span>Server Uptime</span>
                 <Server className="w-4 h-4 text-[#135D3B]" />
               </div>
-              <div className="text-2xl font-extrabold text-[#0F291E] mt-2 font-mono tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 mt-2 font-mono tabular-nums tracking-tight">
                 {telemetry.serverUptimeFormatted}
               </div>
-              <div className="text-xs text-slate-500 font-mono font-medium mt-1">
+              <div className="text-xs text-slate-500 font-mono tabular-nums font-medium mt-1">
                 {telemetry.serverUptimeSeconds}s total uptime
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <span>V8 Heap Used</span>
                 <Cpu className="w-4 h-4 text-[#135D3B]" />
               </div>
-              <div className="text-2xl font-extrabold text-[#0F291E] mt-2 font-mono tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 mt-2 font-mono tabular-nums tracking-tight">
                 {telemetry.heapUsedMb} MB
               </div>
-              <div className="text-xs text-slate-500 font-mono font-medium mt-1">
+              <div className="text-xs text-slate-500 font-mono tabular-nums font-medium mt-1">
                 Total Allocated: {telemetry.heapTotalMb} MB
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <span>RSS Process Memory</span>
                 <HardDrive className="w-4 h-4 text-[#135D3B]" />
               </div>
-              <div className="text-2xl font-extrabold text-[#0F291E] mt-2 font-mono tracking-tight">
+              <div className="text-2xl font-extrabold text-slate-900 mt-2 font-mono tabular-nums tracking-tight">
                 {telemetry.rssMemoryMb} MB
               </div>
               <div className="text-xs text-slate-500 font-mono font-medium mt-1">Resident Set Size</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <span>MongoDB Health</span>
                 <Database className="w-4 h-4 text-[#135D3B]" />
