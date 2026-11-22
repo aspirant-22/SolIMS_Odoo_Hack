@@ -25,6 +25,7 @@ import { serviceApiRouter } from './modules/service/service.routes.js';
 import { accountingApiRouter } from './modules/accounting/accounting.routes.js';
 import { diagnosticsApiRouter } from './modules/diagnostics/diagnostics.routes.js';
 import { simulatedEmailApiRouter } from './modules/notifications/simulatedEmail.routes.js';
+import { publicApiRouter } from './modules/public/public.routes.js';
 import { generateSampleDemoSimulatedEmails } from './modules/notifications/simulatedEmail.service.js';
 import { seedDatabase } from './seed/seedDatabase.js';
 import { LeadModel } from './modules/leads/lead.model.js';
@@ -64,6 +65,7 @@ expressApplication.get('/api/health', (httpRequest, httpResponse) => {
 });
 
 // Mount Subdomain Modular API Routers
+expressApplication.use('/api/public', publicApiRouter);
 expressApplication.use('/api/auth', authApiRouter);
 expressApplication.use('/api/leads', leadApiRouter);
 expressApplication.use('/api/orders', orderApiRouter);

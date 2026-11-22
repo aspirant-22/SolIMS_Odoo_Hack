@@ -24,9 +24,13 @@ import {
   handleRestockItem,
   handleReserveEquipment
 } from './inventory.controller.js';
+import { handlePublicUnitLookup } from '../service/service.controller.js';
 
 const { ADMIN, OPERATIONS, STAFF } = ERP_SYSTEM_CONFIG.RBAC_ROLES;
 const inventoryApiRouter = Router();
+
+// Public unauthenticated serial warranty lookup alias: GET /api/inventory/public/:serialNumber
+inventoryApiRouter.get('/public/:serialNumber', handlePublicUnitLookup);
 
 // Serialised hardware list (warehouse scanner + warranty desk). Customers never see warehouse data.
 inventoryApiRouter.get('/', verifyAuthentication, authorizeRoles(ADMIN, OPERATIONS, STAFF), handleGetWarehouseInventory);

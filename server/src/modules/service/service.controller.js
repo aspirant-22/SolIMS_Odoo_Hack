@@ -91,12 +91,19 @@ export const handleGetAllTickets = async (httpRequest, httpResponse, nextMiddlew
 export const handlePublicSerialLookup = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {
     const { serialNumber } = httpRequest.params;
-    const asset = await lookupPublicSerialAsset(serialNumber);
-    return httpResponse.status(200).json({ success: true, asset });
+    const unit = await lookupPublicSerialAsset(serialNumber);
+    return httpResponse.status(200).json({
+      success: true,
+      unit,
+      asset: unit,
+      data: unit
+    });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }
 };
+
+export const handlePublicUnitLookup = handlePublicSerialLookup;
 
 export const handleCreatePublicTicket = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
   try {

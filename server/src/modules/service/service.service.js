@@ -255,9 +255,21 @@ export const fetchAllServiceTickets = async (filterQuery = {}, customerUser = nu
 
 export const lookupPublicSerialAsset = async (serialNumber) => {
   const sanitized = String(serialNumber || '').trim();
+  if (!sanitized) {
+    const error = new Error('Serial number is required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Case-insensitive asset search with nested population of ProjectOrder and Lead
   const asset = await SerialAssetModel.findOne({
     serialNumber: { $regex: new RegExp(`^${sanitized}$`, 'i') }
-  }).lean();
+  })
+    .populate({
+      path: 'allocatedOrderId',
+      populate: { path: 'leadInquiryId' }
+    })
+    .lean();
 
   if (!asset) {
     const error = new Error(`Equipment asset with serial number "${sanitized}" not found in registry`);
@@ -265,14 +277,65 @@ export const lookupPublicSerialAsset = async (serialNumber) => {
     throw error;
   }
 
+  // Resolve associated ProjectOrder and Lead if not populated through allocatedOrderId
+  let order = asset.allocatedOrderId;
+  if (!order && asset.orderReference) {
+    order = await OrderModel.findOne({
+      $or: [
+        { orderReference: asset.orderReference },
+        { quotationReference: asset.orderReference }
+      ]
+    })
+      .populate('leadInquiryId')
+      .lean();
+  }
+
+  const lead = order?.leadInquiryId;
+
+  // Masking helpers for privacy (e.g. Sunil Agrawal -> S***l A*****l, B-42 Noida -> Noida, UP)
+  const maskCustomerName = (fullName) => {
+    if (!fullName || fullName === 'Verified Homeowner') return 'Verified Homeowner';
+    return fullName
+      .trim()
+      .split(/\s+/)
+      .map((part) => {
+        if (part.length <= 2) return part[0] + '*';
+        return part[0] + '*'.repeat(Math.max(1, part.length - 2)) + part[part.length - 1];
+      })
+      .join(' ');
+  };
+
+  const maskCity = (address) => {
+    if (!address) return 'Registered Solar Rooftop';
+    const parts = address.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      return parts.slice(-2).join(', ');
+    }
+    return parts[0] || 'Registered Solar Rooftop';
+  };
+
+  const rawCustomerName = asset.customerFullName || order?.customerFullName || lead?.customerFullName || 'Verified Homeowner';
+  const rawAddress = asset.installationSiteAddress || order?.installationSiteAddress || lead?.installationSiteAddress || 'Registered Rooftop Array';
+
+  const maskedName = maskCustomerName(rawCustomerName);
+  const maskedCity = maskCity(rawAddress);
+
   const now = new Date();
-  const isUnderWarranty = asset.warrantyExpiresTimestamp && new Date(asset.warrantyExpiresTimestamp) > now;
-  const remainingDays = asset.warrantyExpiresTimestamp
-    ? Math.max(0, Math.ceil((new Date(asset.warrantyExpiresTimestamp) - now) / 86400000))
+  const expiry = asset.warrantyExpiresTimestamp ? new Date(asset.warrantyExpiresTimestamp) : null;
+  const isUnderWarranty = Boolean(expiry && expiry > now);
+
+  const daysRemaining = (isUnderWarranty && expiry)
+    ? Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / 86400000))
     : 0;
-  const expiredDays = !isUnderWarranty && asset.warrantyExpiresTimestamp
-    ? Math.max(0, Math.ceil((now - new Date(asset.warrantyExpiresTimestamp)) / 86400000))
+
+  const daysExpired = (!isUnderWarranty && expiry)
+    ? Math.max(0, Math.ceil((now.getTime() - expiry.getTime()) / 86400000))
     : 0;
+
+  const warrantyStatus = isUnderWarranty ? 'UNDER_WARRANTY' : 'EXPIRED';
+  const statusBadge = isUnderWarranty
+    ? `✅ ACTIVE WARRANTY — ${daysRemaining} Days Remaining`
+    : '⚠️ WARRANTY EXPIRED';
 
   let estimatedPartCost = 0;
   if (!isUnderWarranty) {
@@ -284,22 +347,45 @@ export const lookupPublicSerialAsset = async (serialNumber) => {
   }
   const estimatedLaborCost = isUnderWarranty ? 0 : ERP_SYSTEM_CONFIG.BOM_TEMPLATES.OUT_OF_WARRANTY_VISIT_FEE_INR;
 
+  const systemCapacityKw = order?.systemCapacityKw || (asset.modelDesignation?.match(/(\d+)\s*kW/i)?.[1] ? Number(asset.modelDesignation.match(/(\d+)\s*kW/i)[1]) : 3);
+  const systemVariant = order?.systemVariant || 'ON_GRID';
+  const installationDate = asset.dispatchConfirmedTimestamp || asset.createdAt;
+
   return {
     serialNumber: asset.serialNumber,
     assetCategory: asset.assetCategory,
     modelDesignation: asset.modelDesignation,
     assetStatus: asset.assetStatus,
-    customerFullName: asset.customerFullName || 'Verified Homeowner Client',
-    customerPhoneNumber: asset.customerPhoneNumber || '',
-    installationSiteAddress: asset.installationSiteAddress || 'Registered Rooftop Array',
-    orderReference: asset.orderReference || 'ORD/2026/0001',
-    dispatchConfirmedTimestamp: asset.dispatchConfirmedTimestamp || asset.createdAt,
+    customerFullName: rawCustomerName,
+    customerPhoneNumber: asset.customerPhoneNumber || order?.customerPhoneNumber || '',
+    customerNameMasked: maskedName,
+    maskedCustomerName: maskedName,
+    customerCityMasked: maskedCity,
+    maskedCity,
+    installationSiteAddress: maskedCity,
+    orderReference: asset.orderReference || order?.orderReference || 'N/A',
+    inquiryReference: lead?.inquiryReference || 'N/A',
+    systemCapacityKw,
+    systemVariant,
+    installationDate,
+    dispatchConfirmedTimestamp: installationDate,
     warrantyDurationDays: asset.warrantyDurationDays || 730,
-    warrantyExpiresTimestamp: asset.warrantyExpiresTimestamp,
+    warrantyExpiresTimestamp: expiry,
+    isUnderWarranty,
     isUnderActiveWarranty: isUnderWarranty,
-    warrantyStatus: isUnderWarranty ? 'UNDER WARRANTY' : 'EXPIRED',
-    remainingWarrantyDays: remainingDays,
-    expiredDays: expiredDays,
+    warrantyStatus,
+    statusBadge,
+    daysRemaining,
+    remainingWarrantyDays: daysRemaining,
+    daysExpired,
+    expiredDays: daysExpired,
+    hardwareSpecs: {
+      modelDesignation: asset.modelDesignation,
+      assetCategory: asset.assetCategory,
+      serialNumber: asset.serialNumber,
+      systemCapacityKw,
+      systemVariant
+    },
     estimatedPartCostInr: estimatedPartCost,
     estimatedLaborCostInr: estimatedLaborCost,
     totalBillableCostInr: estimatedPartCost + estimatedLaborCost
