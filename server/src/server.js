@@ -26,6 +26,8 @@ import { accountingApiRouter } from './modules/accounting/accounting.routes.js';
 import { diagnosticsApiRouter } from './modules/diagnostics/diagnostics.routes.js';
 import { simulatedEmailApiRouter } from './modules/notifications/simulatedEmail.routes.js';
 import { generateSampleDemoSimulatedEmails } from './modules/notifications/simulatedEmail.service.js';
+import { seedDatabase } from './seed/seedDatabase.js';
+import { LeadModel } from './modules/leads/lead.model.js';
 
 const expressApplication = express();
 const httpServerInstance = http.createServer(expressApplication);
@@ -76,6 +78,11 @@ expressApplication.use(handleGlobalApplicationErrors);
 const startEnterpriseServer = async () => {
   try {
     await connectDatabase();
+    const leadCount = await LeadModel.countDocuments();
+    if (leadCount === 0) {
+      console.log('[ERP] Empty database detected on boot. Triggering automatic seedDatabase()...');
+      await seedDatabase({ keepConnectionOpen: true });
+    }
     await ensureStockCatalogSeeded();
     await generateSampleDemoSimulatedEmails();
     httpServerInstance.listen(ERP_SYSTEM_CONFIG.PORT, () => {

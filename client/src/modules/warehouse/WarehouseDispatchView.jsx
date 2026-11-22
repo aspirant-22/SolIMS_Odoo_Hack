@@ -5,7 +5,7 @@
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Truck as KTruck, Barcode as KBarcode, Package as KPackage, ShieldCheck as KShieldCheck } from 'lucide-react';
 import { KpiCard, KpiStrip } from '../../components/KpiCard';
 import {
@@ -18,7 +18,10 @@ import {
   Sparkles,
   ArrowRight,
   PackageCheck,
-  X
+  X,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -40,6 +43,38 @@ export const WarehouseDispatchView = () => {
   const [selectedControllerId, setSelectedControllerId] = useState('');
   const [dispatchSuccessData, setDispatchSuccessData] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
+  const [dispatchSearchQuery, setDispatchSearchQuery] = useState('');
+  const [dispatchCurrentPage, setDispatchCurrentPage] = useState(1);
+  const DISPATCH_PAGE_SIZE = 25;
+
+  const filteredAwaitingOrders = useMemo(() => {
+    if (!dispatchSearchQuery.trim()) return ordersAwaitingDispatch;
+    const q = dispatchSearchQuery.toLowerCase().trim();
+    return ordersAwaitingDispatch.filter((order) => {
+      return (
+        (order.orderReference && order.orderReference.toLowerCase().includes(q)) ||
+        (order.quotationReference && order.quotationReference.toLowerCase().includes(q)) ||
+        (order.customerFullName && order.customerFullName.toLowerCase().includes(q)) ||
+        (order.customerPhoneNumber && order.customerPhoneNumber.toLowerCase().includes(q)) ||
+        (order.installationSiteAddress && order.installationSiteAddress.toLowerCase().includes(q)) ||
+        (order.orderWorkflowStatus && order.orderWorkflowStatus.toLowerCase().includes(q)) ||
+        (order.systemCapacityKw && String(order.systemCapacityKw).includes(q)) ||
+        (order.systemVariant && order.systemVariant.toLowerCase().includes(q))
+      );
+    });
+  }, [ordersAwaitingDispatch, dispatchSearchQuery]);
+
+  const totalDispatchPages = Math.max(1, Math.ceil(filteredAwaitingOrders.length / DISPATCH_PAGE_SIZE));
+  const paginatedAwaitingOrders = useMemo(() => {
+    const start = (dispatchCurrentPage - 1) * DISPATCH_PAGE_SIZE;
+    return filteredAwaitingOrders.slice(start, start + DISPATCH_PAGE_SIZE);
+  }, [filteredAwaitingOrders, dispatchCurrentPage]);
+
+  useEffect(() => {
+    if (dispatchCurrentPage > totalDispatchPages) {
+      setDispatchCurrentPage(1);
+    }
+  }, [totalDispatchPages, dispatchCurrentPage]);
 
   const loadDispatchData = async () => {
     try {
@@ -354,21 +389,50 @@ export const WarehouseDispatchView = () => {
       {/* Main Scanner Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Orders Ready for Packing */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide flex justify-between items-center">
-            <span>Orders Ready to Pack ({ordersAwaitingDispatch.length})</span>
-            <span className="text-[10px] text-sky-800 font-semibold bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full">
-              Advance Paid
-            </span>
+        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col">
+          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide space-y-2.5">
+            <div className="flex justify-between items-center">
+              <span>Orders Ready to Pack ({filteredAwaitingOrders.length})</span>
+              <span className="text-[10px] text-sky-800 font-semibold bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full">
+                Advance Paid
+              </span>
+            </div>
+
+            {/* Live Search Across All Awaiting Orders */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={dispatchSearchQuery}
+                onChange={(e) => {
+                  setDispatchSearchQuery(e.target.value);
+                  setDispatchCurrentPage(1);
+                }}
+                placeholder="Search ref, customer, phone..."
+                className="w-full bg-white text-xs pl-8 pr-7 py-1.5 rounded-full border border-slate-300 font-medium text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#135D3B] focus:ring-1 focus:ring-[#135D3B]"
+              />
+              {dispatchSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDispatchSearchQuery('');
+                    setDispatchCurrentPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="divide-y divide-slate-100 max-h-[550px] overflow-y-auto">
-            {ordersAwaitingDispatch.length === 0 ? (
+          <div className="divide-y divide-slate-100 max-h-[550px] overflow-y-auto flex-1">
+            {paginatedAwaitingOrders.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-500 font-medium">
-                No orders currently waiting for dispatch. (Advance payment required)
+                {dispatchSearchQuery ? 'No matching orders found.' : 'No orders currently waiting for dispatch. (Advance payment required)'}
               </div>
             ) : (
-              ordersAwaitingDispatch.map((order) => {
+              paginatedAwaitingOrders.map((order) => {
                 const isSelected = selectedOrder?._id === order._id;
                 const badgeStyle = getStatusBadgeStyle(order.orderWorkflowStatus);
                 return (
@@ -400,6 +464,37 @@ export const WarehouseDispatchView = () => {
               })
             )}
           </div>
+
+          {/* Smooth 25-Orders-Per-Page Pagination */}
+          {filteredAwaitingOrders.length > 0 && (
+            <div className="p-3 bg-[#F4F9F6]/80 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+              <div>
+                Showing {(dispatchCurrentPage - 1) * DISPATCH_PAGE_SIZE + 1} to{' '}
+                {Math.min(dispatchCurrentPage * DISPATCH_PAGE_SIZE, filteredAwaitingOrders.length)} of {filteredAwaitingOrders.length}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setDispatchCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={dispatchCurrentPage === 1}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-bold px-1.5 tabular-nums">
+                  {dispatchCurrentPage} / {totalDispatchPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDispatchCurrentPage((p) => Math.min(totalDispatchPages, p + 1))}
+                  disabled={dispatchCurrentPage === totalDispatchPages}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Barcode Scanner & BOM Matching Slip */}

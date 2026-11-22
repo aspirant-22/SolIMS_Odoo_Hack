@@ -5,12 +5,16 @@
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { RevenueBreakdown } from '../../components/RevenueBreakdown';
 import {
   BarChart3,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +26,9 @@ export const DirectorDashboardView = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState('MONTH');
   const [generalLedgerEntries, setGeneralLedgerEntries] = useState([]);
   const [activeTab, setActiveTab] = useState('PNL');
+  const [ledgerSearchQuery, setLedgerSearchQuery] = useState('');
+  const [ledgerCurrentPage, setLedgerCurrentPage] = useState(1);
+  const LEDGER_PAGE_SIZE = 25;
 
   const loadFinancialData = async () => {
     setIsSystemProcessing(true);
@@ -53,12 +60,42 @@ export const DirectorDashboardView = () => {
     loadFinancialData();
   }, [selectedTimePeriod]);
 
+  const filteredLedgerEntries = useMemo(() => {
+    if (!ledgerSearchQuery.trim()) return generalLedgerEntries;
+    const q = ledgerSearchQuery.toLowerCase().trim();
+    return generalLedgerEntries.filter((entry) => {
+      return (
+        (entry.entryReference && entry.entryReference.toLowerCase().includes(q)) ||
+        (entry.entryCategory && entry.entryCategory.toLowerCase().includes(q)) ||
+        (entry.narrativeDescription && entry.narrativeDescription.toLowerCase().includes(q)) ||
+        (entry.orderReference && entry.orderReference.toLowerCase().includes(q)) ||
+        (entry.journalLines && entry.journalLines.some((l) =>
+          (l.accountCode && l.accountCode.toLowerCase().includes(q)) ||
+          (l.accountName && l.accountName.toLowerCase().includes(q))
+        ))
+      );
+    });
+  }, [generalLedgerEntries, ledgerSearchQuery]);
+
+  const totalLedgerPages = Math.max(1, Math.ceil(filteredLedgerEntries.length / LEDGER_PAGE_SIZE));
+  const paginatedLedger = useMemo(() => {
+    const start = (ledgerCurrentPage - 1) * LEDGER_PAGE_SIZE;
+    return filteredLedgerEntries.slice(start, start + LEDGER_PAGE_SIZE);
+  }, [filteredLedgerEntries, ledgerCurrentPage]);
+
+  useEffect(() => {
+    if (ledgerCurrentPage > totalLedgerPages) {
+      setLedgerCurrentPage(1);
+    }
+  }, [totalLedgerPages, ledgerCurrentPage]);
+
   const exportDirectorPnlCsv = () => {
     if (!financialSummary?.projectMarginAnalysis) return;
 
     const headers = [
       'Project Order Reference',
       'Customer Full Name',
+      'Installation Site Address',
       'System Capacity (kW)',
       'Variant',
       'Workflow Status',
@@ -72,23 +109,33 @@ export const DirectorDashboardView = () => {
       'Subsidy Status'
     ];
 
+    const escapeCsvCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      return `"${String(val).replace(/"/g, '""')}"`;
+    };
+
     const csvRows = financialSummary.projectMarginAnalysis.map((row) => [
-      `"${row.orderReference}"`,
-      `"${row.customerFullName}"`,
-      row.systemCapacityKw,
-      row.systemVariant,
-      row.status,
-      row.grossRevenueInr,
-      row.hardwareCostInr,
-      row.technicianLaborCostInr,
-      row.netJobProfitInr,
-      `${row.profitMarginPercentage}%`,
-      row.advanceCollectedInr,
-      row.balanceDueInr,
-      row.subsidyStatus
+      escapeCsvCell(row.orderReference),
+      escapeCsvCell(row.customerFullName),
+      escapeCsvCell(row.installationSiteAddress),
+      escapeCsvCell(row.systemCapacityKw),
+      escapeCsvCell(row.systemVariant),
+      escapeCsvCell(row.status),
+      escapeCsvCell(row.grossRevenueInr),
+      escapeCsvCell(row.hardwareCostInr),
+      escapeCsvCell(row.technicianLaborCostInr),
+      escapeCsvCell(row.netJobProfitInr),
+      escapeCsvCell(`${row.profitMarginPercentage}%`),
+      escapeCsvCell(row.advanceCollectedInr),
+      escapeCsvCell(row.balanceDueInr),
+      escapeCsvCell(row.subsidyStatus)
     ]);
 
-    const csvContentString = [headers.join(','), ...csvRows.map((e) => e.join(','))].join('\n');
+    const csvContentString = [
+      headers.map(escapeCsvCell).join(','),
+      ...csvRows.map((e) => e.join(','))
+    ].join('\r\n');
+
     const blob = new Blob([csvContentString], { type: 'text/csv;charset=utf-8;' });
     const downloadUrl = URL.createObjectURL(blob);
     const linkElement = document.createElement('a');
@@ -328,61 +375,131 @@ export const DirectorDashboardView = () => {
           keyField="orderId"
           title="Per-Installation Profit & Subsidy Matrix"
           searchPlaceholder="Search project ref, customer..."
+          pageSize={25}
         />
       ) : (
         /* Double-Entry General Ledger */
-        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm space-y-4 p-5">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-            <h4 className="text-xs font-heading font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <FileSpreadsheet className="w-4 h-4 text-[#135D3B]" />
-              <span>Immutable SolIMS Double-Entry General Ledger (Debits === Credits)</span>
-            </h4>
-            <span className="text-xs text-emerald-800 font-mono font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Strict Parity Enforced
-            </span>
-          </div>
-
-          <div className="space-y-3.5">
-            {generalLedgerEntries.map((entry) => (
-              <div key={entry._id} className="border border-slate-200/90 rounded-2xl p-4 bg-slate-50/70 space-y-2.5 shadow-2xs">
-                <div className="flex justify-between items-center text-xs">
-                  <div>
-                    <span className="font-mono font-bold text-slate-900 tabular-nums">{entry.entryReference}</span>
-                    <span className="text-slate-500 font-bold ml-2">[{entry.entryCategory}]</span>
-                    <span className="text-slate-900 font-semibold ml-2">{entry.narrativeDescription}</span>
-                  </div>
-                  <span className="text-xs text-slate-500 font-mono font-medium tabular-nums">
-                    {new Date(entry.entryDate).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <table className="w-full text-left text-xs bg-white rounded-xl border border-slate-200/90 overflow-hidden">
-                  <thead className="bg-slate-50 text-slate-700 text-[10px] uppercase font-bold">
-                    <tr>
-                      <th className="p-2.5">Account Code</th>
-                      <th className="p-2.5">Account Name</th>
-                      <th className="p-2.5 text-right">Debit (₹)</th>
-                      <th className="p-2.5 text-right">Credit (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {entry.journalLines.map((line, lIdx) => (
-                      <tr key={lIdx}>
-                        <td className="p-2.5 font-mono text-slate-600 font-semibold tabular-nums">{line.accountCode}</td>
-                        <td className="p-2.5 font-bold text-slate-900">{line.accountName}</td>
-                        <td className="p-2.5 text-right font-mono font-bold text-slate-900 tabular-nums">
-                          {line.debitAmountInr > 0 ? `₹${line.debitAmountInr.toLocaleString('en-IN')}` : '-'}
-                        </td>
-                        <td className="p-2.5 text-right font-mono font-bold text-slate-900 tabular-nums">
-                          {line.creditAmountInr > 0 ? `₹${line.creditAmountInr.toLocaleString('en-IN')}` : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm space-y-4 p-5 flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-slate-200 gap-3">
+            <div>
+              <h4 className="text-xs font-heading font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <FileSpreadsheet className="w-4 h-4 text-[#135D3B]" />
+                <span>Immutable SolIMS Double-Entry General Ledger (Debits === Credits)</span>
+              </h4>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                {filteredLedgerEntries.length} balanced journal entries across all solar project transactions
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="relative min-w-[220px]">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={ledgerSearchQuery}
+                  onChange={(e) => {
+                    setLedgerSearchQuery(e.target.value);
+                    setLedgerCurrentPage(1);
+                  }}
+                  placeholder="Search ref, account, category..."
+                  className="w-full bg-white text-xs pl-8 pr-7 py-1.5 rounded-full border border-slate-300 font-medium text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#135D3B] focus:ring-1 focus:ring-[#135D3B]"
+                />
+                {ledgerSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLedgerSearchQuery('');
+                      setLedgerCurrentPage(1);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-            ))}
+              <span className="text-xs text-emerald-800 font-mono font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
+                Strict Parity Enforced ✓
+              </span>
+            </div>
           </div>
+
+          <div className="space-y-3.5 flex-1">
+            {paginatedLedger.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-500 font-medium">
+                No ledger entries found matching search query.
+              </div>
+            ) : (
+              paginatedLedger.map((entry) => (
+                <div key={entry._id} className="border border-slate-200/90 rounded-2xl p-4 bg-slate-50/70 space-y-2.5 shadow-2xs">
+                  <div className="flex justify-between items-center text-xs">
+                    <div>
+                      <span className="font-mono font-bold text-slate-900 tabular-nums">{entry.entryReference}</span>
+                      <span className="text-slate-500 font-bold ml-2">[{entry.entryCategory}]</span>
+                      <span className="text-slate-900 font-semibold ml-2">{entry.narrativeDescription}</span>
+                    </div>
+                    <span className="text-xs text-slate-500 font-mono font-medium tabular-nums">
+                      {new Date(entry.entryDate).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <table className="w-full text-left text-xs bg-white rounded-xl border border-slate-200/90 overflow-hidden">
+                    <thead className="bg-slate-50 text-slate-700 text-[10px] uppercase font-bold">
+                      <tr>
+                        <th className="p-2.5">Account Code</th>
+                        <th className="p-2.5">Account Name</th>
+                        <th className="p-2.5 text-right">Debit (₹)</th>
+                        <th className="p-2.5 text-right">Credit (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {entry.journalLines.map((line, lIdx) => (
+                        <tr key={lIdx}>
+                          <td className="p-2.5 font-mono text-slate-600 font-semibold tabular-nums">{line.accountCode}</td>
+                          <td className="p-2.5 font-bold text-slate-900">{line.accountName}</td>
+                          <td className="p-2.5 text-right font-mono font-bold text-slate-900 tabular-nums">
+                            {line.debitAmountInr > 0 ? `₹${line.debitAmountInr.toLocaleString('en-IN')}` : '-'}
+                          </td>
+                          <td className="p-2.5 text-right font-mono font-bold text-slate-900 tabular-nums">
+                            {line.creditAmountInr > 0 ? `₹${line.creditAmountInr.toLocaleString('en-IN')}` : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Smooth 25-Ledger-Entries-Per-Page Pagination */}
+          {filteredLedgerEntries.length > 0 && (
+            <div className="p-3 bg-[#F4F9F6]/80 rounded-2xl border border-slate-200 flex items-center justify-between text-xs text-slate-600">
+              <div>
+                Showing {(ledgerCurrentPage - 1) * LEDGER_PAGE_SIZE + 1} to{' '}
+                {Math.min(ledgerCurrentPage * LEDGER_PAGE_SIZE, filteredLedgerEntries.length)} of {filteredLedgerEntries.length} entries
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLedgerCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={ledgerCurrentPage === 1}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-bold px-1.5 tabular-nums">
+                  {ledgerCurrentPage} / {totalLedgerPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLedgerCurrentPage((p) => Math.min(totalLedgerPages, p + 1))}
+                  disabled={ledgerCurrentPage === totalLedgerPages}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

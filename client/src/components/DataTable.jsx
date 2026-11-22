@@ -95,7 +95,13 @@ export const DataTable = ({
     return sortedData.slice(start, start + pageSize);
   }, [sortedData, currentPage, pageSize]);
 
-  const totalPages = pageSize > 0 ? Math.ceil(sortedData.length / pageSize) : 1;
+  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(sortedData.length / pageSize)) : 1;
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
 
   const handleSort = (columnKey) => {
     setSortConfig((prev) => {
@@ -278,7 +284,7 @@ export const DataTable = ({
       </div>
 
       {/* Pagination Footer */}
-      {pageSize > 0 && totalPages > 1 && (
+      {pageSize > 0 && sortedData.length > 0 && (
         <div className="p-3 bg-[#F4F9F6]/60 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
           <div>
             Showing {(currentPage - 1) * pageSize + 1} to{' '}
@@ -286,16 +292,18 @@ export const DataTable = ({
           </div>
           <div className="flex items-center gap-1.5">
             <button
+              type="button"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="font-bold px-2">
+            <span className="font-bold px-2 tabular-nums">
               {currentPage} / {totalPages}
             </span>
             <button
+              type="button"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"

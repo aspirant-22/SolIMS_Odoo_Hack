@@ -5,7 +5,7 @@
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search as KSearch, ShieldCheck as KShieldCheck, AlertTriangle as KAlertTriangle, Wrench as KWrench } from 'lucide-react';
 import { WarrantyCertificateCard } from '../../components/WarrantyCertificateCard';
 import { KpiCard, KpiStrip } from '../../components/KpiCard';
@@ -19,7 +19,9 @@ import {
   Wrench,
   Sparkles,
   Ticket,
-  CreditCard
+  CreditCard,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +32,8 @@ export const WarrantyLookupTicketView = () => {
   const { setIsSystemProcessing } = useAuth();
   const [searchQuery, setSearchQuery] = useState('INV-2024-RAINY-ACTIVE');
   const [searchResults, setSearchResults] = useState([]);
+  const [resultsPage, setResultsPage] = useState(1);
+  const RESULTS_PAGE_SIZE = 25;
   const [ticketsList, setTicketsList] = useState([]);
   const [selectedAssetForTicket, setSelectedAssetForTicket] = useState(null);
   const [faultCodeInput, setFaultCodeInput] = useState('ERR_INVERTER_GRID_FAIL');
@@ -72,6 +76,7 @@ export const WarrantyLookupTicketView = () => {
       const response = await executeHttpRequest(`/api/service/warranty-lookup?query=${encodeURIComponent(q.trim())}`);
       if (response.success) {
         setSearchResults(response.results || []);
+        setResultsPage(1);
       }
     } catch (err) {
       console.error('Search failed:', err);
@@ -245,22 +250,61 @@ export const WarrantyLookupTicketView = () => {
       {/* Live Search Results Card */}
       {searchResults.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wider">
-            Live Warranty Evaluation Results ({searchResults.length})
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Live Warranty Evaluation Results ({searchResults.length})
+            </h3>
+            {searchResults.length > RESULTS_PAGE_SIZE && (
+              <span className="text-[11px] text-slate-500 font-medium">
+                Page {resultsPage} of {Math.max(1, Math.ceil(searchResults.length / RESULTS_PAGE_SIZE))}
+              </span>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {searchResults.map((asset) => (
-              <WarrantyCertificateCard
-                key={asset.assetId}
-                asset={asset}
-                onCreateTicket={() => {
-                  setSelectedAssetForTicket(asset);
-                  setIsTicketModalOpen(true);
-                }}
-              />
-            ))}
+            {searchResults
+              .slice((resultsPage - 1) * RESULTS_PAGE_SIZE, resultsPage * RESULTS_PAGE_SIZE)
+              .map((asset) => (
+                <WarrantyCertificateCard
+                  key={asset.assetId}
+                  asset={asset}
+                  onCreateTicket={() => {
+                    setSelectedAssetForTicket(asset);
+                    setIsTicketModalOpen(true);
+                  }}
+                />
+              ))}
           </div>
+
+          {searchResults.length > RESULTS_PAGE_SIZE && (
+            <div className="p-3 bg-[#F4F9F6]/80 rounded-2xl border border-slate-200 flex items-center justify-between text-xs text-slate-600">
+              <div>
+                Showing {(resultsPage - 1) * RESULTS_PAGE_SIZE + 1} to{' '}
+                {Math.min(resultsPage * RESULTS_PAGE_SIZE, searchResults.length)} of {searchResults.length} assets
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setResultsPage((p) => Math.max(1, p - 1))}
+                  disabled={resultsPage === 1}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-bold px-1.5 tabular-nums">
+                  {resultsPage} / {Math.max(1, Math.ceil(searchResults.length / RESULTS_PAGE_SIZE))}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setResultsPage((p) => Math.min(Math.ceil(searchResults.length / RESULTS_PAGE_SIZE), p + 1))}
+                  disabled={resultsPage === Math.ceil(searchResults.length / RESULTS_PAGE_SIZE)}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -406,6 +450,7 @@ export const WarrantyLookupTicketView = () => {
         subtitle="Tracked until customer confirmation"
         icon={Ticket}
         searchPlaceholder="Search ticket, customer, serial..."
+        pageSize={25}
       />
 
       {/* Create Ticket Modal */}

@@ -357,6 +357,7 @@ export const OrdersView = () => {
             onRowClick={(row) => setSelectedOrder(row)}
             selectedRowId={selectedOrder?._id}
             searchPlaceholder="Search customer, ref, or status..."
+            pageSize={25}
           />
         </div>
 

@@ -29,19 +29,23 @@ export const generateDirectorMonthEndFinancialSummary = async (startDateFilter =
   let cumulativeBalanceReceivable = 0;
   let cumulativeSubsidiesExpected = 0;
 
+  const roundCurrency = (val) => Math.round((Number(val) || 0) * 100) / 100;
+
   const projectMarginAnalysisList = allOrders.map((order) => {
-    cumulativeRevenue += order.grossTotalAmountInr;
-    cumulativeAdvanceCollected += order.advancePaymentAmountInr;
-    cumulativeBalanceReceivable += order.balancePaymentDueInr;
-    cumulativeSubsidiesExpected += order.estimatedSubsidyAmountInr;
+    cumulativeRevenue += order.grossTotalAmountInr || 0;
+    cumulativeAdvanceCollected += order.advancePaymentAmountInr || 0;
+    cumulativeBalanceReceivable += order.balancePaymentDueInr || 0;
+    cumulativeSubsidiesExpected += order.estimatedSubsidyAmountInr || 0;
 
     // Estimate hardware cost (approx 68% of gross for solar EPC)
-    const hardwareCost = order.billOfMaterials
-      .filter((b) => b.itemCategory !== 'SERVICE')
-      .reduce((sum, b) => sum + b.totalPriceInr, 0);
+    const hardwareCost = roundCurrency(
+      order.billOfMaterials
+        .filter((b) => b.itemCategory !== 'SERVICE')
+        .reduce((sum, b) => sum + (b.totalPriceInr || 0), 0)
+    );
 
-    const technicianCrewCost = order.assignedTechnicians.length * 2500; // estimated per job
-    const netJobProfit = order.grossTotalAmountInr - (hardwareCost + technicianCrewCost);
+    const technicianCrewCost = roundCurrency((order.assignedTechnicians?.length || 0) * 2500); // estimated per job
+    const netJobProfit = roundCurrency((order.grossTotalAmountInr || 0) - (hardwareCost + technicianCrewCost));
     const profitMarginPercentage = order.grossTotalAmountInr > 0
       ? Math.round((netJobProfit / order.grossTotalAmountInr) * 100)
       : 0;
@@ -53,25 +57,35 @@ export const generateDirectorMonthEndFinancialSummary = async (startDateFilter =
       orderId: order._id,
       orderReference: order.orderReference || order.quotationReference,
       customerFullName: order.customerFullName,
+      installationSiteAddress: order.installationSiteAddress || '',
       systemCapacityKw: order.systemCapacityKw,
       systemVariant: order.systemVariant,
       status: order.orderWorkflowStatus,
-      grossRevenueInr: order.grossTotalAmountInr,
-      advanceCollectedInr: order.advancePaymentAmountInr,
-      balanceDueInr: order.balancePaymentDueInr,
-      hardwareCostInr: hardwareCost,
-      technicianLaborCostInr: technicianCrewCost,
-      netJobProfitInr: netJobProfit,
+      grossRevenueInr: roundCurrency(order.grossTotalAmountInr),
+      advanceCollectedInr: roundCurrency(order.advancePaymentAmountInr),
+      balanceDueInr: roundCurrency(order.balancePaymentDueInr),
+      hardwareCostInr: roundCurrency(hardwareCost),
+      technicianLaborCostInr: roundCurrency(technicianCrewCost),
+      netJobProfitInr: roundCurrency(netJobProfit),
       profitMarginPercentage,
       subsidyStatus: order.subsidyApplicationStatus
     };
   });
 
-  const cumulativeWarrantyExpense = allTickets
-    .filter((t) => t.isUnderActiveWarranty)
-    .reduce((sum, t) => sum + (t.sparePartCostInr || 5000), 0);
+  const cumulativeWarrantyExpense = roundCurrency(
+    allTickets
+      .filter((t) => t.isUnderActiveWarranty)
+      .reduce((sum, t) => sum + (t.sparePartCostInr || 5000), 0)
+  );
 
-  const overallNetProfit = cumulativeRevenue - (cumulativeHardwareCogs + cumulativeLaborPayroll + cumulativeWarrantyExpense);
+  cumulativeRevenue = roundCurrency(cumulativeRevenue);
+  cumulativeHardwareCogs = roundCurrency(cumulativeHardwareCogs);
+  cumulativeLaborPayroll = roundCurrency(cumulativeLaborPayroll);
+  cumulativeAdvanceCollected = roundCurrency(cumulativeAdvanceCollected);
+  cumulativeBalanceReceivable = roundCurrency(cumulativeBalanceReceivable);
+  cumulativeSubsidiesExpected = roundCurrency(cumulativeSubsidiesExpected);
+
+  const overallNetProfit = roundCurrency(cumulativeRevenue - (cumulativeHardwareCogs + cumulativeLaborPayroll + cumulativeWarrantyExpense));
 
   return {
     kpis: {

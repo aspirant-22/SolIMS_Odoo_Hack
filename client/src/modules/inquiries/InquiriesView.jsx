@@ -5,7 +5,7 @@
  * @DEPENDENCIES: react, lucide-react, api.js, AuthContext.jsx
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Sun as KSun, Clock as KClock, MapPin as KMapPin, CheckCircle2 as KCheckCircle2 } from 'lucide-react';
 import { KpiCard, KpiStrip } from '../../components/KpiCard';
 import {
@@ -17,7 +17,11 @@ import {
   AlertCircle,
   CreditCard,
   Zap,
-  Mail
+  Mail,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -42,9 +46,44 @@ export const InquiriesView = () => {
   const [advanceAmountInput, setAdvanceAmountInput] = useState(50000);
   const [feedbackMessage, setFeedbackMessage] = useState({ type: '', text: '' });
   const [approvalQueueOnly, setApprovalQueueOnly] = useState(false);
+  const [inquirySearchQuery, setInquirySearchQuery] = useState('');
+  const [inquiryCurrentPage, setInquiryCurrentPage] = useState(1);
+  const INQUIRY_PAGE_SIZE = 25;
 
   const isTechnician = currentUser?.role === 'STAFF';
   const isDirectorOrOps = currentUser?.role === 'ADMIN' || currentUser?.role === 'OPERATIONS';
+
+  const filteredInquiries = useMemo(() => {
+    let list = approvalQueueOnly
+      ? inquiriesList.filter((i) => i.inquiryWorkflowStatus === 'Survey_Completed')
+      : inquiriesList;
+    if (!inquirySearchQuery.trim()) return list;
+    const q = inquirySearchQuery.toLowerCase().trim();
+    return list.filter((lead) => {
+      return (
+        (lead.inquiryReference && lead.inquiryReference.toLowerCase().includes(q)) ||
+        (lead.customerFullName && lead.customerFullName.toLowerCase().includes(q)) ||
+        (lead.customerPhoneNumber && lead.customerPhoneNumber.toLowerCase().includes(q)) ||
+        (lead.customerEmailAddress && lead.customerEmailAddress.toLowerCase().includes(q)) ||
+        (lead.installationSiteAddress && lead.installationSiteAddress.toLowerCase().includes(q)) ||
+        (lead.inquiryWorkflowStatus && lead.inquiryWorkflowStatus.toLowerCase().includes(q)) ||
+        (lead.requestedCapacityKw && String(lead.requestedCapacityKw).includes(q)) ||
+        (lead.requestedVariant && lead.requestedVariant.toLowerCase().includes(q))
+      );
+    });
+  }, [inquiriesList, approvalQueueOnly, inquirySearchQuery]);
+
+  const totalInquiryPages = Math.max(1, Math.ceil(filteredInquiries.length / INQUIRY_PAGE_SIZE));
+  const paginatedInquiries = useMemo(() => {
+    const start = (inquiryCurrentPage - 1) * INQUIRY_PAGE_SIZE;
+    return filteredInquiries.slice(start, start + INQUIRY_PAGE_SIZE);
+  }, [filteredInquiries, inquiryCurrentPage]);
+
+  useEffect(() => {
+    if (inquiryCurrentPage > totalInquiryPages) {
+      setInquiryCurrentPage(1);
+    }
+  }, [totalInquiryPages, inquiryCurrentPage]);
 
   // New inquiry form state
   const [newInquiryData, setNewInquiryData] = useState({
@@ -308,11 +347,38 @@ export const InquiriesView = () => {
       {/* Main Grid: Inquiries List & Detail Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left List Pane */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
-          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide space-y-2">
+        <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col">
+          <div className="p-4 bg-slate-50 border-b border-slate-200 font-heading font-bold text-xs text-slate-900 uppercase tracking-wide space-y-2.5">
             <div className="flex justify-between items-center">
-              <span>Inquiry Records ({inquiriesList.length})</span>
+              <span>Inquiry Records ({filteredInquiries.length})</span>
               <span className="text-[11px] text-slate-600 font-mono font-medium bg-white px-2.5 py-0.5 rounded-full border border-slate-200">ir.sequence</span>
+            </div>
+
+            {/* Live Search Across All 170+ Inquiries */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={inquirySearchQuery}
+                onChange={(e) => {
+                  setInquirySearchQuery(e.target.value);
+                  setInquiryCurrentPage(1);
+                }}
+                placeholder="Search ref, customer, phone, city..."
+                className="w-full bg-white text-xs pl-8 pr-7 py-1.5 rounded-full border border-slate-300 font-medium text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#135D3B] focus:ring-1 focus:ring-[#135D3B]"
+              />
+              {inquirySearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInquirySearchQuery('');
+                    setInquiryCurrentPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* QA FIX 4: Director & Operations Survey Approval Queue Filter */}
@@ -320,7 +386,10 @@ export const InquiriesView = () => {
               <div className="flex items-center gap-1.5 pt-1">
                 <button
                   type="button"
-                  onClick={() => setApprovalQueueOnly(false)}
+                  onClick={() => {
+                    setApprovalQueueOnly(false);
+                    setInquiryCurrentPage(1);
+                  }}
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                     !approvalQueueOnly
                       ? 'bg-[#135D3B] text-white shadow-2xs'
@@ -331,7 +400,10 @@ export const InquiriesView = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setApprovalQueueOnly(true)}
+                  onClick={() => {
+                    setApprovalQueueOnly(true);
+                    setInquiryCurrentPage(1);
+                  }}
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                     approvalQueueOnly
                       ? 'bg-amber-600 text-white shadow-2xs'
@@ -347,51 +419,85 @@ export const InquiriesView = () => {
             )}
           </div>
 
-          <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-            {(approvalQueueOnly
-              ? inquiriesList.filter((i) => i.inquiryWorkflowStatus === 'Survey_Completed')
-              : inquiriesList
-            ).map((lead) => {
-              const isSelected = selectedInquiry?._id === lead._id;
-              const badgeStyle = getStatusBadgeStyle(lead.inquiryWorkflowStatus);
-              return (
-                <div
-                  key={lead._id}
-                  onClick={() => setSelectedInquiry(lead)}
-                  className={`p-4 cursor-pointer transition-colors text-left ${
-                    isSelected ? 'bg-slate-100/90 border-l-4 border-[#135D3B]' : 'hover:bg-slate-50/70'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
-                      {lead.inquiryReference}
-                    </span>
-                    <span
-                      className={`text-[10px] font-semibold px-3 py-0.5 rounded-full border ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}
-                    >
-                      {lead.inquiryWorkflowStatus}
-                    </span>
+          <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto flex-1">
+            {paginatedInquiries.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-500 font-medium">
+                No rooftop solar inquiries found matching search criteria.
+              </div>
+            ) : (
+              paginatedInquiries.map((lead) => {
+                const isSelected = selectedInquiry?._id === lead._id;
+                const badgeStyle = getStatusBadgeStyle(lead.inquiryWorkflowStatus);
+                return (
+                  <div
+                    key={lead._id}
+                    onClick={() => setSelectedInquiry(lead)}
+                    className={`p-4 cursor-pointer transition-colors text-left ${
+                      isSelected ? 'bg-slate-100/90 border-l-4 border-[#135D3B]' : 'hover:bg-slate-50/70'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-mono text-xs font-bold text-slate-900 tabular-nums">
+                        {lead.inquiryReference}
+                      </span>
+                      <span
+                        className={`text-[10px] font-semibold px-3 py-0.5 rounded-full border ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}
+                      >
+                        {lead.inquiryWorkflowStatus}
+                      </span>
+                    </div>
+                    <div className="font-bold text-sm text-slate-900">{lead.customerFullName}</div>
+                    <div className="text-xs text-slate-600 font-medium mt-0.5 tabular-nums">
+                      {lead.requestedCapacityKw} kW {lead.requestedVariant} • ₹{lead.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}/mo
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                        lead.onboardingStage === 'STAGE_2_ACTIVATED'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}>
+                        {lead.onboardingStage === 'STAGE_2_ACTIVATED' ? 'Stage 2: Customer Active' : 'Stage 1: Lead Registered'}
+                      </span>
+                      {lead.stage1EmailDispatchedAt && (
+                        <span className="text-[9px] text-slate-400 font-mono">✉️ Email Sent</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="font-bold text-sm text-slate-900">{lead.customerFullName}</div>
-                  <div className="text-xs text-slate-600 font-medium mt-0.5 tabular-nums">
-                    {lead.requestedCapacityKw} kW {lead.requestedVariant} • ₹{lead.averageMonthlyElectricityBillInr.toLocaleString('en-IN')}/mo
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                      lead.onboardingStage === 'STAGE_2_ACTIVATED'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        : 'bg-amber-50 text-amber-800 border-amber-200'
-                    }`}>
-                      {lead.onboardingStage === 'STAGE_2_ACTIVATED' ? 'Stage 2: Customer Active' : 'Stage 1: Lead Registered'}
-                    </span>
-                    {lead.stage1EmailDispatchedAt && (
-                      <span className="text-[9px] text-slate-400 font-mono">✉️ Email Sent</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
+
+          {/* Smooth 25-Records-Per-Page Pagination */}
+          {filteredInquiries.length > 0 && (
+            <div className="p-3 bg-[#F4F9F6]/80 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+              <div>
+                Showing {(inquiryCurrentPage - 1) * INQUIRY_PAGE_SIZE + 1} to{' '}
+                {Math.min(inquiryCurrentPage * INQUIRY_PAGE_SIZE, filteredInquiries.length)} of {filteredInquiries.length}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setInquiryCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={inquiryCurrentPage === 1}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-bold px-1.5 tabular-nums">
+                  {inquiryCurrentPage} / {totalInquiryPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setInquiryCurrentPage((p) => Math.min(totalInquiryPages, p + 1))}
+                  disabled={inquiryCurrentPage === totalInquiryPages}
+                  className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Detail Pane */}
