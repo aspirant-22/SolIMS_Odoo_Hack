@@ -21,7 +21,8 @@ import {
   Search,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Award
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -608,6 +609,44 @@ export const InquiriesView = () => {
                   <Mail className="w-3.5 h-3.5" />
                   <span>Resend Stage 1 Email</span>
                 </button>
+              </div>
+
+              {/* PM Surya Ghar Subsidy Readiness Gate Card */}
+              <div className="bg-[#F4F9F6] border border-emerald-900/15 rounded-2xl p-4 space-y-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-600" />
+                    <span className="font-heading font-extrabold text-slate-900">
+                      PM Surya Ghar Subsidy Readiness Gate
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    4-Point Compliance Gate
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-center space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">1. DCR Panels</span>
+                    <span className="text-xs font-bold text-emerald-700 block">ALMM List 1 ✓</span>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-center space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">2. Serials Linked</span>
+                    <span className="text-xs font-bold text-emerald-700 block">Dispatch Ready ✓</span>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-center space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">3. Roof Photo</span>
+                    <span className="text-xs font-bold text-emerald-700 block">Field Proof ✓</span>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-center space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">4. Homeowner Signed</span>
+                    <span className="text-xs font-bold text-emerald-700 block">Handover Sign ✓</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                  National PM Surya Ghar central subsidy disbursement is strictly gated until all 4 checkpoints pass.
+                </p>
               </div>
 
               {/* Inquiry Specifications Grid */}

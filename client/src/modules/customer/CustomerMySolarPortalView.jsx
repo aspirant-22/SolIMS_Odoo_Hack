@@ -673,9 +673,20 @@ export const CustomerMySolarPortalView = () => {
                 Warranty clocks auto-initialized upon warehouse dispatch. Zero paperwork required for warranty service.
               </p>
             </div>
-            <span className="text-xs font-mono font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-              {customerAssets.length} Certified Asset{customerAssets.length === 1 ? '' : 's'}
-            </span>
+            <div className="flex items-center gap-2.5">
+              <a
+                href={`/certificate/${customerProjectOrder?._id || 'ORD-2026-0001'}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3.5 py-1.5 rounded-full bg-[#135D3B] hover:bg-[#0E462C] text-white font-heading font-bold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Award className="w-3.5 h-3.5 text-amber-300" />
+                <span>Print Official Warranty Certificate</span>
+              </a>
+              <span className="text-xs font-mono font-semibold text-slate-700 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                {customerAssets.length} Certified Asset{customerAssets.length === 1 ? '' : 's'}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

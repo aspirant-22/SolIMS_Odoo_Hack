@@ -50,6 +50,35 @@ const CUSTOMER_LAST_NAMES = [
   'Dhillon', 'Grewal', 'Sandhu', 'Gill', 'Sidhu', 'Bajwa', 'Kohli', 'Kapoor'
 ];
 
+/**
+ * Distributes createdAt/updatedAt timestamps realistically across past 30 days:
+ * ~10% strictly within Today (>= startOfToday and <= now)
+ * ~35% cumulative within This Week (1 to 6 days ago)
+ * 100% within This Month (7 to 28 days ago)
+ */
+export const distributePast30DaysDate = (index, totalCount) => {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const ratio = totalCount > 0 ? index / totalCount : 0;
+
+  if (ratio < 0.10) {
+    // ~10% Today: strictly between startOfToday and now
+    const elapsedTodayMs = Math.max(now.getTime() - startOfToday.getTime(), 60000);
+    const offsetMs = ((index % 14) + 1) * (elapsedTodayMs / 16);
+    return new Date(startOfToday.getTime() + offsetMs);
+  } else if (ratio < 0.35) {
+    // ~35% This Week: between 1 and 6 days ago
+    const daysAgo = 1 + ((index * 2) % 6);
+    const hoursAgo = 1 + (index % 18);
+    return new Date(now.getTime() - daysAgo * 86400000 - hoursAgo * 3600000);
+  } else {
+    // Remaining ~65% This Month: between 7 and 28 days ago
+    const daysAgo = 7 + ((index * 3) % 21);
+    const hoursAgo = 2 + (index % 18);
+    return new Date(now.getTime() - daysAgo * 86400000 - hoursAgo * 3600000);
+  }
+};
+
 export const seedEnterpriseUsers = async () => {
   const commonPasswordHash = await bcrypt.hash('admin123', 10);
   const opsPasswordHash = await bcrypt.hash('ops123', 10);
@@ -273,7 +302,9 @@ export const seedHistoricalLeadsAndSurveys = async (allUsersList) => {
         surveyRemarks: `Site inspected at ${cityObj.city}. Clear southern solar exposure verified.`,
         assignedTechnician: assignedTech._id,
         surveyCompletedAt: !['Draft', 'Survey_Scheduled'].includes(status) ? new Date(Date.now() - (180 - idx) * 86400000) : null
-      }
+      },
+      createdAt: distributePast30DaysDate(idx, 170),
+      updatedAt: distributePast30DaysDate(idx, 170)
     });
   }
 
@@ -417,6 +448,9 @@ export const seedOrdersAndInstallations = async (insertedLeads, allUsersList) =>
       });
     }
 
+    const orderDate = distributePast30DaysDate(idx, 140);
+    const isSubsidyDisbursed = subsidyStage === 'SUBSIDY_DISBURSED';
+
     sampleOrders.push({
       quotationReference: quoteRef,
       orderReference: !isDraft ? orderRef : null,
@@ -442,7 +476,15 @@ export const seedOrdersAndInstallations = async (insertedLeads, allUsersList) =>
       scheduledInstallationDate: hasCrew ? scheduledDate : null,
       crewModificationLog,
       subsidyApplicationStatus: subsidyStage,
-      subsidyDisbursedDate: subsidyStage === 'SUBSIDY_DISBURSED' ? new Date(Date.now() - 15 * 86400000) : null,
+      subsidyDisbursedDate: isSubsidyDisbursed ? new Date(orderDate.getTime() + 5 * 86400000) : null,
+      subsidyCompliance: {
+        dcrPanelVerified: isSubsidyDisbursed || (idx % 2 === 0),
+        serialsLinked: isSubsidyDisbursed || (!isDraft && idx % 3 !== 0),
+        roofPhotoProof: isSubsidyDisbursed || ['Installed', 'Done'].includes(orderStatus),
+        homeownerSigned: isSubsidyDisbursed || (['Installed', 'Done'].includes(orderStatus) && idx % 4 !== 0)
+      },
+      createdAt: orderDate,
+      updatedAt: orderDate,
       updatedBy: adminUser._id
     });
   }
@@ -498,7 +540,9 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
       homeownerSignatureDataUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><path d="M10 40 Q 50 10 90 40 T 170 30" stroke="%23135D3B" stroke-width="3" fill="none"/></svg>',
       technicianNotes: `Site sign-off completed by certified technician ${techUser.fullName}. Grid voltage and inverter synchronize tested clean.`,
       leadTechnicianUser: techUser._id,
-      completionStatus: 'CONFIRMED_AND_ACCEPTED'
+      completionStatus: 'CONFIRMED_AND_ACCEPTED',
+      createdAt: distributePast30DaysDate(i, 60),
+      updatedAt: distributePast30DaysDate(i, 60)
     });
   }
 
@@ -527,7 +571,9 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
       resolutionConfirmationByCustomer: true,
       assignedTechnicianUser: techUsers[0]._id,
       technicianResolutionNotes: 'Replaced DC surge module under manufacturer 2-year warranty at ₹0 charge. System functioning normally.',
-      resolvedTimestamp: new Date()
+      resolvedTimestamp: new Date(),
+      createdAt: distributePast30DaysDate(0, 50),
+      updatedAt: distributePast30DaysDate(0, 50)
     },
     // Mandatory Demo Record 2: 26-mo expired warranty (billed ₹9,700)
     {
@@ -549,7 +595,9 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
       resolutionConfirmationByCustomer: false,
       assignedTechnicianUser: techUsers[1 % techUsers.length]._id,
       technicianResolutionNotes: 'Warranty expired 60 days ago. Billed ₹8,500 for replacement inverter card + ₹1,200 visit fee.',
-      resolvedTimestamp: null
+      resolvedTimestamp: null,
+      createdAt: distributePast30DaysDate(1, 50),
+      updatedAt: distributePast30DaysDate(1, 50)
     }
   ];
 
@@ -560,6 +608,7 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
     const totalCost = partsCost + laborCost;
     const assignedTech = techUsers[i % techUsers.length];
     const cityObj = NORTH_INDIA_CITIES[i % NORTH_INDIA_CITIES.length];
+    const ticketDate = distributePast30DaysDate(i - 1, 50);
 
     ticketsList.push({
       ticketReference: `TKT/2026/${String(i).padStart(4, '0')}`,
@@ -590,7 +639,9 @@ export const seedServiceTicketsAndSiteLogs = async (insertedOrders, allUsersList
       technicianResolutionNotes: isWarrantyActive
         ? 'Covered under manufacturer warranty at zero charge.'
         : 'Out-of-warranty inspection and part replacement billed to customer.',
-      resolvedTimestamp: i % 3 === 0 ? new Date() : null
+      resolvedTimestamp: i % 3 === 0 ? new Date() : null,
+      createdAt: ticketDate,
+      updatedAt: ticketDate
     });
   }
 
@@ -666,9 +717,11 @@ export const seedDoubleEntryLedger = async (insertedOrders, adminUserId) => {
         ];
     }
 
+    const journalDate = distributePast30DaysDate(idx, 160);
+
     journalEntries.push({
       entryReference: journalRef,
-      entryDate: new Date(Date.now() - idx * 43200000),
+      entryDate: journalDate,
       orderReference: order.orderReference || null,
       entryCategory: category,
       narrativeDescription: narrative,
@@ -676,6 +729,8 @@ export const seedDoubleEntryLedger = async (insertedOrders, adminUserId) => {
       totalDebitAmountInr: amount,
       totalCreditAmountInr: amount,
       isBalanced: true,
+      createdAt: journalDate,
+      updatedAt: journalDate,
       updatedBy: adminUserId
     });
   }

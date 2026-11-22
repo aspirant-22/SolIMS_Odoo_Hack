@@ -13,7 +13,9 @@ import {
   Mail,
   Sparkles,
   Key,
-  Calendar
+  Calendar,
+  Award,
+  ExternalLink
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -316,6 +318,28 @@ export const OrdersView = () => {
           </span>
         );
       }
+    },
+    {
+      key: 'certificate',
+      header: 'Certificate',
+      render: (row) => {
+        const canView = ['Installed', 'Done', 'Dispatched'].includes(row.orderWorkflowStatus);
+        if (!canView) return <span className="text-slate-400 text-xs">—</span>;
+        return (
+          <a
+            href={`/certificate/${row._id}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-[10px] font-bold text-[#135D3B] hover:text-[#0E462C] bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs transition-colors"
+            title="View Official Commissioning & Warranty Certificate"
+          >
+            <Award className="w-3 h-3 text-[#135D3B]" />
+            <span>Certificate</span>
+            <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+          </a>
+        );
+      }
     }
   ];
 
@@ -413,6 +437,20 @@ export const OrdersView = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Commissioning Certificate Link */}
+              {['Installed', 'Done', 'Dispatched'].includes(selectedOrder.orderWorkflowStatus) && (
+                <a
+                  href={`/certificate/${selectedOrder._id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-2.5 rounded-full bg-gradient-to-r from-[#0F291E] to-[#135D3B] hover:opacity-95 text-white font-heading font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
+                >
+                  <Award className="w-4 h-4 text-amber-300" />
+                  <span>Print Commissioning & Warranty Certificate</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-emerald-200" />
+                </a>
+              )}
 
               {/* Stage 2 Progressive Onboarding Card */}
               <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2 text-xs">

@@ -107,8 +107,14 @@ const projectOrderEntitySchema = new mongoose.Schema(
     dispatchEquipmentReserved: { type: Boolean, default: false },
     subsidyApplicationStatus: {
       type: String,
-      enum: ['NOT_SUBMITTED', 'DOCUMENTS_VERIFIED', 'INSPECTION_PENDING', 'SUBSIDY_DISBURSED'],
+      enum: ['NOT_SUBMITTED', 'DOCUMENTS_VERIFIED', 'INSPECTION_PENDING', 'SUBMITTED', 'SUBSIDY_DISBURSED'],
       default: 'NOT_SUBMITTED'
+    },
+    subsidyCompliance: {
+      dcrPanelVerified: { type: Boolean, default: false },
+      serialsLinked: { type: Boolean, default: false },
+      roofPhotoProof: { type: Boolean, default: false },
+      homeownerSigned: { type: Boolean, default: false }
     },
     subsidyDisbursedDate: { type: Date, default: null },
     customerUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

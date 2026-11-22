@@ -285,30 +285,32 @@ export const DataTable = ({
 
       {/* Pagination Footer */}
       {pageSize > 0 && sortedData.length > 0 && (
-        <div className="p-3 bg-[#F4F9F6]/60 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
-          <div>
-            Showing {(currentPage - 1) * pageSize + 1} to{' '}
-            {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} entries
+        <div className="p-3.5 bg-[#F4F9F6]/80 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-700">
+          <div className="font-medium">
+            Showing <span className="font-bold text-slate-900">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+            <span className="font-bold text-slate-900">{Math.min(currentPage * pageSize, sortedData.length)}</span> of{' '}
+            <span className="font-bold text-slate-900">{sortedData.length}</span> entries
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1 font-semibold text-xs text-slate-700 shadow-2xs transition-all"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Previous</span>
             </button>
-            <span className="font-bold px-2 tabular-nums">
-              {currentPage} / {totalPages}
+            <span className="font-bold px-2.5 py-1 rounded-full bg-white border border-slate-200 text-xs text-slate-800 tabular-nums shadow-2xs">
+              Page {currentPage} of {totalPages}
             </span>
             <button
               type="button"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1 rounded-full border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1 font-semibold text-xs text-[#135D3B] shadow-2xs transition-all hover:border-[#135D3B]/40"
             >
-              <ChevronRight className="w-4 h-4" />
+              <span>Next {pageSize > 0 && totalPages > 1 ? `${pageSize} ➔` : '➔'}</span>
             </button>
           </div>
         </div>

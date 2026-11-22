@@ -17,7 +17,9 @@ import {
   fetchMyCustomerProjectOrder,
   fetchAllTechnicians,
   fetchQuoteForLead,
-  fetchCustomerPortalBundle
+  fetchCustomerPortalBundle,
+  updateOrderSubsidyComplianceAndStatus,
+  fetchOrderCertificateData
 } from './order.service.js';
 import {
   isCustomerUser,
@@ -193,6 +195,38 @@ export const handleGetAllTechnicians = async (httpRequest, httpResponse, nextMid
       success: true,
       count: technicians.length,
       technicians
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleUpdateOrderSubsidy = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const { newStatus, complianceChecks } = httpRequest.body;
+    const updatedOrder = await updateOrderSubsidyComplianceAndStatus(
+      id,
+      { newStatus, complianceChecks },
+      httpRequest.authenticatedUser?._id
+    );
+    return httpResponse.status(200).json({
+      success: true,
+      message: `Subsidy status updated to "${updatedOrder.subsidyApplicationStatus}" successfully.`,
+      order: updatedOrder
+    });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleGetOrderCertificate = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { id } = httpRequest.params;
+    const certData = await fetchOrderCertificateData(id);
+    return httpResponse.status(200).json({
+      success: true,
+      ...certData
     });
   } catch (error) {
     return nextMiddlewareFunction(error);

@@ -14,15 +14,24 @@ import {
   Search,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  FileCheck2,
+  Award,
+  Zap,
+  Lock
 } from 'lucide-react';
 import { executeHttpRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, StatusPill } from '../../components/DataTable';
+import { AlertBanner } from '../../components/AlertBanner';
 
 export const DirectorDashboardView = () => {
   const { setIsSystemProcessing } = useAuth();
   const [financialSummary, setFinancialSummary] = useState(null);
+  const [subsidiesData, setSubsidiesData] = useState(null);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState('MONTH');
   const [generalLedgerEntries, setGeneralLedgerEntries] = useState([]);
   const [activeTab, setActiveTab] = useState('PNL');
@@ -30,11 +39,23 @@ export const DirectorDashboardView = () => {
   const [ledgerCurrentPage, setLedgerCurrentPage] = useState(1);
   const LEDGER_PAGE_SIZE = 25;
 
+  // PM Surya Ghar 4-Point Subsidy Compliance Checklist state
+  const [selectedJobForSubsidy, setSelectedJobForSubsidy] = useState(null);
+  const [complianceChecks, setComplianceChecks] = useState({
+    dcrPanelVerified: false,
+    serialsLinked: false,
+    roofPhotoProof: false,
+    homeownerSigned: false
+  });
+  const [subsidyFeedbackMsg, setSubsidyFeedbackMsg] = useState({ type: '', text: '' });
+  const [updatingSubsidy, setUpdatingSubsidy] = useState(false);
+
   const loadFinancialData = async () => {
     setIsSystemProcessing(true);
     try {
-      const [summaryResult, ledgerResult] = await Promise.allSettled([
-        executeHttpRequest('/api/accounting/director-summary'),
+      const [summaryResult, subsidiesResult, ledgerResult] = await Promise.allSettled([
+        executeHttpRequest(`/api/accounting/pnl?period=${selectedTimePeriod}`),
+        executeHttpRequest(`/api/accounting/subsidies?period=${selectedTimePeriod}`),
         executeHttpRequest('/api/accounting/ledger')
       ]);
 
@@ -42,6 +63,12 @@ export const DirectorDashboardView = () => {
         setFinancialSummary(summaryResult.value.summary);
       } else if (summaryResult.status === 'rejected') {
         console.warn('Failed to load P&L summary:', summaryResult.reason);
+      }
+
+      if (subsidiesResult.status === 'fulfilled' && subsidiesResult.value?.success) {
+        setSubsidiesData(subsidiesResult.value);
+      } else if (subsidiesResult.status === 'rejected') {
+        console.warn('Failed to load subsidies summary:', subsidiesResult.reason);
       }
 
       if (ledgerResult.status === 'fulfilled' && ledgerResult.value?.success) {
@@ -149,6 +176,57 @@ export const DirectorDashboardView = () => {
   const kpis = financialSummary?.kpis || {};
   const projectMargins = financialSummary?.projectMarginAnalysis || [];
 
+  const openSubsidyModal = (job) => {
+    setSelectedJobForSubsidy(job);
+    setComplianceChecks({
+      dcrPanelVerified: Boolean(job.subsidyCompliance?.dcrPanelVerified ?? (job.subsidyStatus === 'SUBSIDY_DISBURSED')),
+      serialsLinked: Boolean(job.subsidyCompliance?.serialsLinked ?? (job.subsidyStatus === 'SUBSIDY_DISBURSED' || job.status !== 'Draft')),
+      roofPhotoProof: Boolean(job.subsidyCompliance?.roofPhotoProof ?? ['Installed', 'Done'].includes(job.status)),
+      homeownerSigned: Boolean(job.subsidyCompliance?.homeownerSigned ?? ['Installed', 'Done'].includes(job.status))
+    });
+    setSubsidyFeedbackMsg({ type: '', text: '' });
+  };
+
+  const handleUpdateSubsidyStatus = async (newStatus) => {
+    if (!selectedJobForSubsidy) return;
+    try {
+      setUpdatingSubsidy(true);
+      setSubsidyFeedbackMsg({ type: '', text: '' });
+
+      const res = await executeHttpRequest(`/api/orders/${selectedJobForSubsidy.orderId}/subsidy`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          newStatus,
+          complianceChecks
+        })
+      });
+
+      if (res.success) {
+        setSubsidyFeedbackMsg({
+          type: 'success',
+          text: `PM Surya Ghar subsidy status updated to "${newStatus}" successfully!`
+        });
+        await loadFinancialData();
+        setTimeout(() => {
+          setSelectedJobForSubsidy(null);
+        }, 1500);
+      }
+    } catch (err) {
+      setSubsidyFeedbackMsg({
+        type: 'error',
+        text: err.message || 'Failed to update subsidy compliance status.'
+      });
+    } finally {
+      setUpdatingSubsidy(false);
+    }
+  };
+
+  const allChecksPassed =
+    complianceChecks.dcrPanelVerified &&
+    complianceChecks.serialsLinked &&
+    complianceChecks.roofPhotoProof &&
+    complianceChecks.homeownerSigned;
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Page Hero Strip: Clean White Surface */}
@@ -167,19 +245,23 @@ export const DirectorDashboardView = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Time Filter Pills */}
+          {/* Time Filter Pills: Passes TODAY, WEEK, or MONTH to /api/accounting/pnl and /api/accounting/subsidies */}
           <div className="bg-slate-100 p-1 rounded-full border border-slate-200 flex items-center text-xs shadow-2xs">
-            {['DAY', 'WEEK', 'MONTH'].map((period) => (
+            {[
+              { id: 'TODAY', label: 'Today' },
+              { id: 'WEEK', label: 'This Week' },
+              { id: 'MONTH', label: 'This Month' }
+            ].map(({ id, label }) => (
               <button
-                key={period}
-                onClick={() => setSelectedTimePeriod(period)}
+                key={id}
+                onClick={() => setSelectedTimePeriod(id)}
                 className={`px-3.5 py-1 rounded-full font-semibold transition-all cursor-pointer ${
-                  selectedTimePeriod === period
+                  selectedTimePeriod === id
                     ? 'bg-[#135D3B] text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {period === 'DAY' ? 'Today' : period === 'WEEK' ? 'This Week' : 'This Month'}
+                {label}
               </button>
             ))}
           </div>
@@ -368,7 +450,18 @@ export const DirectorDashboardView = () => {
             {
               key: 'subsidyStatus',
               header: 'Govt Subsidy Status',
-              render: (job) => <StatusPill status={job.subsidyStatus} />
+              render: (job) => (
+                <div className="flex items-center gap-1.5">
+                  <StatusPill status={job.subsidyStatus} />
+                  <button
+                    onClick={() => openSubsidyModal(job)}
+                    className="p-1 rounded-full text-slate-400 hover:text-[#135D3B] hover:bg-emerald-50 transition-colors cursor-pointer"
+                    title="Open PM Surya Ghar 4-Point Subsidy Compliance Gate"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )
             }
           ]}
           data={projectMargins}
@@ -500,6 +593,223 @@ export const DirectorDashboardView = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* PM Surya Ghar 4-Point Subsidy Readiness Gate Modal */}
+      {selectedJobForSubsidy && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-5 border border-slate-200 shadow-2xl animate-slideUp">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-heading font-black text-base text-slate-900">
+                      PM Surya Ghar Subsidy Readiness Gate
+                    </h3>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      National Portal
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Project: <span className="font-mono font-bold text-slate-900">{selectedJobForSubsidy.orderReference}</span> • {selectedJobForSubsidy.customerFullName} ({selectedJobForSubsidy.systemCapacityKw} kW)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedJobForSubsidy(null)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Alert / Feedback message */}
+            {subsidyFeedbackMsg.text && (
+              <AlertBanner
+                type={subsidyFeedbackMsg.type}
+                message={subsidyFeedbackMsg.text}
+                onDismiss={() => setSubsidyFeedbackMsg({ type: '', text: '' })}
+              />
+            )}
+
+            {/* Status summary banner */}
+            <div
+              className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between gap-3 ${
+                allChecksPassed
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                  : 'bg-amber-50 text-amber-900 border-amber-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {allChecksPassed ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                ) : (
+                  <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+                )}
+                <span>
+                  {allChecksPassed
+                    ? '✓ All 4 PM Surya Ghar compliance prerequisites verified! Claim is unlocked for submission & disbursement.'
+                    : '⚠️ Subsidy Disbursement Blocked: All 4 checklist checkpoints must pass before claim can be Submitted or Disbursed.'}
+                </span>
+              </div>
+              <span className="font-mono font-bold px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-800 shrink-0">
+                {Object.values(complianceChecks).filter(Boolean).length} / 4 Checks
+              </span>
+            </div>
+
+            {/* The 4-Point Compliance Checklist */}
+            <div className="space-y-3">
+              <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                4-Point Subsidy Compliance Checklist (Strict Gate)
+              </div>
+
+              {/* Check 1: DCR Panel Verified */}
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:bg-slate-50/80 transition-all cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={complianceChecks.dcrPanelVerified}
+                  onChange={(e) =>
+                    setComplianceChecks((prev) => ({ ...prev, dcrPanelVerified: e.target.checked }))
+                  }
+                  className="mt-0.5 w-4 h-4 rounded text-[#135D3B] focus:ring-[#135D3B] cursor-pointer"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>1. DCR Panel Verified</span>
+                    {complianceChecks.dcrPanelVerified && (
+                      <span className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.2 rounded-full border border-emerald-200">
+                        PASSED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-500 font-medium text-[11px] mt-0.5">
+                    Domestic Content Requirement verified. Solar PV modules certified under MNRE ALMM List 1 with certified cell origin.
+                  </p>
+                </div>
+              </label>
+
+              {/* Check 2: Serials Linked */}
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:bg-slate-50/80 transition-all cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={complianceChecks.serialsLinked}
+                  onChange={(e) =>
+                    setComplianceChecks((prev) => ({ ...prev, serialsLinked: e.target.checked }))
+                  }
+                  className="mt-0.5 w-4 h-4 rounded text-[#135D3B] focus:ring-[#135D3B] cursor-pointer"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>2. Serials Linked</span>
+                    {complianceChecks.serialsLinked && (
+                      <span className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.2 rounded-full border border-emerald-200">
+                        PASSED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-500 font-medium text-[11px] mt-0.5">
+                    Hardware serial barcodes (Panels, Smart Inverter, Battery) barcode scanned and verified in warehouse dispatch.
+                  </p>
+                </div>
+              </label>
+
+              {/* Check 3: Roof Photo Proof */}
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:bg-slate-50/80 transition-all cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={complianceChecks.roofPhotoProof}
+                  onChange={(e) =>
+                    setComplianceChecks((prev) => ({ ...prev, roofPhotoProof: e.target.checked }))
+                  }
+                  className="mt-0.5 w-4 h-4 rounded text-[#135D3B] focus:ring-[#135D3B] cursor-pointer"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>3. Roof Photo Proof</span>
+                    {complianceChecks.roofPhotoProof && (
+                      <span className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.2 rounded-full border border-emerald-200">
+                        PASSED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-500 font-medium text-[11px] mt-0.5">
+                    High-resolution rooftop array photos verified on-site with zero shading and proper azimuth/tilt alignment.
+                  </p>
+                </div>
+              </label>
+
+              {/* Check 4: Homeowner Signed */}
+              <label className="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-300 hover:bg-slate-50/80 transition-all cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={complianceChecks.homeownerSigned}
+                  onChange={(e) =>
+                    setComplianceChecks((prev) => ({ ...prev, homeownerSigned: e.target.checked }))
+                  }
+                  className="mt-0.5 w-4 h-4 rounded text-[#135D3B] focus:ring-[#135D3B] cursor-pointer"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>4. Homeowner Signed</span>
+                    {complianceChecks.homeownerSigned && (
+                      <span className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.2 rounded-full border border-emerald-200">
+                        PASSED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-500 font-medium text-[11px] mt-0.5">
+                    Digital customer handover and power generation acceptance signature recorded and verified.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedJobForSubsidy(null)}
+                className="px-4 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!allChecksPassed || updatingSubsidy}
+                  onClick={() => handleUpdateSubsidyStatus('SUBMITTED')}
+                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                    allChecksPassed
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                  title={allChecksPassed ? 'Submit claim to National PM Surya Ghar Portal' : 'All 4 checks required'}
+                >
+                  Submit to National Portal
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!allChecksPassed || updatingSubsidy}
+                  onClick={() => handleUpdateSubsidyStatus('SUBSIDY_DISBURSED')}
+                  className={`px-5 py-2 rounded-full text-xs font-bold shadow-sm transition-all ${
+                    allChecksPassed
+                      ? 'bg-[#135D3B] hover:bg-[#0E462C] text-white cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                  title={allChecksPassed ? 'Mark subsidy as disbursed from Central Government' : 'All 4 checks required'}
+                >
+                  {updatingSubsidy ? 'Updating...' : 'Mark Subsidy Disbursed'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

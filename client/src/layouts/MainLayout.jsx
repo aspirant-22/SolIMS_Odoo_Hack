@@ -110,8 +110,19 @@ export const MainLayout = ({ currentModule, children }) => {
           </div>
         </div>
 
-        {/* Right side persona switcher for judges */}
+        {/* Right side navigation actions & persona switcher */}
         <div className="flex items-center gap-2">
+          {/* Clean Top Navbar Simulated Mailbox Button (replaces bottom-right floating pill on internal routes) */}
+          <button
+            onClick={() => setIsEmailModalOpen(true)}
+            className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#E6F4EC] text-[#135D3B] border border-emerald-300 hover:bg-emerald-100 shadow-2xs transition-all cursor-pointer flex items-center gap-1.5"
+            title="Open Zero-Config Simulated Email Outbox"
+          >
+            <Mail className="w-3.5 h-3.5 text-[#135D3B]" />
+            <span className="hidden sm:inline">Simulated Mailbox</span>
+            <span className="sm:hidden">Mailbox</span>
+          </button>
+
           <div className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-full text-xs border border-slate-200/80">
             <span className="text-[10px] text-slate-500 font-bold uppercase px-2">Switch:</span>
             <button
@@ -140,14 +151,6 @@ export const MainLayout = ({ currentModule, children }) => {
               className="px-3 py-1 rounded-full text-[10px] font-bold bg-white text-slate-700 border border-slate-200 hover:text-[#135D3B] hover:border-[#135D3B]/30 shadow-2xs transition-all cursor-pointer ml-1"
             >
               Customer Portal ➔
-            </button>
-            <button
-              onClick={() => setIsEmailModalOpen(true)}
-              className="px-3 py-1 rounded-full text-[10px] font-bold bg-white text-[#135D3B] border border-emerald-300 hover:bg-emerald-50 shadow-2xs transition-all cursor-pointer flex items-center gap-1 ml-1"
-              title="Open Zero-Config Simulated Email Outbox"
-            >
-              <Mail className="w-3 h-3 text-[#135D3B]" />
-              <span>Simulated Mailbox</span>
             </button>
           </div>
         </div>

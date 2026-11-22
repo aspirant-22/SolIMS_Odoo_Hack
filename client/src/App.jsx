@@ -23,6 +23,8 @@ import { WarrantyLookupTicketView } from './modules/warranty/WarrantyLookupTicke
 import { DirectorDashboardView } from './modules/director/DirectorDashboardView';
 import { SystemDiagnosticsView } from './modules/diagnostics/SystemDiagnosticsView';
 import { SimulatedEmailFloatingNotifier } from './components/SimulatedEmailFloatingNotifier';
+import { HandoverWarrantyCertificateView } from './modules/customer/HandoverWarrantyCertificateView';
+import { PublicInverterQrLookupView } from './modules/landing/PublicInverterQrLookupView';
 
 const ROLE_HOME = {
   ADMIN: '/director',
@@ -112,6 +114,8 @@ export const App = () => {
         <Route path="/quote" element={<PublicLandingView mode="quote" />} />
         <Route path="/activate-account" element={<ActivateAccountRoute />} />
         <Route path="/login" element={currentUser ? <Navigate to={home} replace /> : <LoginView />} />
+        <Route path="/u/:serialNumber" element={<PublicInverterQrLookupView />} />
+        <Route path="/certificate/:orderId" element={<HandoverWarrantyCertificateView />} />
 
         {/* Homeowner portal */}
         <Route

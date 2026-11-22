@@ -11,7 +11,9 @@ import {
   createBreakdownServiceTicket,
   recordServiceTicketPayment,
   resolveServiceTicketWithConfirmation,
-  fetchAllServiceTickets
+  fetchAllServiceTickets,
+  lookupPublicSerialAsset,
+  createPublicServiceTicket
 } from './service.service.js';
 import { isCustomerUser } from '../../core/customerScope.js';
 
@@ -81,6 +83,29 @@ export const handleGetAllTickets = async (httpRequest, httpResponse, nextMiddlew
     const customerUser = isCustomerUser(httpRequest.authenticatedUser) ? httpRequest.authenticatedUser : null;
     const tickets = await fetchAllServiceTickets({}, customerUser);
     return httpResponse.status(200).json({ success: true, count: tickets.length, tickets });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handlePublicSerialLookup = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const { serialNumber } = httpRequest.params;
+    const asset = await lookupPublicSerialAsset(serialNumber);
+    return httpResponse.status(200).json({ success: true, asset });
+  } catch (error) {
+    return nextMiddlewareFunction(error);
+  }
+};
+
+export const handleCreatePublicTicket = async (httpRequest, httpResponse, nextMiddlewareFunction) => {
+  try {
+    const ticket = await createPublicServiceTicket(httpRequest.body);
+    return httpResponse.status(201).json({
+      success: true,
+      message: `Breakdown Ticket ${ticket.ticketReference} filed successfully.`,
+      ticket
+    });
   } catch (error) {
     return nextMiddlewareFunction(error);
   }

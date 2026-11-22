@@ -162,7 +162,7 @@ export const WarrantyLookupTicketView = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
+    <div className="p-6 pb-16 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Page Hero Strip: Clean White Surface */}
       <div className="page-hero flex flex-wrap items-center justify-between gap-4">
         <div>

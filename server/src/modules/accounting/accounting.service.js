@@ -11,11 +11,24 @@ import { TicketModel } from '../service/ticket.model.js';
 import { getNextSequenceNumber } from '../../core/sequenceRegistry.js';
 import { ERP_SYSTEM_CONFIG } from '../../config/erpConfig.js';
 
-export const generateDirectorMonthEndFinancialSummary = async (startDateFilter = null, endDateFilter = null) => {
+export const generateDirectorMonthEndFinancialSummary = async (periodOrStartDate = null, endDateFilter = null) => {
+  const now = new Date();
+  let startDate = null;
+  const normalizedPeriod = typeof periodOrStartDate === 'string' ? periodOrStartDate.trim().toUpperCase() : null;
+
+  if (normalizedPeriod === 'TODAY' || normalizedPeriod === 'DAY') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0); // startOfToday
+  } else if (normalizedPeriod === 'WEEK' || normalizedPeriod === 'THIS_WEEK') {
+    startDate = new Date(now.getTime() - 7 * 86400000); // now - 7 days
+  } else if (normalizedPeriod === 'MONTH' || normalizedPeriod === 'THIS_MONTH') {
+    startDate = new Date(now.getTime() - 30 * 86400000); // now - 30 days
+  } else if (periodOrStartDate) {
+    startDate = new Date(periodOrStartDate);
+  }
+
   const queryConditions = {};
-  if (startDateFilter || endDateFilter) {
-    queryConditions.createdAt = {};
-    if (startDateFilter) queryConditions.createdAt.$gte = new Date(startDateFilter);
+  if (startDate) {
+    queryConditions.createdAt = { $gte: startDate };
     if (endDateFilter) queryConditions.createdAt.$lte = new Date(endDateFilter);
   }
 
@@ -108,4 +121,63 @@ export const generateDirectorMonthEndFinancialSummary = async (startDateFilter =
 
 export const fetchDoubleEntryGeneralLedger = async () => {
   return JournalEntryModel.find().sort({ entryDate: -1 });
+};
+
+export const fetchDirectorSubsidySummary = async (periodOrStartDate = null) => {
+  const now = new Date();
+  let startDate = null;
+  const normalizedPeriod = typeof periodOrStartDate === 'string' ? periodOrStartDate.trim().toUpperCase() : null;
+
+  if (normalizedPeriod === 'TODAY' || normalizedPeriod === 'DAY') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  } else if (normalizedPeriod === 'WEEK' || normalizedPeriod === 'THIS_WEEK') {
+    startDate = new Date(now.getTime() - 7 * 86400000);
+  } else if (normalizedPeriod === 'MONTH' || normalizedPeriod === 'THIS_MONTH') {
+    startDate = new Date(now.getTime() - 30 * 86400000);
+  } else if (periodOrStartDate) {
+    startDate = new Date(periodOrStartDate);
+  }
+
+  const queryConditions = {};
+  if (startDate) {
+    queryConditions.createdAt = { $gte: startDate };
+  }
+
+  const orders = await OrderModel.find(queryConditions).lean();
+  let totalSubsidiesExpected = 0;
+  let totalSubsidiesDisbursed = 0;
+  let pendingClaimsCount = 0;
+  let disbursedClaimsCount = 0;
+
+  const records = orders.map((o) => {
+    const subsidy = o.estimatedSubsidyAmountInr || 0;
+    totalSubsidiesExpected += subsidy;
+    if (o.subsidyApplicationStatus === 'SUBSIDY_DISBURSED') {
+      totalSubsidiesDisbursed += subsidy;
+      disbursedClaimsCount++;
+    } else {
+      pendingClaimsCount++;
+    }
+    return {
+      orderId: o._id,
+      orderReference: o.orderReference || o.quotationReference,
+      customerFullName: o.customerFullName,
+      systemCapacityKw: o.systemCapacityKw,
+      systemVariant: o.systemVariant,
+      estimatedSubsidyAmountInr: subsidy,
+      subsidyApplicationStatus: o.subsidyApplicationStatus,
+      subsidyCompliance: o.subsidyCompliance || {},
+      createdAt: o.createdAt
+    };
+  });
+
+  return {
+    period: normalizedPeriod || 'MONTH',
+    totalSubsidiesExpectedInr: Math.round(totalSubsidiesExpected * 100) / 100,
+    totalSubsidiesDisbursedInr: Math.round(totalSubsidiesDisbursed * 100) / 100,
+    pendingClaimsCount,
+    disbursedClaimsCount,
+    recordsCount: records.length,
+    records
+  };
 };

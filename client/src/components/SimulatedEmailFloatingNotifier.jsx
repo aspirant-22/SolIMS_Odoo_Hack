@@ -6,16 +6,21 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Mail, Sparkles, X, ChevronRight } from 'lucide-react';
 import { subscribeToErpEvent } from '../services/socket';
 import { executeHttpRequest } from '../services/api';
 import { SimulatedEmailOutboxModal } from './SimulatedEmailOutboxModal';
 
 export const SimulatedEmailFloatingNotifier = () => {
+  const location = useLocation();
   const [emailCount, setEmailCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeToast, setActiveToast] = useState(null);
   const [selectedEmailId, setSelectedEmailId] = useState(null);
+
+  // Floating pill is restricted ONLY to public routes; internal dashboards feature the mailbox inside top navbar
+  const isPublicRoute = ['/', '/quote', '/login'].includes(location.pathname);
 
   const fetchEmailCount = async () => {
     try {
@@ -98,24 +103,26 @@ export const SimulatedEmailFloatingNotifier = () => {
         </div>
       )}
 
-      {/* 2. Persistent Floating Quick Access Pill */}
-      <aside aria-label="Simulated Mailbox" className="fixed bottom-6 right-6 z-40">
-        <button
-          onClick={() => handleOpenEmailModal()}
-          className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#0F291E] to-[#135D3B] text-white font-heading font-extrabold text-xs shadow-xl border border-emerald-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
-          title="Open Zero-Config Simulated Email Outbox"
-        >
-          <div className="relative">
-            <Mail className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform" />
-            {emailCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-emerald-500 text-[9px] font-mono font-black text-slate-900 flex items-center justify-center border border-white">
-                {emailCount}
-              </span>
-            )}
-          </div>
-          <span className="tracking-tight">Simulated Mailbox</span>
-        </button>
-      </aside>
+      {/* 2. Persistent Floating Quick Access Pill (ONLY on public landing, quote, and login pages) */}
+      {isPublicRoute && (
+        <aside aria-label="Simulated Mailbox" className="fixed bottom-6 right-6 z-40">
+          <button
+            onClick={() => handleOpenEmailModal()}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#0F291E] to-[#135D3B] text-white font-heading font-extrabold text-xs shadow-xl border border-emerald-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+            title="Open Zero-Config Simulated Email Outbox"
+          >
+            <div className="relative">
+              <Mail className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform" />
+              {emailCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 rounded-full bg-emerald-500 text-[9px] font-mono font-black text-slate-900 flex items-center justify-center border border-white">
+                  {emailCount}
+                </span>
+              )}
+            </div>
+            <span className="tracking-tight">Simulated Mailbox</span>
+          </button>
+        </aside>
+      )}
 
       {/* 3. The Modal / Drawer */}
       <SimulatedEmailOutboxModal

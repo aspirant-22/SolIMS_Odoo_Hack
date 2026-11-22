@@ -694,3 +694,78 @@ export const fetchAllProjectOrders = async (filterQuery = {}) => {
 export const fetchProjectOrderById = async (orderId) => {
   return OrderModel.findById(orderId).populate(ORDER_POPULATE_PATHS);
 };
+
+export const updateOrderSubsidyComplianceAndStatus = async (orderId, updatePayload, userId) => {
+  const orderRecord = await OrderModel.findById(orderId);
+  if (!orderRecord) throw buildHttpError(404, 'Project order not found');
+
+  const { newStatus, complianceChecks } = updatePayload;
+
+  // Update compliance checks if provided
+  if (complianceChecks && typeof complianceChecks === 'object') {
+    orderRecord.subsidyCompliance = {
+      dcrPanelVerified: Boolean(complianceChecks.dcrPanelVerified),
+      serialsLinked: Boolean(complianceChecks.serialsLinked),
+      roofPhotoProof: Boolean(complianceChecks.roofPhotoProof),
+      homeownerSigned: Boolean(complianceChecks.homeownerSigned)
+    };
+  }
+
+  // 4-Point Subsidy Compliance Gate:
+  // Both SUBMITTED and SUBSIDY_DISBURSED strictly require all 4 checklist points to pass
+  if (['SUBMITTED', 'SUBSIDY_DISBURSED'].includes(newStatus)) {
+    const checks = orderRecord.subsidyCompliance || {};
+    const missing = [];
+    if (!checks.dcrPanelVerified) missing.push('DCR Panel Verified');
+    if (!checks.serialsLinked) missing.push('Serials Linked');
+    if (!checks.roofPhotoProof) missing.push('Roof Photo Proof');
+    if (!checks.homeownerSigned) missing.push('Homeowner Signed');
+
+    if (missing.length > 0) {
+      throw buildHttpError(
+        400,
+        `PM Surya Ghar compliance failure: All 4 checklist gates must pass before marking claim as "${newStatus}". Missing prerequisite(s): ${missing.join(', ')}.`
+      );
+    }
+
+    orderRecord.subsidyApplicationStatus = newStatus;
+    if (newStatus === 'SUBSIDY_DISBURSED') {
+      orderRecord.subsidyDisbursedDate = new Date();
+    }
+  } else if (newStatus) {
+    orderRecord.subsidyApplicationStatus = newStatus;
+  }
+
+  if (userId) orderRecord.updatedBy = userId;
+  await orderRecord.save();
+  await orderRecord.populate(ORDER_POPULATE_PATHS);
+
+  emitErpEvent('SUBSIDY_STATUS_UPDATED', {
+    orderId: orderRecord._id,
+    orderReference: orderRecord.orderReference,
+    subsidyStatus: orderRecord.subsidyApplicationStatus,
+    subsidyCompliance: orderRecord.subsidyCompliance
+  });
+
+  return orderRecord;
+};
+
+export const fetchOrderCertificateData = async (orderId) => {
+  const order = await OrderModel.findById(orderId).populate(ORDER_POPULATE_PATHS).lean();
+  if (!order) throw buildHttpError(404, 'Order not found');
+
+  const siteLog = await SiteLogModel.findOne({ orderId: order._id })
+    .populate('leadTechnicianUser', 'fullName assignedSpecialization phoneNumber')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const serialAssets = await SerialAssetModel.find({
+    orderReference: order.orderReference || order.quotationReference
+  }).lean();
+
+  return {
+    order,
+    siteLog: siteLog || null,
+    serialAssets: serialAssets || []
+  };
+};

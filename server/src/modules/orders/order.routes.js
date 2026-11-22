@@ -28,7 +28,9 @@ import {
   handleResendStage2Email,
   handleGetMyProjectOrder,
   handleGetMyPortalBundle,
-  handleGetAllTechnicians
+  handleGetAllTechnicians,
+  handleUpdateOrderSubsidy,
+  handleGetOrderCertificate
 } from './order.controller.js';
 
 const { ADMIN, OPERATIONS, CUSTOMER, STAFF } = ERP_SYSTEM_CONFIG.RBAC_ROLES;
@@ -38,6 +40,8 @@ orderApiRouter.get('/technicians', verifyAuthentication, authorizeRoles(ADMIN, O
 orderApiRouter.get('/my-project', verifyAuthentication, authorizeRoles(CUSTOMER), handleGetMyProjectOrder);
 orderApiRouter.get('/my-portal', verifyAuthentication, authorizeRoles(CUSTOMER), handleGetMyPortalBundle);
 orderApiRouter.get('/by-lead/:leadId', verifyAuthentication, authorizeRoles(ADMIN, OPERATIONS), handleGetQuoteByLead);
+orderApiRouter.get('/:id/certificate', handleGetOrderCertificate);
+orderApiRouter.patch('/:id/subsidy', verifyAuthentication, authorizeRoles(ADMIN, OPERATIONS), handleUpdateOrderSubsidy);
 orderApiRouter.get('/', verifyAuthentication, handleGetAllOrders);
 orderApiRouter.get('/:id', verifyAuthentication, handleGetOrderById);
 

@@ -252,3 +252,97 @@ export const fetchAllServiceTickets = async (filterQuery = {}, customerUser = nu
   }
   return TicketModel.find(resolvedFilter).sort({ createdAt: -1 });
 };
+
+export const lookupPublicSerialAsset = async (serialNumber) => {
+  const sanitized = String(serialNumber || '').trim();
+  const asset = await SerialAssetModel.findOne({
+    serialNumber: { $regex: new RegExp(`^${sanitized}$`, 'i') }
+  }).lean();
+
+  if (!asset) {
+    const error = new Error(`Equipment asset with serial number "${sanitized}" not found in registry`);
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const now = new Date();
+  const isUnderWarranty = asset.warrantyExpiresTimestamp && new Date(asset.warrantyExpiresTimestamp) > now;
+  const remainingDays = asset.warrantyExpiresTimestamp
+    ? Math.max(0, Math.ceil((new Date(asset.warrantyExpiresTimestamp) - now) / 86400000))
+    : 0;
+  const expiredDays = !isUnderWarranty && asset.warrantyExpiresTimestamp
+    ? Math.max(0, Math.ceil((now - new Date(asset.warrantyExpiresTimestamp)) / 86400000))
+    : 0;
+
+  let estimatedPartCost = 0;
+  if (!isUnderWarranty) {
+    if (asset.assetCategory === 'INVERTER') {
+      estimatedPartCost = ERP_SYSTEM_CONFIG.BOM_TEMPLATES.DEFAULT_INVERTER_OUT_OF_WARRANTY_COST_INR;
+    } else if (asset.assetCategory === 'BATTERY') {
+      estimatedPartCost = ERP_SYSTEM_CONFIG.BOM_TEMPLATES.DEFAULT_BATTERY_OUT_OF_WARRANTY_COST_INR;
+    }
+  }
+  const estimatedLaborCost = isUnderWarranty ? 0 : ERP_SYSTEM_CONFIG.BOM_TEMPLATES.OUT_OF_WARRANTY_VISIT_FEE_INR;
+
+  return {
+    serialNumber: asset.serialNumber,
+    assetCategory: asset.assetCategory,
+    modelDesignation: asset.modelDesignation,
+    assetStatus: asset.assetStatus,
+    customerFullName: asset.customerFullName || 'Verified Homeowner Client',
+    customerPhoneNumber: asset.customerPhoneNumber || '',
+    installationSiteAddress: asset.installationSiteAddress || 'Registered Rooftop Array',
+    orderReference: asset.orderReference || 'ORD/2026/0001',
+    dispatchConfirmedTimestamp: asset.dispatchConfirmedTimestamp || asset.createdAt,
+    warrantyDurationDays: asset.warrantyDurationDays || 730,
+    warrantyExpiresTimestamp: asset.warrantyExpiresTimestamp,
+    isUnderActiveWarranty: isUnderWarranty,
+    warrantyStatus: isUnderWarranty ? 'UNDER WARRANTY' : 'EXPIRED',
+    remainingWarrantyDays: remainingDays,
+    expiredDays: expiredDays,
+    estimatedPartCostInr: estimatedPartCost,
+    estimatedLaborCostInr: estimatedLaborCost,
+    totalBillableCostInr: estimatedPartCost + estimatedLaborCost
+  };
+};
+
+export const createPublicServiceTicket = async (ticketData) => {
+  const { targetSerialNumber, reportedFaultCode, issueDescription, customerFullName, customerPhoneNumber } = ticketData;
+  const asset = await SerialAssetModel.findOne({
+    serialNumber: { $regex: new RegExp(`^${String(targetSerialNumber || '').trim()}$`, 'i') }
+  });
+
+  const now = new Date();
+  const isUnderWarranty = asset?.warrantyExpiresTimestamp ? new Date(asset.warrantyExpiresTimestamp) > now : false;
+
+  let sparePartCost = 0;
+  if (!isUnderWarranty) {
+    if (asset?.assetCategory === 'INVERTER') sparePartCost = ERP_SYSTEM_CONFIG.BOM_TEMPLATES.DEFAULT_INVERTER_OUT_OF_WARRANTY_COST_INR;
+    if (asset?.assetCategory === 'BATTERY') sparePartCost = ERP_SYSTEM_CONFIG.BOM_TEMPLATES.DEFAULT_BATTERY_OUT_OF_WARRANTY_COST_INR;
+  }
+  const laborCharge = isUnderWarranty ? 0 : ERP_SYSTEM_CONFIG.BOM_TEMPLATES.OUT_OF_WARRANTY_VISIT_FEE_INR;
+  const totalPayable = sparePartCost + laborCharge;
+
+  const ticketRef = await getNextSequenceNumber(ERP_SYSTEM_CONFIG.SEQUENCE_CODES.TICKET);
+
+  const createdTicket = await TicketModel.create({
+    ticketReference: ticketRef,
+    customerFullName: customerFullName || asset?.customerFullName || 'Verified Homeowner',
+    customerPhoneNumber: customerPhoneNumber || asset?.customerPhoneNumber || '+91 98000 00000',
+    installationSiteAddress: asset?.installationSiteAddress || 'Registered Solar Rooftop',
+    targetSerialNumber: asset?.serialNumber || targetSerialNumber,
+    assetCategory: asset?.assetCategory || 'INVERTER',
+    reportedFaultCode: reportedFaultCode || 'ERR_INVERTER_GRID_FAIL',
+    issueDescription: issueDescription || 'Monsoon downpour caused inverter to trip. Generation stopped.',
+    isUnderActiveWarranty: isUnderWarranty,
+    warrantyExpiryDate: asset?.warrantyExpiresTimestamp || new Date(),
+    sparePartCostInr: sparePartCost,
+    laborChargeCostInr: laborCharge,
+    totalPayableAmountInr: totalPayable,
+    paymentStatus: (!isUnderWarranty && totalPayable > 0) ? 'PENDING' : 'NOT_REQUIRED',
+    ticketWorkflowStatus: 'Draft'
+  });
+
+  emitErpEvent('BREAKDOWN_TICKET_CREATED', { ticket: createdTicket });
+  return createdTicket;
+};

@@ -22,10 +22,16 @@ import {
   handleCreateTicket,
   handleRecordTicketPayment,
   handleResolveTicket,
-  handleGetAllTickets
+  handleGetAllTickets,
+  handlePublicSerialLookup,
+  handleCreatePublicTicket
 } from './service.controller.js';
 
 const serviceApiRouter = Router();
+
+// Public QR Sticker Inverter & Asset Lookup (zero-auth for mobile scanning in field)
+serviceApiRouter.get('/public-lookup/:serialNumber', handlePublicSerialLookup);
+serviceApiRouter.post('/public-ticket', handleCreatePublicTicket);
 
 serviceApiRouter.get('/tickets', verifyAuthentication, handleGetAllTickets);
 serviceApiRouter.get('/warranty-lookup', verifyAuthentication, handleWarrantyLookup);
