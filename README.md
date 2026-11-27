@@ -27,7 +27,7 @@ Before SolIMS, inquiries were lost in unstructured messaging threads, quotes omi
 
 > 📺 **Watch the complete architectural & workflow walkthrough of SolIMS:**
 
-[![Watch Project Demo Video](https://img.shields.io/badge/▶%20Watch%20Project%20Demo%20Video-E11D48?style=for-the-badge&logo=youtube&logoColor=white)](YOUR_DEMO_VIDEO_URL_HERE)
+[![Watch Project Demo Video](https://img.shields.io/badge/▶%20Watch%20Project%20Demo%20Video-E11D48?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/35sMNZJ4iSI)
 
 ---
 
