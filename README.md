@@ -1,6 +1,9 @@
 # ☀️ SolIMS — Solar Installation Management System ERP
 ### *The Digital Operational Backbone for Solar EPC & Asset Lifecycle Management*
 
+<img width="940" height="535" alt="Screenshot 2026-11-27 150105" src="https://github.com/user-attachments/assets/ca53af1a-fa19-4948-898b-e3fbf7924c39" />
+
+
 [![Odoo Hackathon](https://img.shields.io/badge/Odoo%20x%20LPU%20Jalandhar-Hackathon%202026-714B67?style=for-the-badge&logo=odoo&logoColor=white)](https://github.com/aspirant-22/SolIMS_Odoo_Hack)
 [![Solo Project](https://img.shields.io/badge/Author-Garima%20Mittal%20(Solo)-135D3B?style=for-the-badge)](https://github.com/aspirant-22)
 [![Scale](https://img.shields.io/badge/Database%20Scale-760%2B%20Historical%20Records-0284C7?style=for-the-badge)](#)
@@ -22,14 +25,9 @@ Before SolIMS, inquiries were lost in unstructured messaging threads, quotes omi
 
 ## 🎬 Project Demo Video
 
-> 📺 **Watch the complete 3-minute architectural & workflow walkthrough of SolIMS:**
+> 📺 **Watch the complete architectural & workflow walkthrough of SolIMS:**
 
-[![Watch 3-Minute Project Demo Video](https://img.shields.io/badge/▶%20Watch%203--Minute%20Project%20Demo%20Video-E11D48?style=for-the-badge&logo=youtube&logoColor=white)](YOUR_DEMO_VIDEO_URL_HERE)
-
-- 🔗 **Direct Walkthrough Link:** [▶ Watch 3-Minute Project Demo Video](YOUR_DEMO_VIDEO_URL_HERE)
-- 📽️ **YouTube Mirror:** [Watch on YouTube](YOUR_YOUTUBE_URL_HERE) *(Paste URL)*
-- 🎥 **Loom Walkthrough:** [Watch on Loom](YOUR_LOOM_URL_HERE) *(Paste URL)*
-- 📁 **Google Drive High-Res:** [Watch on Google Drive](YOUR_GDRIVE_URL_HERE) *(Paste URL)*
+[![Watch Project Demo Video](https://img.shields.io/badge/▶%20Watch%20Project%20Demo%20Video-E11D48?style=for-the-badge&logo=youtube&logoColor=white)](YOUR_DEMO_VIDEO_URL_HERE)
 
 ---
 
